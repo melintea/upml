@@ -42,6 +42,8 @@ struct plantuml_grammar : bs::qi::grammar<ITER, upml::sm::state_machine(), bs::a
 {
     plantuml_grammar() : plantuml_grammar::base_type(start)
     {
+        qstring %= bs::qi::lexeme['"' >> +(bs::qi::char_ - '"') >> '"'];
+
         start %= 
             bs::qi::lit("@startuml")
             //>> bs::qi::int_
@@ -51,6 +53,7 @@ struct plantuml_grammar : bs::qi::grammar<ITER, upml::sm::state_machine(), bs::a
         //BOOST_SPIRIT_DEBUG_NODES((start)(sm));
     }
     
+    bs::qi::rule<ITER, std::string(), bs::ascii::space_type> qstring;
     bs::qi::rule<ITER, upml::sm::state_machine(), bs::ascii::space_type> start;
     
 }; // plantuml_grammar

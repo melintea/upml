@@ -14,6 +14,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -58,13 +59,16 @@ using id_t = std::string;
 template <typename T> struct hasher
 {
     size_t operator()(const T& s) const { return std::hash<id_t>()(s._id); }
+    size_t operator()(const std::unique_ptr<T>& p) const { return std::hash<id_t>()(p->_id); }
+    size_t operator()(const std::shared_ptr<T>& p) const { return std::hash<id_t>()(p->_id); }
 }; // hasher
 
 
 // transition: trigger [guard] /effect
 struct transition
 {
-    using transitions_t = std::unordered_set<transition, hasher<transition>>;
+    //using transitions_t = std::unordered_set<transition, hasher<transition>>;
+    using transitions_t = std::unordered_map<id_t, transition>;
     using graph_t       = std::unordered_map<id_t/*fromState*/, transitions_t>; // TODO: use BGL?
     
     id_t _id;
@@ -108,8 +112,9 @@ inline std::ostream& operator<<(std::ostream& os, const transition& t)
 */
 struct state
 {
-    using ptr_t         = std::unique_ptr<state>;
-    using states_t      = std::unordered_set<ptr_t, hasher<state>>;
+    using ptr_t         = std::shared_ptr<state>;
+    //using states_t      = std::unordered_set<ptr_t, hasher<state>>;
+    using states_t      = std::unordered_map<id_t, ptr_t>;
     using transitions_t = transition::transitions_t;
     
     struct region
@@ -117,25 +122,22 @@ struct state
         id_t       _id;
         states_t   _substates;
 
-        struct hasher
-        {
-            size_t operator()(const region& s) const { return std::hash<id_t>()(s._id); }
-        }; // hasher
-
         bool operator==(const region& other) const { return other._id == _id; }
 
         indent& trace(indent& id, std::ostream& os) const
         {
             ++id;
             os << id << "-- " << _id << '\n';
-	        std::for_each(_substates.begin(), _substates.end(), 
-                          [&id, &os](const auto& pss){ pss->trace(id, os);});
+	        for (const auto& [k, v] : _substates)
+            {
+                v->trace(id, os);
+            }
             --id;
             return id;
         }
         friend std::ostream& operator<<(std::ostream& os, const region& r);
     }; // region
-    using regions_t = std::unordered_set<region, hasher<region>>;
+    using regions_t = std::unordered_map<id_t, region>;
     
     id_t           _id;
     regions_t      _regions;
@@ -143,14 +145,23 @@ struct state
 
     bool operator==(const state& other) const { return other._id == _id; }
 
+    state& add(const state& newState)
+    {
+        return *this;
+    }
+
     indent& trace(indent& id, std::ostream& os) const
     {
         ++id;
         os << id << "state " << _id << " s{\n";
-        std::for_each(_transitions.begin(), _transitions.end(), 
-                      [&id, &os](const auto& t){ t.trace(id, os);});
-        std::for_each(_regions.begin(), _regions.end(), 
-                      [&id, &os](const auto& r){ r.trace(id, os);});
+        for (const auto& [k, v] : _transitions)
+        {
+            v.trace(id, os);
+        }
+        for (const auto& [k, v] : _regions)
+        {
+            v.trace(id, os);
+        }
         os << id << "}s\n";
         --id;
         return id;
@@ -185,12 +196,29 @@ struct state_machine
     id_t       _id;
     states_t   _substates;
 
+    state& add(const state& newState) // TODO: do a move one later
+    {
+        assert( ! newState._id.empty());
+        auto it = _substates.find(newState._id);
+        if (it == _substates.end())
+        {
+            auto [it, ret] = _substates.emplace(newState._id, std::make_shared<state>());
+            *it->second = newState;
+        }
+        else
+        {
+            it->second->add(newState);
+        }
+    }
+
     indent& trace(indent& id, std::ostream& os) const
     {
         ++id;
         os << id << "machine " << _id << " m{\n";
-        std::for_each(_substates.begin(), _substates.end(), 
-                        [&id, &os](const auto& pss){ pss->trace(id, os);});
+        for (const auto& [k, v] : _substates)
+        {
+            v->trace(id, os);
+        }
         os << id << "}m\n";
         --id;
         return id;
