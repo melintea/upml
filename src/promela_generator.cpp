@@ -8,13 +8,15 @@
  *
  */
 
-#include <lpt/promela_generator.hpp>
+#include "promela_generator.hpp"
 
-namespace lpt {
+namespace upml {
 
-promela_generator::promela_generator()
+bool promela_generator(const upml::sm::state_machine& sm)
 {
+    std::cout << sm;
+    return true;
 }
 
-} //namespace lpt
+} //namespace upml
 

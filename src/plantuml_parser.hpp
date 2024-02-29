@@ -13,26 +13,20 @@
 
 #pragma once
 
-namespace lpt {
+#include "state_machine.hpp"
+
+#include <iostream>
+
+namespace upml {
 
 /*
  *
  */
-class plantuml_parser
-{
-public:
+bool plantuml_parser(
+    std::istream&            in,
+    upml::sm::state_machine& sm);
 
-    plantuml_parser()  {}
-    ~plantuml_parser() {}
-
-    plantuml_parser( const plantuml_parser& other );
-    plantuml_parser& operator=( const plantuml_parser& other );
-
-    plantuml_parser( const plantuml_parser& other );
-    plantuml_parser& operator=( plantuml_parser&& other );
-}; // plantuml_parser
-
-} //namespace lpt
+} //namespace upml
 
 
 #endif //#define INCLUDED_plantuml_parser_hpp_f567faf6_5b3d_46ce_b12a_9552ec944049
