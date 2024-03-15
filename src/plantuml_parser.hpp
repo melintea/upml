@@ -15,9 +15,22 @@
 
 #include "state_machine.hpp"
 
+// no recursive wrapper/heap allocation for std::variant
+#include <boost/variant.hpp>
+#include <boost/variant/recursive_wrapper.hpp>
+
 #include <iostream>
 
 namespace upml {
+
+using value =  boost::variant<
+    sm::transition,
+    //sm::state, 
+    //sm::region,
+    boost::recursive_wrapper<sm::state>, 
+    boost::recursive_wrapper<sm::region>,
+    sm::state_machine
+>;
 
 /*
  *

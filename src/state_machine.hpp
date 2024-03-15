@@ -63,43 +63,30 @@ template <typename T> struct hasher
     size_t operator()(const std::shared_ptr<T>& p) const { return std::hash<id_t>()(p->_id); }
 }; // hasher
 
+struct state;
+using stateptr_t = std::shared_ptr<state>; // break curcular dep between regions & states
+using states_t   = std::unordered_map<id_t, stateptr_t>;
+//using states_t   = std::unordered_set<ptr_t, hasher<state>>;
 
 // transition: trigger [guard] /effect
 struct transition
 {
-    //using transitions_t = std::unordered_set<transition, hasher<transition>>;
-    using transitions_t = std::unordered_map<id_t, transition>;
-    using graph_t       = std::unordered_map<id_t/*fromState*/, transitions_t>; // TODO: use BGL?
-    
     id_t _id;
     id_t _fromState;
     id_t _toState;
-    id_t _trigger;
+    id_t _event;  // trigger
     id_t _guard;
     id_t _effect;
 
-    indent& trace(indent& id, std::ostream& os) const
-    {
-        ++id;
-        os << id 
-           << _fromState << " --> " << _toState << " " 
-           << _trigger << '[' << _guard << "]/" << _effect
-           << " (" << _id << ")\n"
-           ;
-	    --id;
-        return id;
-    }
+    indent& trace(indent& id, std::ostream& os) const;
     
     friend std::ostream& operator<<(std::ostream& os, const transition& t);
 }; // transition
 
+//using transitions_t = std::unordered_set<transition, hasher<transition>>;
+using transitions_t = std::unordered_map<id_t, transition>;
+using graph_t       = std::unordered_map<id_t/*fromState*/, transitions_t>; // TODO: use BGL?
 
-inline std::ostream& operator<<(std::ostream& os, const transition& t)
-{
-    indent id("");
-    t.trace(id, os);
-    return os;
-}
 
 /*
  https://www.omg.org/spec/UML/2.5.1/About-UML
@@ -110,34 +97,28 @@ inline std::ostream& operator<<(std::ostream& os, const transition& t)
    history states
  
 */
+
+struct region
+{
+    id_t       _id;
+    states_t   _substates;
+
+    bool operator==(const region& other) const { return other._id == _id; }
+
+    indent& trace(indent& id, std::ostream& os) const;
+
+    friend std::ostream& operator<<(std::ostream& os, const region& r);
+}; // region
+
+using regions_t = std::unordered_map<id_t, region>;
+
+
 struct state
 {
-    using ptr_t         = std::shared_ptr<state>;
-    //using states_t      = std::unordered_set<ptr_t, hasher<state>>;
-    using states_t      = std::unordered_map<id_t, ptr_t>;
-    using transitions_t = transition::transitions_t;
-    
-    struct region
-    {
-        id_t       _id;
-        states_t   _substates;
-
-        bool operator==(const region& other) const { return other._id == _id; }
-
-        indent& trace(indent& id, std::ostream& os) const
-        {
-            ++id;
-            os << id << "-- " << _id << '\n';
-	        for (const auto& [k, v] : _substates)
-            {
-                v->trace(id, os);
-            }
-            --id;
-            return id;
-        }
-        friend std::ostream& operator<<(std::ostream& os, const region& r);
-    }; // region
-    using regions_t = std::unordered_map<id_t, region>;
+    using ptr_t         = sm::stateptr_t;
+    using states_t      = sm::states_t;
+    using transitions_t = sm::transitions_t;
+    using regions_t     = sm::regions_t;
     
     id_t           _id;
     regions_t      _regions;
@@ -150,40 +131,11 @@ struct state
         return *this;
     }
 
-    indent& trace(indent& id, std::ostream& os) const
-    {
-        ++id;
-        os << id << "state " << _id << " s{\n";
-        for (const auto& [k, v] : _transitions)
-        {
-            v.trace(id, os);
-        }
-        for (const auto& [k, v] : _regions)
-        {
-            v.trace(id, os);
-        }
-        os << id << "}s\n";
-        --id;
-        return id;
-    }
+    indent& trace(indent& id, std::ostream& os) const;
+
     friend std::ostream& operator<<(std::ostream& os, const state& s);
 
 }; // state
-
-
-inline std::ostream& operator<<(std::ostream& os, const state::region& r)
-{
-    indent id("");
-    r.trace(id, os);
-    return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const state& s)
-{
-    indent id("");
-    s.trace(id, os);
-    return os;
-}
 
 
 /*
@@ -191,7 +143,7 @@ inline std::ostream& operator<<(std::ostream& os, const state& s)
  */
 struct state_machine
 {
-    using states_t = state::states_t;
+    using states_t = sm::states_t;
     
     id_t       _id;
     states_t   _substates;
@@ -211,20 +163,87 @@ struct state_machine
         }
     }
 
-    indent& trace(indent& id, std::ostream& os) const
-    {
-        ++id;
-        os << id << "machine " << _id << " m{\n";
-        for (const auto& [k, v] : _substates)
-        {
-            v->trace(id, os);
-        }
-        os << id << "}m\n";
-        --id;
-        return id;
-    }
+    indent& trace(indent& id, std::ostream& os) const;
+
     friend std::ostream& operator<<(std::ostream& os, const state_machine& sm);
 }; // state_machine
+
+
+inline indent& transition::trace(indent& id, std::ostream& os) const
+{
+    ++id;
+    os << id 
+        << _fromState << " --> " << _toState << " " 
+        << _event << '[' << _guard << "]/" << _effect
+        << " (" << _id << ")\n"
+        ;
+    --id;
+    return id;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const transition& t)
+{
+    indent id("");
+    t.trace(id, os);
+    return os;
+}
+
+inline indent& region::trace(indent& id, std::ostream& os) const
+{
+    ++id;
+    os << id << "-- " << _id << '\n';
+    for (const auto& [k, v] : _substates)
+    {
+        v->trace(id, os);
+    }
+    --id;
+    return id;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const region& r)
+{
+    indent id("");
+    r.trace(id, os);
+    return os;
+}
+
+inline indent& state::trace(indent& id, std::ostream& os) const
+{
+    ++id;
+    os << id << "state " << _id << " s{\n";
+    for (const auto& [k, v] : _transitions)
+    {
+        v.trace(id, os);
+    }
+    for (const auto& [k, v] : _regions)
+    {
+        v.trace(id, os);
+    }
+    os << id << "}s\n";
+    --id;
+    return id;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const state& s)
+{
+    indent id("");
+    s.trace(id, os);
+    return os;
+}
+
+
+inline indent& state_machine::trace(indent& id, std::ostream& os) const
+{
+    ++id;
+    os << id << "machine " << _id << " m{\n";
+    for (const auto& [k, v] : _substates)
+    {
+        v->trace(id, os);
+    }
+    os << id << "}m\n";
+    --id;
+    return id;
+}
 
 inline std::ostream& operator<<(std::ostream& os, const state_machine& sm)
 {
@@ -232,8 +251,6 @@ inline std::ostream& operator<<(std::ostream& os, const state_machine& sm)
     sm.trace(id, os);
     return os;
 }
-
-
 
 } //namespace upml::sm
 

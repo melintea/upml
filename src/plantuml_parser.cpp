@@ -34,6 +34,16 @@ BOOST_FUSION_ADAPT_STRUCT(
     (upml::sm::state_machine::states_t, _substates)
 )
 
+BOOST_FUSION_ADAPT_STRUCT(
+    upml::sm::transition,
+    (upml::sm::id_t, _id)
+    (upml::sm::id_t, _fromState)
+    (upml::sm::id_t, _toState)
+    (upml::sm::id_t, _event)
+    (upml::sm::id_t, _guard)
+    (upml::sm::id_t, _effect)
+)
+
 
 namespace upml {
 
@@ -43,10 +53,14 @@ struct plantuml_grammar : bs::qi::grammar<ITER, upml::sm::state_machine(), bs::a
     plantuml_grammar() : plantuml_grammar::base_type(start)
     {
         qstring %= bs::qi::lexeme['"' >> +(bs::qi::char_ - '"') >> '"'];
+        
+        transition %= string >> bs::qi::lit("-->") >> string;
 
-        start %= 
+        //statements = transition;
+
+        start = 
             bs::qi::lit("@startuml")
-            //>> bs::qi::int_
+            //>> transition
             >> bs::qi::lit("@enduml")
             ;
         
@@ -54,6 +68,9 @@ struct plantuml_grammar : bs::qi::grammar<ITER, upml::sm::state_machine(), bs::a
     }
     
     bs::qi::rule<ITER, std::string(), bs::ascii::space_type> qstring;
+    bs::qi::rule<ITER, std::string(), bs::ascii::space_type> string;
+    bs::qi::rule<ITER, upml::sm::transition(), bs::ascii::space_type>    transition;
+    //bs::qi::rule<ITER, std::string(), bs::ascii::space_type> statements;
     bs::qi::rule<ITER, upml::sm::state_machine(), bs::ascii::space_type> start;
     
 }; // plantuml_grammar
