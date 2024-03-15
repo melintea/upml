@@ -26,14 +26,7 @@
 namespace bs = boost::spirit;
 namespace bp = boost::phoenix;
 
-
 // In the global scope
-BOOST_FUSION_ADAPT_STRUCT(
-    upml::sm::state_machine,
-    (upml::sm::id_t, _id)
-    (upml::sm::state_machine::states_t, _substates)
-)
-
 BOOST_FUSION_ADAPT_STRUCT(
     upml::sm::transition,
     (upml::sm::id_t, _id)
@@ -44,11 +37,50 @@ BOOST_FUSION_ADAPT_STRUCT(
     (upml::sm::id_t, _effect)
 )
 
+BOOST_FUSION_ADAPT_STRUCT(
+    upml::sm::region,
+    (upml::sm::id_t, _id)
+    (upml::sm::region::states_t, _substates)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+    upml::sm::state,
+    (upml::sm::id_t, _id)
+    (upml::sm::state::regions_t,     _regions)
+    (upml::sm::state::transitions_t, _transitions)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+    upml::sm::state_machine,
+    (upml::sm::id_t, _id)
+    (upml::sm::state_machine::states_t, _substates)
+)
+
 
 namespace upml {
 
-template <typename ITER>
-struct plantuml_grammar : bs::qi::grammar<ITER, upml::sm::state_machine(), bs::ascii::space_type>
+//namespace encoding = bs::qi::unicode;
+namespace encoding = bs::qi::ascii;
+
+template <typename It>
+struct skipper final : bs::qi::grammar<It>
+{
+    skipper() : skipper::base_type(rule) {}
+
+    const bs::qi::rule<It> rule = encoding::space 
+            | ("#"  >> *~encoding::char_("\n")   >> -bs::qi::eol)
+            | ("//" >> *~encoding::char_("\n")   >> -bs::qi::eol)
+            | ("/*" >> *(encoding::char_ - "*/") >> "*/")
+            ;
+};
+
+template <typename ITER, 
+          typename SKIPPER
+         >
+struct plantuml_grammar final 
+    : bs::qi::grammar<ITER, 
+                      upml::sm::state_machine(), 
+                      SKIPPER/*bs::ascii::space_type*/>
 {
     plantuml_grammar() : plantuml_grammar::base_type(start)
     {
@@ -67,11 +99,11 @@ struct plantuml_grammar : bs::qi::grammar<ITER, upml::sm::state_machine(), bs::a
         //BOOST_SPIRIT_DEBUG_NODES((start)(sm));
     }
     
-    bs::qi::rule<ITER, std::string(), bs::ascii::space_type> qstring;
-    bs::qi::rule<ITER, std::string(), bs::ascii::space_type> string;
-    bs::qi::rule<ITER, upml::sm::transition(), bs::ascii::space_type>    transition;
-    //bs::qi::rule<ITER, std::string(), bs::ascii::space_type> statements;
-    bs::qi::rule<ITER, upml::sm::state_machine(), bs::ascii::space_type> start;
+    bs::qi::rule<ITER, std::string(), SKIPPER> qstring;
+    bs::qi::rule<ITER, std::string(), SKIPPER> string;
+    bs::qi::rule<ITER, upml::sm::transition(), SKIPPER>    transition;
+    //bs::qi::rule<ITER, std::string(), SKIPPER> statements;
+    bs::qi::rule<ITER, upml::sm::state_machine(), SKIPPER> start;
     
 }; // plantuml_grammar
 
@@ -81,19 +113,23 @@ bool plantuml_parser(
 {
     using base_iter_t        = bs::istream_iterator;
     using in_iter_t          = bs::line_pos_iterator<base_iter_t>; // base_iter_t; // 
-    using plantuml_grammar_t = plantuml_grammar<in_iter_t>;
+    using skipper_t          = skipper<in_iter_t>; //
+    using plantuml_grammar_t = plantuml_grammar<in_iter_t, 
+                                                skipper_t 
+                                               >;
     
     in_iter_t crtIt(base_iter_t(in >> std::noskipws));
     in_iter_t firstIt(crtIt);
     in_iter_t endIt;
     
     plantuml_grammar_t grammar;
-    
+
+    skipper_t skip = {};    
     bool match = bs::qi::phrase_parse(
                      crtIt, 
                      endIt, 
                      grammar,
-                     bs::ascii::space,
+                     skip, //bs::ascii::space,
                      sm);
     //std::cout << std::boolalpha << match << '\n';
     if ( ! match || crtIt != endIt)

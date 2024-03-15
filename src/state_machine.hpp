@@ -100,6 +100,8 @@ using graph_t       = std::unordered_map<id_t/*fromState*/, transitions_t>; // T
 
 struct region
 {
+    using states_t      = sm::states_t;
+
     id_t       _id;
     states_t   _substates;
 
