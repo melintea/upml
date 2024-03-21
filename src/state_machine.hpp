@@ -23,6 +23,11 @@
 
 namespace upml::sm {
 
+inline std::string id(char c, int num)
+{
+    //return std::vformat("{}{}", std::make_format_args(c, num));
+    return std::string(1, c) + std::to_string(num);
+}
 
 // Trace helper
 struct indent

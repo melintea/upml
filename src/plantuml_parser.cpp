@@ -75,16 +75,38 @@ struct skipper final : bs::qi::grammar<It>
             ;
 };
 
+struct diagnostics_handler_tag;
+
+template <typename It> 
+struct diagnostics_handler 
+{
+    It            _first;
+    std::ostream& _os;
+
+    void operator()(It itFirstErr, std::string const& errMsg) const {
+        _os << "L:"<< bs::get_line(itFirstErr)
+            << ":" << bs::get_column(_first, itFirstErr)
+            << " " << errMsg << "\n";
+    }
+};
+
 template <typename ITER, 
           typename SKIPPER
          >
 struct plantuml_grammar final 
     : bs::qi::grammar<ITER, 
                       upml::sm::state_machine(), 
+                      bs::qi::locals<std::string>,
                       SKIPPER/*bs::ascii::space_type*/>
 {
     plantuml_grammar() : plantuml_grammar::base_type(start)
     {
+        using bs::qi::eps;  // init rule's result if needed
+        using bs::qi::_val; // rule's result
+        using bs::qi::_1;
+        using bs::qi::_2;
+        using bs::qi::_3;
+
         qstring %= bs::qi::lexeme['"' >> +(bs::qi::char_ - '"') >> '"'];
         
         transition %= string >> bs::qi::lit("-->") >> string;
@@ -104,7 +126,7 @@ struct plantuml_grammar final
     bs::qi::rule<ITER, std::string(), SKIPPER> string;
     bs::qi::rule<ITER, upml::sm::transition(), SKIPPER>    transition;
     //bs::qi::rule<ITER, std::string(), SKIPPER> statements;
-    bs::qi::rule<ITER, upml::sm::state_machine(), SKIPPER> start;
+    bs::qi::rule<ITER, upml::sm::state_machine(), bs::qi::locals<std::string>, SKIPPER> start;
     
 }; // plantuml_grammar
 
