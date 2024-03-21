@@ -53,7 +53,8 @@ BOOST_FUSION_ADAPT_STRUCT(
 BOOST_FUSION_ADAPT_STRUCT(
     upml::sm::state_machine,
     (upml::sm::id_t, _id)
-    (upml::sm::state_machine::states_t, _substates)
+    (upml::sm::state_machine::states_t,  _substates)
+    (upml::sm::state_machine::regions_t, _regions)
 )
 
 

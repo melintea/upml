@@ -2,7 +2,7 @@
 #
 #
 
-FLAGS = -ggdb -std=c++20 -O3
+FLAGS = -ggdb -std=c++20 -O0 #-O3
 
 all:  upml
 

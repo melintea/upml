@@ -18,8 +18,8 @@
 #include <iostream>
 #include <memory>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
+#include <map>  // unordered not supported by boost::spirit/phoenix?
+#include <set>
 
 namespace upml::sm {
 
@@ -65,8 +65,8 @@ template <typename T> struct hasher
 
 struct state;
 using stateptr_t = std::shared_ptr<state>; // break curcular dep between regions & states
-using states_t   = std::unordered_map<id_t, stateptr_t>;
-//using states_t   = std::unordered_set<ptr_t, hasher<state>>;
+using states_t   = std::map<id_t, stateptr_t>;
+//using states_t   = std::set<ptr_t, hasher<state>>;
 
 // transition: trigger [guard] /effect
 struct transition
@@ -83,9 +83,9 @@ struct transition
     friend std::ostream& operator<<(std::ostream& os, const transition& t);
 }; // transition
 
-//using transitions_t = std::unordered_set<transition, hasher<transition>>;
-using transitions_t = std::unordered_map<id_t, transition>;
-using graph_t       = std::unordered_map<id_t/*fromState*/, transitions_t>; // TODO: use BGL?
+//using transitions_t = std::set<transition, hasher<transition>>;
+using transitions_t = std::map<id_t, transition>;
+using graph_t       = std::map<id_t/*fromState*/, transitions_t>; // TODO: use BGL?
 
 
 /*
@@ -112,7 +112,7 @@ struct region
     friend std::ostream& operator<<(std::ostream& os, const region& r);
 }; // region
 
-using regions_t = std::unordered_map<id_t, region>;
+using regions_t = std::map<id_t, region>;
 
 
 struct state
@@ -141,16 +141,22 @@ struct state
 
 
 /*
- *
+ * A state machine is a collection of parallel regions (has at least one).
+ * A region is a collection of (sub)states with transitions.
+ * A state is a collection of regions and has transitions.
  */
 struct state_machine
 {
-    using states_t = sm::states_t;
+    using states_t  = sm::states_t;
+    using regions_t = sm::regions_t;
     
     id_t       _id;
     states_t   _substates;
+    regions_t  _regions;
 
-    state& add(const state& newState) // TODO: do a move one later
+    // TODO: do a move one later
+    // TODO: add state to last regions
+    state& add(const state& newState) 
     {
         assert( ! newState._id.empty());
         auto it = _substates.find(newState._id);
@@ -174,7 +180,7 @@ struct state_machine
 inline indent& transition::trace(indent& id, std::ostream& os) const
 {
     ++id;
-    os << id 
+    os  << id 
         << _fromState << " --> " << _toState << " " 
         << _event << '[' << _guard << "]/" << _effect
         << " (" << _id << ")\n"
@@ -241,6 +247,10 @@ inline indent& state_machine::trace(indent& id, std::ostream& os) const
     for (const auto& [k, v] : _substates)
     {
         v->trace(id, os);
+    }
+    for (const auto& [k, v] : _regions)
+    {
+        v.trace(id, os);
     }
     os << id << "}m\n";
     --id;

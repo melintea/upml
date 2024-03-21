@@ -1,0 +1,25 @@
+@startuml
+
+#Deploy -down-> Operation  
+Deploy --> Operation  
+
+/*
+state Operation {
+
+[*] -down-> Operation_Launch
+
+Operation_Launch -down-> Operation_Auto_Monitor
+--
+[*] -down-> Operation_BizData_Collection
+
+Operation_BizData_Collection -down-> Operation_BizData_Anylasis
+--
+[*] -down-> Operation_Next_Preparation
+
+}
+
+Operation -down-> [*]
+*/
+
+@enduml
+
