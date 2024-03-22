@@ -15,6 +15,7 @@
 #include <iostream>
 #include <fstream>
 
+// cat ../plantuml/t0.plantuml | ./upml
 int main(int argc, char* argv[])
 {
     upml::sm::state_machine sm;

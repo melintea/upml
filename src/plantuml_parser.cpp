@@ -21,6 +21,7 @@
 #include <boost/fusion/include/io.hpp>
 
 #include <string>
+#include <iomanip>
 #include <iostream>
 
 namespace bs = boost::spirit;
@@ -119,6 +120,22 @@ struct on_success_handler
     static void store_location(...) { std::cerr << "(not location-derived)\n"; }
 };
 
+struct on_error_handler 
+{
+    using result_type = bs::qi::error_handler_result;
+
+    template<typename T1, typename T2, typename T3, typename T4>
+    bs::qi::error_handler_result operator()(T1 b, T2 e, T3 where, const T4& what) const 
+    {
+        std::cerr 
+            << "Error: expecting " << what << " in line " << bs::get_line(where) << ": \n"
+            //<< std::string(b,e) << "\n"
+            //<< std::setw(std::distance(b, where)) << '^' << "---- here\n"
+            ;
+        return bs::qi::fail;
+    }
+};
+
 
 template <typename ITER, 
           typename SKIPPER
@@ -154,23 +171,14 @@ struct plantuml_grammar final
         auto setLocationInfo = annotate(_val, _1, _3);
         on_success(start, setLocationInfo);
 
-        on_error<fail>
-        (
-            // _3: errPosIt, _2: endIt, _1: rule enter pos
-            start,
-            std::cerr
-                << bp::val("Expecting ")
-                << bs::qi::_4  // what
-                << bp::val(" at line ")
-                << bs::get_line(bs::qi::_3) // lines(_1, _3)
-                << bp::val(":\n")
-                << construct<std::string>(bs::qi::_3, bs::qi::_2)
-        );
+        // _3: errPosIt, _2: endIt, _1: rule enter pos
+        on_error<fail>(start, errorout(_1, _2, _3, _4));
         
         //BOOST_SPIRIT_DEBUG_NODES((start));
     }
 
     bp::function<on_success_handler<ITER>> annotate;
+    bp::function<on_error_handler>         errorout;
     
     bs::qi::rule<ITER, std::string(), SKIPPER> qstring;
     bs::qi::rule<ITER, std::string(), SKIPPER> string;
