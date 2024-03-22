@@ -82,21 +82,6 @@ auto lines(const It& b, const It& e)
     return std::count_if(b, e, [](char ch){return ch == '\n'; });
 }
 
-struct diagnostics_handler_tag;
-
-template <typename It> 
-struct diagnostics_handler 
-{
-    It            _first;
-    std::ostream& _os;
-
-    void operator()(It itFirstErr, std::string const& errMsg) const {
-        _os << "L:"<< lines(_first, itFirstErr) //bs::get_line(itFirstErr)
-            << ":" << bs::get_column(_first, itFirstErr)
-            << " " << errMsg << "\n";
-    }
-};
-
 template <typename It> 
 struct on_success_handler 
 {
@@ -116,6 +101,7 @@ struct on_success_handler
     {
         loc._line = bs::get_line(f);
         loc._col  = bs::get_column(first, f);
+        //std::cerr << " [" << loc << "]\n";
     }
     static void store_location(...) { std::cerr << "(not location-derived)\n"; }
 };
@@ -156,15 +142,16 @@ struct plantuml_grammar final
         using bs::qi::_val; // rule's result
         using namespace bs::qi::labels; // _a, ...
 
-        qstring %= bs::qi::lexeme['"' >> +(bs::qi::char_ - '"') >> '"'];
+        qstring  = bs::qi::lexeme['"' >> +(bs::qi::char_ - '"') >> '"'];
+        rstring  = +bs::qi::char_("a-zA-Z0-9_");
         
-        transition %= string >> bs::qi::lit("-->") >> string;
+        transition = rstring >> bs::qi::lit("-->") >> rstring;
 
         //statements = transition;
 
         start = eps >
             bs::qi::lit("@startuml")
-            //>> transition
+            >> transition
             >> bs::qi::lit("@enduml")
             ;
 
@@ -172,16 +159,20 @@ struct plantuml_grammar final
         on_success(start, setLocationInfo);
 
         // _3: errPosIt, _2: endIt, _1: rule enter pos
-        on_error<fail>(start, errorout(_1, _2, _3, _4));
+        on_error<fail>(start,      errorout(_1, _2, _3, _4));
+        on_error<fail>(transition, errorout(_1, _2, _3, _4));
         
-        //BOOST_SPIRIT_DEBUG_NODES((start));
+        BOOST_SPIRIT_DEBUG_NODES(
+            //(start)
+            (transition)
+        );
     }
 
     bp::function<on_success_handler<ITER>> annotate;
     bp::function<on_error_handler>         errorout;
     
     bs::qi::rule<ITER, std::string(), SKIPPER> qstring;
-    bs::qi::rule<ITER, std::string(), SKIPPER> string;
+    bs::qi::rule<ITER, std::string(), SKIPPER> rstring;
     bs::qi::rule<ITER, upml::sm::transition(), SKIPPER>    transition;
     //bs::qi::rule<ITER, std::string(), SKIPPER> statements;
     bs::qi::rule<ITER, upml::sm::state_machine(), bs::qi::locals<std::string>, SKIPPER> start;
