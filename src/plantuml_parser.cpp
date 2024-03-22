@@ -75,6 +75,12 @@ struct skipper final : bs::qi::grammar<It>
             ;
 };
 
+template <typename It> 
+auto lines(const It& b, const It& e)
+{
+    return std::count_if(b, e, [](char ch){return ch == '\n'; });
+}
+
 struct diagnostics_handler_tag;
 
 template <typename It> 
@@ -84,7 +90,7 @@ struct diagnostics_handler
     std::ostream& _os;
 
     void operator()(It itFirstErr, std::string const& errMsg) const {
-        _os << "L:"<< bs::get_line(itFirstErr)
+        _os << "L:"<< lines(_first, itFirstErr) //bs::get_line(itFirstErr)
             << ":" << bs::get_column(_first, itFirstErr)
             << " " << errMsg << "\n";
     }
@@ -101,11 +107,11 @@ struct plantuml_grammar final
 {
     plantuml_grammar() : plantuml_grammar::base_type(start)
     {
+        using bs::qi::on_error;
+        using bs::qi::fail;
         using bs::qi::eps;  // init rule's result if needed
         using bs::qi::_val; // rule's result
-        using bs::qi::_1;
-        using bs::qi::_2;
-        using bs::qi::_3;
+        using namespace bs::qi::labels; // _a, ...
 
         qstring %= bs::qi::lexeme['"' >> +(bs::qi::char_ - '"') >> '"'];
         
@@ -113,13 +119,26 @@ struct plantuml_grammar final
 
         //statements = transition;
 
-        start = 
+        start = eps >
             bs::qi::lit("@startuml")
             //>> transition
             >> bs::qi::lit("@enduml")
             ;
+
+        on_error<fail>
+        (
+            // _3: errPosIt, _2: endIt, _1: rule enter pos
+            start,
+            std::cerr
+                << bp::val("Expecting ")
+                << bs::qi::_4  // what
+                << bp::val(" at line ")
+                << bs::get_line(bs::qi::_3) // lines(_1, _3)
+                << bp::val(":\n")
+                << construct<std::string>(bs::qi::_3, bs::qi::_2)
+        );
         
-        //BOOST_SPIRIT_DEBUG_NODES((start)(sm));
+        //BOOST_SPIRIT_DEBUG_NODES((start));
     }
     
     bs::qi::rule<ITER, std::string(), SKIPPER> qstring;
@@ -135,7 +154,8 @@ bool plantuml_parser(
     upml::sm::state_machine& sm)
 {
     using base_iter_t        = bs::istream_iterator;
-    using in_iter_t          = bs::line_pos_iterator<base_iter_t>; // base_iter_t; // 
+    using lp_iter_t          = bs::line_pos_iterator<base_iter_t>;
+    using in_iter_t          = lp_iter_t;  // base_iter_t; // 
     using skipper_t          = skipper<in_iter_t>; //
     using plantuml_grammar_t = plantuml_grammar<in_iter_t, 
                                                 skipper_t 
@@ -155,12 +175,14 @@ bool plantuml_parser(
                      skip, //bs::ascii::space,
                      sm);
     //std::cout << std::boolalpha << match << '\n';
+    /*
     if ( ! match || crtIt != endIt)
     {
         std::cerr << "Parsing stopped at line " 
                   << bs::get_line(crtIt) << ':' << bs::get_column(firstIt, crtIt) << '\n' 
                   << '\'' << std::string{crtIt, endIt} << "'\n";
     }
+    */
 
     return match;
 }

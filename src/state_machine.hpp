@@ -69,7 +69,7 @@ template <typename T> struct hasher
 }; // hasher
 
 struct state;
-using stateptr_t = std::shared_ptr<state>; // break curcular dep between regions & states
+using stateptr_t = std::shared_ptr<state>; // break circular dep between regions & states
 using states_t   = std::map<id_t, stateptr_t>;
 //using states_t   = std::set<ptr_t, hasher<state>>;
 
@@ -141,7 +141,6 @@ struct state
     indent& trace(indent& id, std::ostream& os) const;
 
     friend std::ostream& operator<<(std::ostream& os, const state& s);
-
 }; // state
 
 
@@ -201,6 +200,12 @@ inline std::ostream& operator<<(std::ostream& os, const transition& t)
     return os;
 }
 
+inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, transition>& pt)
+{
+    os << pt.first << ":" << pt.second;
+    return os;
+}
+
 inline indent& region::trace(indent& id, std::ostream& os) const
 {
     ++id;
@@ -219,6 +224,13 @@ inline std::ostream& operator<<(std::ostream& os, const region& r)
     r.trace(id, os);
     return os;
 }
+
+inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, region>& pr)
+{
+    os << pr.first << ":" << pr.second;
+    return os;
+}
+
 
 inline indent& state::trace(indent& id, std::ostream& os) const
 {
@@ -241,6 +253,22 @@ inline std::ostream& operator<<(std::ostream& os, const state& s)
 {
     indent id("");
     s.trace(id, os);
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const stateptr_t& ps)
+{
+    if (ps) {
+        os << *ps;
+    } else {
+        os << "(NULL)";
+    }
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, stateptr_t>& pps)
+{
+    os << pps.first << ":" << pps.second;
     return os;
 }
 
@@ -268,6 +296,13 @@ inline std::ostream& operator<<(std::ostream& os, const state_machine& sm)
     sm.trace(id, os);
     return os;
 }
+
+inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, state_machine>& ppsm)
+{
+    os << ppsm.first << ":" << ppsm.second;
+    return os;
+}
+
 
 } //namespace upml::sm
 
