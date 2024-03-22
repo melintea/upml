@@ -29,6 +29,21 @@ inline std::string id(char c, int num)
     return std::string(1, c) + std::to_string(num);
 }
 
+struct location
+{
+    size_t      _line{0};
+    size_t      _col{0};
+    std::string _file;
+
+    friend std::ostream& operator<<(std::ostream& os, const location& l);
+};
+
+inline std::ostream& operator<<(std::ostream& os, const location& l)
+{
+    os << "F:'" << l._file << "';L:" << l._line << ";C:" << l._col;
+    return os;
+}
+
 // Trace helper
 struct indent
 {
@@ -74,7 +89,7 @@ using states_t   = std::map<id_t, stateptr_t>;
 //using states_t   = std::set<ptr_t, hasher<state>>;
 
 // transition: trigger [guard] /effect
-struct transition
+struct transition : public location
 {
     id_t _id;
     id_t _fromState;
@@ -103,7 +118,7 @@ using graph_t       = std::map<id_t/*fromState*/, transitions_t>; // TODO: use B
  
 */
 
-struct region
+struct region : public location
 {
     using states_t      = sm::states_t;
 
@@ -120,7 +135,7 @@ struct region
 using regions_t = std::map<id_t, region>;
 
 
-struct state
+struct state : public location
 {
     using ptr_t         = sm::stateptr_t;
     using states_t      = sm::states_t;
@@ -149,7 +164,7 @@ struct state
  * A region is a collection of (sub)states with transitions.
  * A state is a collection of regions and has transitions.
  */
-struct state_machine
+struct state_machine : public location
 {
     using states_t  = sm::states_t;
     using regions_t = sm::regions_t;
@@ -185,6 +200,7 @@ inline indent& transition::trace(indent& id, std::ostream& os) const
 {
     ++id;
     os  << id 
+        << '(' << static_cast<location>(*this) << ") "
         << _fromState << " --> " << _toState << " " 
         << _event << '[' << _guard << "]/" << _effect
         << " (" << _id << ")\n"
@@ -209,6 +225,7 @@ inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, t
 inline indent& region::trace(indent& id, std::ostream& os) const
 {
     ++id;
+    os << id << '(' << static_cast<location>(*this) << ")\n";
     os << id << "-- " << _id << '\n';
     for (const auto& [k, v] : _substates)
     {
@@ -235,6 +252,7 @@ inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, r
 inline indent& state::trace(indent& id, std::ostream& os) const
 {
     ++id;
+    os << id << '(' << static_cast<location>(*this) << ")\n";
     os << id << "state " << _id << " s{\n";
     for (const auto& [k, v] : _transitions)
     {
@@ -276,6 +294,7 @@ inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, s
 inline indent& state_machine::trace(indent& id, std::ostream& os) const
 {
     ++id;
+    os << id << '(' << static_cast<location>(*this) << ")\n";
     os << id << "machine " << _id << " m{\n";
     for (const auto& [k, v] : _substates)
     {

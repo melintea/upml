@@ -96,6 +96,30 @@ struct diagnostics_handler
     }
 };
 
+template <typename It> 
+struct on_success_handler 
+{
+    using result_type = void;
+
+    const It   _first;
+
+    on_success_handler(It first) : _first(first) {}
+
+    template <typename Val, typename First, typename Last>
+    void operator()(Val& v, First f, Last l) const
+    {
+        store_location(v, f, l, _first);
+    }
+
+    static void store_location(upml::sm::location& loc, It f, It l, It first)
+    {
+        loc._line = bs::get_line(f);
+        loc._col  = bs::get_column(first, f);
+    }
+    static void store_location(...) { std::cerr << "(not location-derived)\n"; }
+};
+
+
 template <typename ITER, 
           typename SKIPPER
          >
@@ -105,7 +129,9 @@ struct plantuml_grammar final
                       bs::qi::locals<std::string>,
                       SKIPPER/*bs::ascii::space_type*/>
 {
-    plantuml_grammar() : plantuml_grammar::base_type(start)
+    plantuml_grammar(ITER first) 
+        : plantuml_grammar::base_type(start)
+        , annotate(first)
     {
         using bs::qi::on_error;
         using bs::qi::fail;
@@ -125,6 +151,9 @@ struct plantuml_grammar final
             >> bs::qi::lit("@enduml")
             ;
 
+        auto setLocationInfo = annotate(_val, _1, _3);
+        on_success(start, setLocationInfo);
+
         on_error<fail>
         (
             // _3: errPosIt, _2: endIt, _1: rule enter pos
@@ -140,6 +169,8 @@ struct plantuml_grammar final
         
         //BOOST_SPIRIT_DEBUG_NODES((start));
     }
+
+    bp::function<on_success_handler<ITER>> annotate;
     
     bs::qi::rule<ITER, std::string(), SKIPPER> qstring;
     bs::qi::rule<ITER, std::string(), SKIPPER> string;
@@ -165,7 +196,7 @@ bool plantuml_parser(
     in_iter_t firstIt(crtIt);
     in_iter_t endIt;
     
-    plantuml_grammar_t grammar;
+    plantuml_grammar_t grammar(firstIt);
 
     skipper_t skip = {};    
     bool match = bs::qi::phrase_parse(
