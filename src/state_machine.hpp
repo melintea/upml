@@ -23,7 +23,7 @@
 
 namespace upml::sm {
 
-inline std::string id(char c, int num)
+inline std::string tag(char c, int num)
 {
     //return std::vformat("{}{}", std::make_format_args(c, num));
     return std::string(1, c) + std::to_string(num);
@@ -295,7 +295,7 @@ inline indent& state_machine::trace(indent& id, std::ostream& os) const
 {
     ++id;
     os << id << '(' << static_cast<location>(*this) << ")\n";
-    os << id << "machine " << _id << " m{\n";
+    os << id << "machine " << _id << " {\n";
     for (const auto& [k, v] : _substates)
     {
         v->trace(id, os);
@@ -304,7 +304,7 @@ inline indent& state_machine::trace(indent& id, std::ostream& os) const
     {
         v.trace(id, os);
     }
-    os << id << "}m\n";
+    os << id << "} " << _id << '\n';
     --id;
     return id;
 }
