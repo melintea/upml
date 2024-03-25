@@ -91,6 +91,8 @@ using states_t   = std::map<id_t, stateptr_t>;
 // transition: trigger [guard] /effect
 struct transition : public location
 {
+    static constexpr const char _tag = 't';
+
     id_t _id;
     id_t _fromState;
     id_t _toState;
@@ -122,6 +124,8 @@ struct region : public location
 {
     using states_t      = sm::states_t;
 
+    static constexpr const char _tag = 'r';
+
     id_t       _id;
     states_t   _substates;
 
@@ -142,6 +146,8 @@ struct state : public location
     using transitions_t = sm::transitions_t;
     using regions_t     = sm::regions_t;
     
+    static constexpr const char _tag = 's';
+
     id_t           _id;
     regions_t      _regions;
     transitions_t  _transitions;
@@ -169,6 +175,8 @@ struct state_machine : public location
     using states_t  = sm::states_t;
     using regions_t = sm::regions_t;
     
+    static constexpr const char _tag = 'm';
+
     id_t       _id;
     states_t   _substates;
     regions_t  _regions;

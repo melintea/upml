@@ -92,10 +92,10 @@ struct on_success_handler
     on_success_handler(It first) : _first(first) {}
 
     template <typename Val, typename First, typename Last>
-    void operator()(Val& v, First f, Last l, char ch) const
+    void operator()(Val& v, First f, Last l) const
     {
         store_location(v, f, l, _first);
-        v._id = upml::sm::tag(ch, v._line);
+        v._id = upml::sm::tag(v._tag, v._line);
     }
 
     static void store_location(upml::sm::location& loc, It f, It l, It first)
@@ -156,7 +156,7 @@ struct plantuml_grammar final
             >> bs::qi::lit("@enduml")
             ;
 
-        on_success(start, locate(_val, _1, _3, 'm'));
+        on_success(start, locate(_val, _1, _3));
 
         // _3: errPosIt, _2: endIt, _1: rule enter pos
         on_error<fail>(start,      errorout(_1, _2, _3, _4));
