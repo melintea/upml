@@ -40,7 +40,9 @@ using ast_nodes_t = std::vector<ast_node>;
 
 struct ast_node_base 
     : public upml::sm::location 
-{};
+{
+    ast_node* _parent{nullptr};
+};
 BOOST_FUSION_ADAPT_STRUCT(
     ast_node_base,
     (size_t,      _line)
@@ -107,72 +109,77 @@ namespace upml {
 /*
  *
  */
+template <typename UPML_T> 
 struct ast_visitor : boost::static_visitor<>
 {
-    int _depth = 0;
-    upml::sm::state_machine& _sm;
+    mutable int _depth = 0;
+    UPML_T& _target;
 
-    ast_visitor(const ast_node&          ast,
-                upml::sm::state_machine& sm)
-        : _sm(sm)
+    ast_visitor(UPML_T& target, int depth = 0)
+        : _target(target)
+        , _depth(depth)
     {
-        boost::apply_visitor(*this, ast);
+        //boost::apply_visitor(*this, ast);
     }
 
-    std::string tab()
+    std::string tab() const
     {
         return std::string(2 * _depth, ' ');
     }
 
-    void recurse(const ast_node& node)
+    template <typename T> 
+    void operator()(T&) const
     {
-        ++_depth;
-        boost::apply_visitor(*this, node);
-        --_depth;
+        std::cout << tab() << "error" << std::endl;
     }
 
-    void recurse(const ast_nodes_t& nodes)
-    {
-        for (const ast_node& n : nodes)
-        {
-            recurse(n);
-        }
-    }
-
-    void operator()(const ast_null& n)
+    void operator()(ast_null& n) const
     {
         std::cout << tab() << "ast_null line " << n._line << std::endl;
     }
 
-    void operator()(const ast_transition& n)
+    void operator()(ast_transition& n) const
     {
         std::cout << tab() << "ast_transition line " << n._line << std::endl;
-        _sm._id   = upml::sm::tag(_sm._tag, _sm._line);
+        _target._id   = upml::sm::tag(_target._tag, _target._line);
     }
 
-    void operator()(const ast_state& n)
+    void operator()(ast_state& n) const
     {
         std::cout << tab() << "ast_state line " << n._line << std::endl;
-        recurse(n._subtree);
+        //recurse<ast_state>(n);
     }
 
-    void operator()(const ast_region& n)
+    void operator()(ast_region& n) const
     {
         std::cout << tab() << "ast_region line " << n._line << std::endl;
-        recurse(n._subtree);
+        _target._line = n._line;
+        _target._col  = n._col;
+        _target._file = n._file;
+        _target._id   = upml::sm::tag(_target._tag, _target._line);
+        //recurse<ast_region>(n);
     }
 
-    void operator()(const ast_machine& n)
+    void operator()(ast_machine& n) const
     {
         std::cout << "ast_machine line " << n._line << std::endl;
-        _sm._line = n._line;
-        _sm._col  = n._col;
-        _sm._file = n._file;
-        _sm._id   = upml::sm::tag(_sm._tag, _sm._line);
-        recurse(n._subtree);
-    }
+        _target._line = n._line;
+        _target._col  = n._col;
+        _target._file = n._file;
+        _target._id   = upml::sm::tag(_target._tag, _target._line);
 
+        ast_nodes_t& nodes = n._subtree;
+        for (ast_node& subn : nodes)
+        {
+            upml::sm::region r;
+            boost::apply_visitor(ast_visitor<upml::sm::region>(r, _depth+1), subn);
+            _target._regions[r._id] = r;
+        }
+    }
 }; // ast_visitor
+
+template <>
+inline void ast_visitor<upml::sm::region>::operator()(ast_machine& n) const {}
 
 /*
  *
