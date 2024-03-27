@@ -13,11 +13,11 @@
 #define BOOST_SPIRIT_USE_PHOENIX_V3
 
 #include "plantuml_parser.hpp"
+#include "state_machine.hpp"
 
 #include <boost/phoenix/phoenix.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/support_line_pos_iterator.hpp>
-#include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/fusion/include/io.hpp>
 
 #include <string>
@@ -26,37 +26,6 @@
 
 namespace bs = boost::spirit;
 namespace bp = boost::phoenix;
-
-// In the global scope
-BOOST_FUSION_ADAPT_STRUCT(
-    upml::sm::transition,
-    (upml::sm::id_t, _id)
-    (upml::sm::id_t, _fromState)
-    (upml::sm::id_t, _toState)
-    (upml::sm::id_t, _event)
-    (upml::sm::id_t, _guard)
-    (upml::sm::id_t, _effect)
-)
-
-BOOST_FUSION_ADAPT_STRUCT(
-    upml::sm::region,
-    (upml::sm::id_t, _id)
-    (upml::sm::region::states_t, _substates)
-)
-
-BOOST_FUSION_ADAPT_STRUCT(
-    upml::sm::state,
-    (upml::sm::id_t, _id)
-    (upml::sm::state::regions_t,     _regions)
-    (upml::sm::state::transitions_t, _transitions)
-)
-
-BOOST_FUSION_ADAPT_STRUCT(
-    upml::sm::state_machine,
-    (upml::sm::id_t, _id)
-    (upml::sm::state_machine::states_t,  _substates)
-    (upml::sm::state_machine::regions_t, _regions)
-)
 
 
 namespace upml {
@@ -95,7 +64,7 @@ struct on_success_handler
     void operator()(Val& v, First f, Last l) const
     {
         store_location(v, f, l, _first);
-        v._id = upml::sm::tag(v._tag, v._line);
+        //v._id = upml::sm::tag(v._tag, v._line);
     }
 
     static void store_location(upml::sm::location& loc, It f, It l, It first)
@@ -129,7 +98,7 @@ template <typename ITER,
          >
 struct plantuml_grammar final 
     : bs::qi::grammar<ITER, 
-                      upml::sm::state_machine(), 
+                      ast_machine(), 
                       bs::qi::locals<std::string>,
                       SKIPPER/*bs::ascii::space_type*/>
 {
@@ -143,27 +112,38 @@ struct plantuml_grammar final
         using bs::qi::_val; // rule's result
         using namespace bs::qi::labels; // _a, ...
 
-        qstring  = bs::qi::lexeme['"' >> +(bs::qi::char_ - '"') >> '"'];
-        rstring  = bs::qi::raw [ bs::qi::lexeme[ +bs::qi::char_("a-zA-Z0-9_") ] ] ;
+        qstring  %= bs::qi::lexeme['"' >> +(bs::qi::char_ - '"') >> '"'];
+        rstring  %= bs::qi::raw [ bs::qi::lexeme[ +bs::qi::char_("a-zA-Z0-9_") ] ] ;
         
-        transition = rstring >> bs::qi::lit("-->") >> rstring;
+        transition %= rstring >> bs::qi::lit("-->") >> rstring;
 
-        //statements = transition;
+        // There is one known limitation though, when you try to use a struct that has a single element that is also a container compilation fails unless you add qi::eps >> ... to your rule
+	    // https://stackoverflow.com/questions/50252680/boost-spirit-x3-parser-no-type-named-type-in
+        region %= eps >> transition
+               ;
+
+        regions %= eps >> *region
+                ;
 
         start = eps >
-            bs::qi::lit("@startuml")
-            >> transition
+            bs::qi::lit("@startuml") //[ bp::push_back(bp::ref(_val._subtree), ast_region()) ]
+            >> regions
             >> bs::qi::lit("@enduml")
             ;
 
-        on_success(start, locate(_val, _1, _3));
+        on_success(transition, locate(_val, _1, _3));
+        on_success(region,     locate(_val, _1, _3));
+        on_success(start,      locate(_val, _1, _3));
 
         // _3: errPosIt, _2: endIt, _1: rule enter pos
         on_error<fail>(start,      errorout(_1, _2, _3, _4));
+        on_error<fail>(region,     errorout(_1, _2, _3, _4));
         on_error<fail>(transition, errorout(_1, _2, _3, _4));
         
         BOOST_SPIRIT_DEBUG_NODES(
-            //(start)
+            (start)
+            (regions)
+            (region)
             (transition)
         );
     }
@@ -173,9 +153,10 @@ struct plantuml_grammar final
     
     bs::qi::rule<ITER, std::string(), SKIPPER> qstring;
     bs::qi::rule<ITER, std::string(), SKIPPER> rstring;
-    bs::qi::rule<ITER, upml::sm::transition(), SKIPPER>    transition;
-    //bs::qi::rule<ITER, std::string(), SKIPPER> statements;
-    bs::qi::rule<ITER, upml::sm::state_machine(), bs::qi::locals<std::string>, SKIPPER> start;
+    bs::qi::rule<ITER, ast_transition(), SKIPPER>    transition;
+    bs::qi::rule<ITER, ast_region(), SKIPPER>    region;
+    bs::qi::rule<ITER, ast_nodes_t(), SKIPPER>    regions;
+    bs::qi::rule<ITER, ast_machine(), bs::qi::locals<std::string>, SKIPPER> start;
     
 }; // plantuml_grammar
 
@@ -197,13 +178,15 @@ bool plantuml_parser(
     
     plantuml_grammar_t grammar(firstIt);
 
+    ast_machine ast;
+
     skipper_t skip = {};    
     bool match = bs::qi::phrase_parse(
                      crtIt, 
                      endIt, 
                      grammar,
                      skip, //bs::ascii::space,
-                     sm);
+                     ast);
     //std::cout << std::boolalpha << match << '\n';
     /*
     if ( ! match || crtIt != endIt)
@@ -214,7 +197,14 @@ bool plantuml_parser(
     }
     */
 
-    return match;
+    if ( ! match )
+    {
+        return false;
+    }
+
+    ast_visitor prn(ast, sm);
+
+    return true;
 }
 
 } //namespace upml

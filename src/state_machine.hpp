@@ -20,6 +20,7 @@
 #include <string>
 #include <map>  // unordered not supported by boost::spirit/phoenix?
 #include <set>
+#include <vector>
 
 namespace upml::sm {
 
@@ -178,25 +179,7 @@ struct state_machine : public location
     static constexpr const char _tag = 'm';
 
     id_t       _id;
-    states_t   _substates;
     regions_t  _regions;
-
-    // TODO: do a move one later
-    // TODO: add state to last regions
-    state& add(const state& newState) 
-    {
-        assert( ! newState._id.empty());
-        auto it = _substates.find(newState._id);
-        if (it == _substates.end())
-        {
-            auto [it, ret] = _substates.emplace(newState._id, std::make_shared<state>());
-            *it->second = newState;
-        }
-        else
-        {
-            it->second->add(newState);
-        }
-    }
 
     indent& trace(indent& id, std::ostream& os) const;
 
@@ -234,11 +217,12 @@ inline indent& region::trace(indent& id, std::ostream& os) const
 {
     ++id;
     os << id << '(' << static_cast<location>(*this) << ")\n";
-    os << id << "-- " << _id << '\n';
+    os << id << "-- " << _id << "{\n";
     for (const auto& [k, v] : _substates)
     {
         v->trace(id, os);
     }
+    os << id << "}\n";
     --id;
     return id;
 }
@@ -304,10 +288,6 @@ inline indent& state_machine::trace(indent& id, std::ostream& os) const
     ++id;
     os << id << '(' << static_cast<location>(*this) << ")\n";
     os << id << "machine " << _id << " {\n";
-    for (const auto& [k, v] : _substates)
-    {
-        v->trace(id, os);
-    }
     for (const auto& [k, v] : _regions)
     {
         v.trace(id, os);
