@@ -21,6 +21,7 @@
 #include <boost/variant/recursive_wrapper.hpp>
 
 #include <iostream>
+#include <source_location>
 
 // In the global scope
 struct ast_null;
@@ -130,7 +131,8 @@ struct ast_visitor : boost::static_visitor<>
     template <typename T> 
     void operator()(T&) const
     {
-        std::cout << tab() << "error" << std::endl;
+        const auto loc(std::source_location::current());
+        std::cout << tab() << "error: " << loc.function_name() << std::endl;
     }
 
     void operator()(ast_null& n) const
@@ -157,7 +159,18 @@ struct ast_visitor : boost::static_visitor<>
         _target._col  = n._col;
         _target._file = n._file;
         _target._id   = upml::sm::tag(_target._tag, _target._line);
-        //recurse<ast_region>(n);
+
+        ast_nodes_t& nodes = n._subtree;
+        for (ast_node& subn : nodes)
+        {
+            upml::sm::transition t;
+            boost::apply_visitor(ast_visitor<upml::sm::transition>(t, _depth+1), subn);
+
+            //upml::sm::state from, to;
+            //from._id = "x"; to._id = "y";
+            //_target._substates[from._id] = std::make_shared<upml::sm::state>(from);
+            //_target._substates[to._id]   = std::make_shared<upml::sm::state>(to);
+        }    
     }
 
     void operator()(ast_machine& n) const
@@ -179,7 +192,18 @@ struct ast_visitor : boost::static_visitor<>
 }; // ast_visitor
 
 template <>
+inline void ast_visitor<upml::sm::state_machine>::operator()(ast_region& n) const {}
+
+template <>
 inline void ast_visitor<upml::sm::region>::operator()(ast_machine& n) const {}
+
+template <>
+inline void ast_visitor<upml::sm::state>::operator()(ast_machine& n) const {}
+
+template <>
+inline void ast_visitor<upml::sm::transition>::operator()(ast_machine& n) const {}
+template <>
+inline void ast_visitor<upml::sm::transition>::operator()(ast_region& n) const {}
 
 /*
  *
