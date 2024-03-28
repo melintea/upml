@@ -178,7 +178,7 @@ bool plantuml_parser(
     
     plantuml_grammar_t grammar(firstIt);
 
-    ast_machine ast;
+    ast_node ast;
 
     skipper_t skip = {};    
     bool match = bs::qi::phrase_parse(
@@ -202,7 +202,8 @@ bool plantuml_parser(
         return false;
     }
 
-    ast_visitor prn(ast, sm);
+    upml::ast_visitor prn(sm);
+    boost::apply_visitor(prn, ast);
 
     return true;
 }
