@@ -6,7 +6,7 @@ WIP, nothing to see yet.
 
 ## Status
 
-@see [the palntuml state diagram](https://plantuml.com/state-diagram):
+@see [the plantuml state diagram](https://plantuml.com/state-diagram):
 
 - unsupported: state long name
 - unsupported: history
