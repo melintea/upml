@@ -30,17 +30,18 @@ namespace bp = boost::phoenix;
 
 namespace upml {
 
-//namespace encoding = bs::qi::unicode;
-namespace encoding = bs::qi::ascii;
+namespace qi       = bs::qi;
+//namespace encoding = qi::unicode;
+namespace encoding = qi::ascii;
 
 template <typename It>
-struct skipper final : bs::qi::grammar<It>
+struct skipper final : qi::grammar<It>
 {
     skipper() : skipper::base_type(rule) {}
 
-    const bs::qi::rule<It> rule = encoding::space 
-            | ("#"  >> *~encoding::char_("\n")   >> -bs::qi::eol)
-            | ("//" >> *~encoding::char_("\n")   >> -bs::qi::eol)
+    const qi::rule<It> rule = encoding::space 
+            | ("#"  >> *~encoding::char_("\n")   >> -qi::eol)
+            | ("//" >> *~encoding::char_("\n")   >> -qi::eol)
             | ("/*" >> *(encoding::char_ - "*/") >> "*/")
             ;
 };
@@ -78,17 +79,17 @@ struct on_success_handler
 
 struct on_error_handler 
 {
-    using result_type = bs::qi::error_handler_result;
+    using result_type = qi::error_handler_result;
 
     template<typename T1, typename T2, typename T3, typename T4>
-    bs::qi::error_handler_result operator()(T1 b, T2 e, T3 where, const T4& what) const 
+    qi::error_handler_result operator()(T1 b, T2 e, T3 where, const T4& what) const 
     {
         std::cerr 
             << "Error: expecting " << what << " in line " << bs::get_line(where) << ": \n"
             //<< std::string(b,e) << "\n"
             //<< std::setw(std::distance(b, where)) << '^' << "---- here\n"
             ;
-        return bs::qi::fail;
+        return qi::fail;
     }
 };
 
@@ -97,38 +98,42 @@ template <typename ITER,
           typename SKIPPER
          >
 struct plantuml_grammar final 
-    : bs::qi::grammar<ITER, 
+    : qi::grammar<ITER, 
                       ast_machine(), 
-                      bs::qi::locals<std::string>,
+                      qi::locals<std::string>,
                       SKIPPER/*bs::ascii::space_type*/>
 {
     plantuml_grammar(ITER first) 
         : plantuml_grammar::base_type(start)
         , locate(first)
     {
-        using bs::qi::on_error;
-        using bs::qi::fail;
-        using bs::qi::eps;  // init rule's result if needed
-        using bs::qi::_val; // rule's result
-        using namespace bs::qi::labels; // _a, ...
+        using qi::on_error;
+        using qi::on_success;
+        using qi::fail;
+        using qi::omit;
+        using qi::eps;  // to init rule's result if needed
+        using qi::_val; // rule's result
+        using namespace qi::labels; // _a, ...
 
-        qstring  %= bs::qi::lexeme['"' >> +(bs::qi::char_ - '"') >> '"'];
-        rstring  %= bs::qi::raw [ bs::qi::lexeme[ +bs::qi::char_("a-zA-Z0-9_") ] ] ;
+        arrow    %= qi::lit('-') >> *(qi::char_ - '-') >> qi::lit("->");
         
-        transition %= rstring >> bs::qi::lit("-->") >> rstring;
+        qstring  %= qi::lexeme['"' >> +(qi::char_ - '"') >> '"'];
+        rstring  %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_") ] ];
+
+        transition %= rstring >> qi::omit[arrow] >> rstring;
 
         // There is one known limitation though, when you try to use a struct that has a single element that is also a container compilation fails unless you add qi::eps >> ... to your rule
-	    // https://stackoverflow.com/questions/50252680/boost-spirit-x3-parser-no-type-named-type-in
-        region %= eps >> transition
+        // https://stackoverflow.com/questions/78241220/boostspirit-error-no-type-named-value-type-in-struct-xxx
+        region = eps >> +transition
                ;
 
-        regions %= eps >> *region
+        regions = *region
                 ;
 
-        start = eps >
-            bs::qi::lit("@startuml") //[ bp::push_back(bp::ref(_val._subtree), ast_region()) ]
+        start = 
+            qi::lit("@startuml") //[ bp::push_back(bp::ref(_val._subtree), ast_region()) ]
             >> regions
-            >> bs::qi::lit("@enduml")
+            >> qi::lit("@enduml")
             ;
 
         on_success(transition, locate(_val, _1, _3));
@@ -151,12 +156,13 @@ struct plantuml_grammar final
     bp::function<on_success_handler<ITER>> locate;
     bp::function<on_error_handler>         errorout;
     
-    bs::qi::rule<ITER, std::string(), SKIPPER> qstring;
-    bs::qi::rule<ITER, std::string(), SKIPPER> rstring;
-    bs::qi::rule<ITER, ast_transition(), SKIPPER>    transition;
-    bs::qi::rule<ITER, ast_region(), SKIPPER>    region;
-    bs::qi::rule<ITER, ast_nodes_t(), SKIPPER>    regions;
-    bs::qi::rule<ITER, ast_machine(), bs::qi::locals<std::string>, SKIPPER> start;
+    qi::rule<ITER, std::string()> arrow;
+    qi::rule<ITER, std::string()> qstring;
+    qi::rule<ITER, std::string()> rstring;
+    qi::rule<ITER, ast_transition(), SKIPPER>    transition;
+    qi::rule<ITER, ast_region(), SKIPPER>        region;
+    qi::rule<ITER, ast_nodes_t(), SKIPPER>       regions;
+    qi::rule<ITER, ast_machine(), qi::locals<std::string>, SKIPPER> start;
     
 }; // plantuml_grammar
 
@@ -181,7 +187,7 @@ bool plantuml_parser(
     ast_node ast;
 
     skipper_t skip = {};    
-    bool match = bs::qi::phrase_parse(
+    bool match = qi::phrase_parse(
                      crtIt, 
                      endIt, 
                      grammar,

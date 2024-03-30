@@ -15,13 +15,21 @@
 
 #include "state_machine.hpp"
 
-// no recursive wrapper/heap allocation for std::variant
-#include <boost/fusion/include/adapt_struct.hpp>
+// no recursive wrapper/heap allocation for std::variant, must use boost's
+#include <boost/fusion/include/adapted.hpp>
 #include <boost/variant.hpp>
 #include <boost/variant/recursive_wrapper.hpp>
 
 #include <iostream>
 #include <source_location>
+
+
+#define ENABLE_AST_DEBUG (1)
+#  define AST_DEBUG(x)  x
+#ifdef ENABLE_AST_DEBUG
+#else
+#  define AST_DEBUG(x)  
+#endif // ENABLE_AST_DEBUG
 
 // In the global scope
 struct ast_null;
@@ -42,7 +50,7 @@ using ast_nodes_t = std::vector<ast_node>;
 struct ast_node_base 
     : public upml::sm::location 
 {
-    ast_node* _parent{nullptr};
+    //ast_node* _parent{nullptr};
 };
 BOOST_FUSION_ADAPT_STRUCT(
     ast_node_base,
@@ -148,7 +156,7 @@ struct ast_base_visitor : public boost::static_visitor<>
     void operator()(T&) const
     {
         const auto loc(std::source_location::current());
-        std::cout << tab() << "bv error: " << loc.function_name() << std::endl;
+        AST_DEBUG(std::cout << tab() << "bv error: " << loc.function_name() << std::endl;);
     }
 
 }; // ast_base_visitor
@@ -164,12 +172,12 @@ struct ast_visitor : public ast_base_visitor<UPML_T>
 
     void operator()(ast_null& n) const
     {
-        std::cout << this->tab() << "v error: ast_null line " << n._line << std::endl;
+        AST_DEBUG(std::cout << this->tab() << "v error: ast_null line " << n._line << std::endl;)
     }
 
     void operator()(ast_transition& n) const
     {
-        std::cout << this->tab() << "v ast_transition line " << n._line << std::endl;
+        AST_DEBUG(std::cout << this->tab() << "v ast_transition line " << n._line << std::endl;);
         this->annotate_target_from(n);
     }
 
@@ -192,7 +200,7 @@ struct ast_visitor<upml::sm::state> : public ast_base_visitor<upml::sm::state>
 
     void operator()(ast_state& n) const
     {
-        std::cout << this->tab() << "s ast_state line " << n._line << std::endl;
+        AST_DEBUG(std::cout << this->tab() << "s ast_state line " << n._line << std::endl;);
         this->annotate_target_from(n);
     }
 }; // ast_visitor<upml::sm::state>
@@ -208,18 +216,21 @@ struct ast_visitor<upml::sm::region> : public ast_base_visitor<upml::sm::region>
 
     void operator()(ast_transition& n) const
     {
-        std::cout << this->tab() << "r ast_transition line " << n._line << std::endl;
+        AST_DEBUG(std::cout << this->tab() << "r ast_transition line " << n._line << std::endl;);
 
         upml::sm::state from, to;
         from._id = n._fromState; 
         to._id   = n._toState;
+        //TODO: warn if no _event
+        //TODO: insert only if new state
+        // TODO: automatically add a (default) region to every new state
         this->_target._substates[from._id] = std::make_shared<upml::sm::state>(from);
         this->_target._substates[to._id]   = std::make_shared<upml::sm::state>(to);
     }
 
     void operator()(ast_region& n) const
     {
-        std::cout << this->tab() << "r ast_region line " << n._line << std::endl;
+        AST_DEBUG(std::cout << this->tab() << "r ast_region line " << n._line << std::endl;);
         this->annotate_target_from(n);
 
         ast_nodes_t& nodes = n._subtree;
@@ -241,7 +252,7 @@ struct ast_visitor<upml::sm::state_machine> : public ast_base_visitor<upml::sm::
 
     void operator()(ast_region& n) const
     {
-        std::cout << this->tab() << "sm ast_region line " << n._line << std::endl;
+        AST_DEBUG(std::cout << this->tab() << "sm ast_region line " << n._line << std::endl;)
         upml::sm::region r;
         ast_node v = n;
         boost::apply_visitor(upml::ast_visitor(r, this->_depth+1), v);
@@ -250,8 +261,10 @@ struct ast_visitor<upml::sm::state_machine> : public ast_base_visitor<upml::sm::
 
     void operator()(ast_machine& n) const
     {
-        std::cout << "sm ast_machine line " << n._line << std::endl;
+        AST_DEBUG(std::cout << "sm ast_machine line " << n._line << std::endl;);
         this->annotate_target_from(n);
+
+        // TODO: automatically add a (default) region to every new state machine
 
         ast_nodes_t& nodes = n._subtree;
         for (ast_node& subn : nodes)
