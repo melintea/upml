@@ -120,7 +120,8 @@ struct plantuml_grammar final
         qstring  %= qi::lexeme['"' >> +(qi::char_ - '"') >> '"'];
         rstring  %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_") ] ];
 
-        transition %= rstring >> qi::omit[arrow] >> rstring;
+        //            _fromState  -->               _toState            _event                _guard                    _effect
+        transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> rstring > ']') >> -('/' >> rstring);
 
         // There is one known limitation though, when you try to use a struct that has a single element that is also a container compilation fails unless you add qi::eps >> ... to your rule
         // https://stackoverflow.com/questions/78241220/boostspirit-error-no-type-named-value-type-in-struct-xxx
