@@ -114,7 +114,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 
 
 namespace upml {
-
+    
 /*
  *
  */
@@ -141,6 +141,23 @@ struct ast_base_visitor : public boost::static_visitor<>
     std::string tag() const
     {
         return upml::sm::tag(this->_target._tag, this->_target._line);
+    }
+
+    static sm::transition from_ast(const ast_transition& n)
+    {
+        sm::transition t;
+
+        t._line      = n._line;
+        t._col       = n._col;
+        t._file      = n._file;
+        t._id        = n._id;
+        t._fromState = n._fromState;
+        t._toState   = n._toState;
+        t._event     = n._event;
+        t._guard     = n._guard;
+        t._effect    = n._effect;
+
+        return t;
     }
 
     template <typename NODE_T> 
@@ -218,14 +235,26 @@ struct ast_visitor<upml::sm::region> : public ast_base_visitor<upml::sm::region>
     {
         AST_DEBUG(std::cout << this->tab() << "r ast_transition line " << n._line << std::endl;);
 
-        upml::sm::state from, to;
-        from._id = n._fromState; 
-        to._id   = n._toState;
+        auto st(from_ast(n));
+        
+        if (this->_target._substates.find(n._fromState) == this->_target._substates.end())
+        {           
+            upml::sm::state from;
+            from._id = n._fromState; 
+            this->_target._substates[from._id] = std::make_shared<upml::sm::state>(from);
+        }
+        this->_target._substates[n._fromState]->_transitions[st._id] = st;
+        
+
+        if (this->_target._substates.find(n._toState) == this->_target._substates.end())
+        {           
+            upml::sm::state to;
+            to._id   = n._toState;
+            this->_target._substates[to._id]   = std::make_shared<upml::sm::state>(to);
+        }
+
         //TODO: warn if no _event
-        //TODO: insert only if new state
         // TODO: automatically add a (default) region to every new state
-        this->_target._substates[from._id] = std::make_shared<upml::sm::state>(from);
-        this->_target._substates[to._id]   = std::make_shared<upml::sm::state>(to);
     }
 
     void operator()(ast_region& n) const

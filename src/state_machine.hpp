@@ -245,7 +245,7 @@ inline indent& state::trace(indent& id, std::ostream& os) const
 {
     ++id;
     os << id << '(' << static_cast<location>(*this) << ")\n";
-    os << id << "state " << _id << " s{\n";
+    os << id << "state " << _id << " {\n";
     for (const auto& [k, v] : _transitions)
     {
         v.trace(id, os);
@@ -254,7 +254,7 @@ inline indent& state::trace(indent& id, std::ostream& os) const
     {
         v.trace(id, os);
     }
-    os << id << "}s\n";
+    os << id << "}\n";
     --id;
     return id;
 }

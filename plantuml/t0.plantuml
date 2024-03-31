@@ -1,7 +1,17 @@
+
+
 @startuml
 
-#Deploy -down-> Operation  
-Deploy --> Operation  
+
+#one line comment
+// one line comment
+/*
+ multi line
+ comment
+ */
+
+Deploy -down-> Operation : Event1 [Guard] / Effect
+#Deploy --> Operation  
 
 /*
 state Operation {
