@@ -22,7 +22,7 @@ end note
 #Deploy : this  is useless
 
 Deploy -down-> Operation : Event1 [Guard] / Effect
-#Deploy --> Operation  
+Deploy --> Operation  
 
 /*
 state Operation {
@@ -38,9 +38,9 @@ Operation_BizData_Collection -down-> Operation_BizData_Anylasis
 [*] -down-> Operation_Next_Preparation
 
 }
+*/
 
 Operation -down-> [*]
-*/
 
 @enduml
 

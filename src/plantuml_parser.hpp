@@ -81,11 +81,13 @@ struct ast_state
     : public upml::sm::state
     //, public ast_nodes_t 
 {
-    ast_nodes_t _subtree;
+    upml::sm::id_t  _id;
+    ast_nodes_t     _subtree;
 };
 BOOST_FUSION_ADAPT_STRUCT(
     ast_state,
-    (ast_nodes_t, _subtree)
+    (upml::sm::id_t, _id)
+    (ast_nodes_t,    _subtree)
 )
 
 
@@ -150,7 +152,12 @@ struct ast_base_visitor : public boost::static_visitor<>
         t._line      = n._line;
         t._col       = n._col;
         t._file      = n._file;
+
         t._id        = n._id;
+        if (t._id.empty()) {
+            t._id = sm::tag(sm::transition::_tag, n._line);
+        }
+
         t._fromState = n._fromState;
         t._toState   = n._toState;
         t._event     = n._event;
@@ -233,9 +240,11 @@ struct ast_visitor<upml::sm::region> : public ast_base_visitor<upml::sm::region>
 
     void operator()(ast_transition& n) const
     {
-        AST_DEBUG(std::cout << this->tab() << "r ast_transition line " << n._line << std::endl;);
-
         auto st(from_ast(n));
+        AST_DEBUG(std::cout << this->tab() 
+                  << "r ast_transition line " << n._line 
+                  << ' ' << st._id << std::endl;);
+
 
         bool init(n._fromState == "[*]");
         bool fin(n._toState == "[*]");

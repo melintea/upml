@@ -126,26 +126,35 @@ struct plantuml_grammar final
         arrow    %= qi::lit('-') >> *(qi::char_ - '-') >> qi::lit("->");
         
         qstring  %= qi::lexeme['"' >> +(qi::char_ - '"') >> '"'];
-        rstring  %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_") ] ];
+        rstring  %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_") ] ]
+                 |  qi::string("[*]")
+                 ;
 
+        state = qi::lit("state") 
+              >> rstring
+              >> qi::lit("{") //>> region /*enter default region*/
+              >> +(regions | transition)
+              >> qi::lit("}")
+              ;
         //            _fromState  -->               _toState            _event                _guard                    _effect
         transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> rstring > ']') >> -('/' >> rstring);
 
         // There is one known limitation though, when you try to use a struct that has a single element that is also a container compilation fails unless you add qi::eps >> ... to your rule
         // https://stackoverflow.com/questions/78241220/boostspirit-error-no-type-named-value-type-in-struct-xxx
-        region = eps >> +transition
+        region %= eps >> +(transition | state)
                ;
 
-        regions = *region
+        regions %= *((qi::lit("--") | qi::lit("||")) >> region)
                 ;
 
         start = 
-            qi::lit("@startuml") //[ bp::push_back(bp::ref(_val._subtree), ast_region()) ]
-            >> regions
+            qi::lit("@startuml") > region /*enter default region*/
+            >> regions /*more regions if any*/
             >> qi::lit("@enduml")
             ;
 
         on_success(transition, locate(_val, _1, _3));
+        on_success(state,      locate(_val, _1, _3));
         on_success(region,     locate(_val, _1, _3));
         on_success(start,      locate(_val, _1, _3));
 
@@ -169,6 +178,7 @@ struct plantuml_grammar final
     qi::rule<ITER, std::string()> qstring;
     qi::rule<ITER, std::string()> rstring;
     qi::rule<ITER, ast_transition(), SKIPPER>    transition;
+    qi::rule<ITER, ast_state(), SKIPPER>         state;
     qi::rule<ITER, ast_region(), SKIPPER>        region;
     qi::rule<ITER, ast_nodes_t(), SKIPPER>       regions;
     qi::rule<ITER, ast_machine(), qi::locals<std::string>, SKIPPER> start;
