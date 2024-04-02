@@ -152,6 +152,8 @@ struct state : public location
     id_t           _id;
     regions_t      _regions;
     transitions_t  _transitions;
+    bool           _initial{false};
+    bool           _final{false};
 
     bool operator==(const state& other) const { return other._id == _id; }
 
@@ -245,7 +247,9 @@ inline indent& state::trace(indent& id, std::ostream& os) const
 {
     ++id;
     os << id << '(' << static_cast<location>(*this) << ")\n";
-    os << id << "state " << _id << " {\n";
+    os << id << "state " << _id 
+       << " final:" << _final << ";initial:" << _initial 
+       << " {\n";
     for (const auto& [k, v] : _transitions)
     {
         v.trace(id, os);

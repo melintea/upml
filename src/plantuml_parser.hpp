@@ -236,6 +236,33 @@ struct ast_visitor<upml::sm::region> : public ast_base_visitor<upml::sm::region>
         AST_DEBUG(std::cout << this->tab() << "r ast_transition line " << n._line << std::endl;);
 
         auto st(from_ast(n));
+
+        bool init(n._fromState == "[*]");
+        bool fin(n._toState == "[*]");
+
+        if (init)
+        {
+            if (this->_target._substates.find(n._toState) == this->_target._substates.end())
+            {           
+                upml::sm::state to;
+                to._id   = n._toState;
+                this->_target._substates[to._id]   = std::make_shared<upml::sm::state>(to);
+            }
+            this->_target._substates[n._toState]->_initial = true;
+            return;
+        }
+        
+        if (fin)
+        {
+            if (this->_target._substates.find(n._fromState) == this->_target._substates.end())
+            {           
+                upml::sm::state from;
+                from._id = n._fromState; 
+                this->_target._substates[from._id] = std::make_shared<upml::sm::state>(from);
+            }
+            this->_target._substates[n._fromState]->_final = true;
+            return;
+        }
         
         if (this->_target._substates.find(n._fromState) == this->_target._substates.end())
         {           

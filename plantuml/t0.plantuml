@@ -10,6 +10,17 @@
  comment
  */
 
+hide empty description
+state "long state name" as ignored
+#state alias4 as "long name"
+note left of active : this is a note
+note left of active
+  line
+  line
+end note
+
+#Deploy : this  is useless
+
 Deploy -down-> Operation : Event1 [Guard] / Effect
 #Deploy --> Operation  
 

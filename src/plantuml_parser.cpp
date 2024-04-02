@@ -43,6 +43,14 @@ struct skipper final : qi::grammar<It>
             | ("#"  >> *~encoding::char_("\n")   >> -qi::eol)
             | ("//" >> *~encoding::char_("\n")   >> -qi::eol)
             | ("/*" >> *(encoding::char_ - "*/") >> "*/")
+            /// legit plantuml not needed
+            | ("hide empty description")
+            // state "long state name" as ignored
+            | ("state \"" >> *~encoding::char_("\"") >> "\" as"  >> *~encoding::char_("\n") >> -qi::eol)
+            // alias
+            //| ("state \"" >> *~encoding::char_("as") >> "\" as"  >> *~encoding::char_("\n") >> -qi::eol)
+            | ("note" >> *~encoding::char_(":") >> ":"  >> *~encoding::char_("\n") >> -qi::eol)
+            | ("note" >> *~encoding::char_("end note") >> *~encoding::char_("\n") >> -qi::eol)
             ;
 };
 
