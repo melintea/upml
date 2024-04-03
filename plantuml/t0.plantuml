@@ -21,24 +21,24 @@ end note
 
 #Deploy : this  is useless
 
-Deploy -down-> Operation : Event1 [Guard] / Effect
+Deploy -1down-> Operation : Event1 [Guard] / Effect
 Deploy --> Operation  
 
 state Operation {
 
-[*] -down-> Operation_Launch
+[*] -2down-> Operation_Launch
 
-Operation_Launch -down-> Operation_Auto_Monitor
-//--
-[*] -down-> Operation_BizData_Collection
+Operation_Launch -2down-> Operation_Auto_Monitor
+--
+[*] -3down-> Operation_BizData_Collection
 
-Operation_BizData_Collection -down-> Operation_BizData_Anylasis
-//--
-[*] -down-> Operation_Next_Preparation
+Operation_BizData_Collection -3down-> Operation_BizData_Anylasis
+||
+[*] -4down-> Operation_Next_Preparation
 
 }
 
-Operation -down-> [*]
+Operation -5down-> [*]
 
 @enduml
 

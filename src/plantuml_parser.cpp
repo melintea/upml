@@ -133,8 +133,8 @@ struct plantuml_grammar final
 
         state = qi::lit("state") 
               >> rstring
-              >> qi::lit("{") //>> region /*enter default region*/
-              >> +(region | transition)
+              >> qi::lit("{")
+              >> regions 
               >> qi::lit("}")
               ;
         //            _fromState  -->               _toState            _event                _guard                    _effect
@@ -145,12 +145,13 @@ struct plantuml_grammar final
         region %= eps >> +(transition | state)
                ;
 
-        regions %= *((qi::lit("--") | qi::lit("||")) >> region)
+        regions %= region/*default region*/ 
+                >> *((qi::lit("--") | qi::lit("||")) >> region)
                 ;
 
         start = 
-            qi::lit("@startuml") > region /*enter default region*/
-            >> regions /*more regions if any*/
+            qi::lit("@startuml")
+            >> regions 
             >> qi::lit("@enduml")
             ;
 

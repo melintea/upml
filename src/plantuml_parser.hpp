@@ -176,11 +176,34 @@ struct ast_base_visitor : public boost::static_visitor<>
         this->_target._id   = n._id.empty() ? this->tag() : n._id;
     }
 
-    template <typename T> 
-    void operator()(T&) const
+    void operator()(ast_transition& n) const
     {
         const auto loc(std::source_location::current());
-        AST_DEBUG(std::cout << tab() << "bv error: " << loc.function_name() << std::endl;);
+        AST_DEBUG(std::cout << tab() << "bv error: " << loc.function_name() 
+                            << " at line " << n._line
+                            << std::endl;);
+    }
+
+    void operator()(ast_null& n) const
+    {
+        const auto loc(std::source_location::current());
+        AST_DEBUG(std::cout << tab() << "bv error: " << loc.function_name() 
+                            << " at line " << n._line
+                            << std::endl;);
+    }
+
+    template <typename T> 
+    void operator()(T& n) const
+    {
+        const auto loc(std::source_location::current());
+        AST_DEBUG(std::cout << tab() << "bv error: " << loc.function_name() 
+                            << " at line " << n._line
+                            << std::endl;);
+        ast_nodes_t& nodes = n._subtree;
+        for (ast_node& subn : nodes)
+        {
+            boost::apply_visitor(*this, subn);
+        }
     }
 
 }; // ast_base_visitor
