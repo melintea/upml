@@ -173,7 +173,7 @@ struct ast_base_visitor : public boost::static_visitor<>
         this->_target._line = n._line;
         this->_target._col  = n._col;
         this->_target._file = n._file;
-        this->_target._id   = this->tag();
+        this->_target._id   = n._id.empty() ? this->tag() : n._id;
     }
 
     template <typename T> 
@@ -222,11 +222,9 @@ struct ast_visitor<upml::sm::state> : public ast_base_visitor<upml::sm::state>
 
     using ast_base_visitor<upml::sm::state>::operator();
 
-    void operator()(ast_state& n) const
-    {
-        AST_DEBUG(std::cout << this->tab() << "s ast_state line " << n._line << std::endl;);
-        this->annotate_target_from(n);
-    }
+    void operator()(ast_state& n)  const;
+    void operator()(ast_region& n) const;
+
 }; // ast_visitor<upml::sm::state>
 
 template <> 
@@ -238,72 +236,9 @@ struct ast_visitor<upml::sm::region> : public ast_base_visitor<upml::sm::region>
 
     using ast_base_visitor<upml::sm::region>::operator();
 
-    void operator()(ast_transition& n) const
-    {
-        auto st(from_ast(n));
-        AST_DEBUG(std::cout << this->tab() 
-                  << "r ast_transition line " << n._line 
-                  << ' ' << st._id << std::endl;);
-
-
-        bool init(n._fromState == "[*]");
-        bool fin(n._toState == "[*]");
-
-        if (init)
-        {
-            if (this->_target._substates.find(n._toState) == this->_target._substates.end())
-            {           
-                upml::sm::state to;
-                to._id   = n._toState;
-                this->_target._substates[to._id]   = std::make_shared<upml::sm::state>(to);
-            }
-            this->_target._substates[n._toState]->_initial = true;
-            return;
-        }
-        
-        if (fin)
-        {
-            if (this->_target._substates.find(n._fromState) == this->_target._substates.end())
-            {           
-                upml::sm::state from;
-                from._id = n._fromState; 
-                this->_target._substates[from._id] = std::make_shared<upml::sm::state>(from);
-            }
-            this->_target._substates[n._fromState]->_final = true;
-            return;
-        }
-        
-        if (this->_target._substates.find(n._fromState) == this->_target._substates.end())
-        {           
-            upml::sm::state from;
-            from._id = n._fromState; 
-            this->_target._substates[from._id] = std::make_shared<upml::sm::state>(from);
-        }
-        this->_target._substates[n._fromState]->_transitions[st._id] = st;
-        
-
-        if (this->_target._substates.find(n._toState) == this->_target._substates.end())
-        {           
-            upml::sm::state to;
-            to._id   = n._toState;
-            this->_target._substates[to._id]   = std::make_shared<upml::sm::state>(to);
-        }
-
-        //TODO: warn if no _event
-        // TODO: automatically add a (default) region to every new state
-    }
-
-    void operator()(ast_region& n) const
-    {
-        AST_DEBUG(std::cout << this->tab() << "r ast_region line " << n._line << std::endl;);
-        this->annotate_target_from(n);
-
-        ast_nodes_t& nodes = n._subtree;
-        for (ast_node& subn : nodes)
-        {
-            boost::apply_visitor(*this, subn);
-        }
-    }
+    void operator()(ast_state& n)      const;
+    void operator()(ast_transition& n) const;
+    void operator()(ast_region& n)     const;
 }; // ast_visitor<upml::sm::region>
 
 template <> 
@@ -315,30 +250,132 @@ struct ast_visitor<upml::sm::state_machine> : public ast_base_visitor<upml::sm::
 
     using ast_base_visitor<upml::sm::state_machine>::operator();
 
-    void operator()(ast_region& n) const
-    {
-        AST_DEBUG(std::cout << this->tab() << "sm ast_region line " << n._line << std::endl;)
-        upml::sm::region r;
-        ast_node v = n;
-        boost::apply_visitor(upml::ast_visitor(r, this->_depth+1), v);
-        this->_target._regions[r._id] = r;
-    }
-
-    void operator()(ast_machine& n) const
-    {
-        AST_DEBUG(std::cout << "sm ast_machine line " << n._line << std::endl;);
-        this->annotate_target_from(n);
-
-        // TODO: automatically add a (default) region to every new state machine
-
-        ast_nodes_t& nodes = n._subtree;
-        for (ast_node& subn : nodes)
-        {
-            boost::apply_visitor(*this, subn);
-        }
-    }
+    void operator()(ast_region& n)  const;
+    void operator()(ast_machine& n) const;
 }; // ast_visitor<upml::sm::state_machine>
 
+//-----------------------------------------------------------------------------
+
+inline void ast_visitor<upml::sm::state>::operator()(ast_state& n) const
+{
+    AST_DEBUG(std::cout << this->tab() << "s ast_state line " << n._line << std::endl;);
+    this->annotate_target_from(n);
+
+    ast_nodes_t& nodes = n._subtree;
+    for (ast_node& subn : nodes)
+    {
+        boost::apply_visitor(*this, subn);
+    }
+} // state
+
+inline void ast_visitor<upml::sm::state>::operator()(ast_region& n) const
+{
+    AST_DEBUG(std::cout << this->tab() << "s ast_region line " << n._line << std::endl;)
+    upml::sm::region r;
+    ast_node v = n;
+    boost::apply_visitor(upml::ast_visitor(r, this->_depth+1), v);
+    this->_target._regions[r._id] = r;
+} // state
+
+inline void ast_visitor<upml::sm::region>::operator()(ast_state& n) const
+{
+    AST_DEBUG(std::cout << this->tab() << "r ast_state line " << n._line << std::endl;);
+    upml::sm::state st;
+    ast_node v = n; // TODO: is this a deep copy?
+    boost::apply_visitor(upml::ast_visitor(st, this->_depth+1), v);
+    this->_target._substates[st._id] = std::make_shared<upml::sm::state>(st);
+} // region
+
+inline void ast_visitor<upml::sm::region>::operator()(ast_transition& n) const
+{
+    auto tr(from_ast(n));
+    AST_DEBUG(std::cout << this->tab() 
+                << "r ast_transition line " << n._line 
+                << ' ' << tr._id << std::endl;);
+
+    bool init(n._fromState == "[*]");
+    bool fin(n._toState == "[*]");
+
+    if (init)
+    {
+        if (this->_target._substates.find(n._toState) == this->_target._substates.end())
+        {           
+            upml::sm::state to;
+            to._id   = n._toState;
+            this->_target._substates[to._id]   = std::make_shared<upml::sm::state>(to);
+        }
+        this->_target._substates[n._toState]->_initial = true;
+        return;
+    }
+    
+    if (fin)
+    {
+        if (this->_target._substates.find(n._fromState) == this->_target._substates.end())
+        {           
+            upml::sm::state from;
+            from._id = n._fromState; 
+            this->_target._substates[from._id] = std::make_shared<upml::sm::state>(from);
+        }
+        this->_target._substates[n._fromState]->_final = true;
+        return;
+    }
+    
+    if (this->_target._substates.find(n._fromState) == this->_target._substates.end())
+    {           
+        upml::sm::state from;
+        from._id = n._fromState; 
+        this->_target._substates[from._id] = std::make_shared<upml::sm::state>(from);
+    }
+    this->_target._substates[n._fromState]->_transitions[tr._id] = tr;
+    
+
+    if (this->_target._substates.find(n._toState) == this->_target._substates.end())
+    {           
+        upml::sm::state to;
+        to._id   = n._toState;
+        this->_target._substates[to._id]   = std::make_shared<upml::sm::state>(to);
+    }
+
+    //TODO: warn if no _event
+    // TODO: automatically add a (default) region to every new state
+} // region
+
+inline void ast_visitor<upml::sm::region>::operator()(ast_region& n) const
+{
+    AST_DEBUG(std::cout << this->tab() << "r ast_region line " << n._line << std::endl;);
+    this->annotate_target_from(n);
+
+    ast_nodes_t& nodes = n._subtree;
+    for (ast_node& subn : nodes)
+    {
+        boost::apply_visitor(*this, subn);
+    }
+} // region
+
+inline void ast_visitor<upml::sm::state_machine>::operator()(ast_region& n) const
+{
+    AST_DEBUG(std::cout << this->tab() << "sm ast_region line " << n._line << std::endl;)
+    upml::sm::region r;
+    ast_node v = n;
+    boost::apply_visitor(upml::ast_visitor(r, this->_depth+1), v);
+    this->_target._regions[r._id] = r;
+} // state_machine
+
+inline void ast_visitor<upml::sm::state_machine>::operator()(ast_machine& n) const
+{
+    AST_DEBUG(std::cout << "sm ast_machine line " << n._line << std::endl;);
+    this->annotate_target_from(n);
+
+    // TODO: automatically add a (default) region to every new state machine
+
+    ast_nodes_t& nodes = n._subtree;
+    for (ast_node& subn : nodes)
+    {
+        boost::apply_visitor(*this, subn);
+    }
+} // state_machine
+
+//-----------------------------------------------------------------------------
 
 /*
  *

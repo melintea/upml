@@ -48,7 +48,7 @@ struct skipper final : qi::grammar<It>
             // state "long state name" as ignored
             | ("state \"" >> *~encoding::char_("\"") >> "\" as"  >> *~encoding::char_("\n") >> -qi::eol)
             // alias
-            //| ("state \"" >> *~encoding::char_("as") >> "\" as"  >> *~encoding::char_("\n") >> -qi::eol)
+            //| ("state \"" >> *encoding::char_("a-zA-Z0-9_") >> "\" as"  >> *~encoding::char_("\n") >> -qi::eol)
             | ("note" >> *~encoding::char_(":") >> ":"  >> *~encoding::char_("\n") >> -qi::eol)
             | ("note" >> *~encoding::char_("end note") >> *~encoding::char_("\n") >> -qi::eol)
             ;
@@ -130,10 +130,11 @@ struct plantuml_grammar final
                  |  qi::string("[*]")
                  ;
 
+
         state = qi::lit("state") 
               >> rstring
               >> qi::lit("{") //>> region /*enter default region*/
-              >> +(regions | transition)
+              >> +(region | transition)
               >> qi::lit("}")
               ;
         //            _fromState  -->               _toState            _event                _guard                    _effect
@@ -161,6 +162,7 @@ struct plantuml_grammar final
         // _3: errPosIt, _2: endIt, _1: rule enter pos
         on_error<fail>(start,      errorout(_1, _2, _3, _4));
         on_error<fail>(region,     errorout(_1, _2, _3, _4));
+        on_error<fail>(state,      errorout(_1, _2, _3, _4));
         on_error<fail>(transition, errorout(_1, _2, _3, _4));
         
         BOOST_SPIRIT_DEBUG_NODES(

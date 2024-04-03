@@ -8,18 +8,16 @@ WIP, nothing to see yet.
 
 @see [the plantuml state diagram](https://plantuml.com/state-diagram):
 
-- unsupported: state long name
 - unsupported: history
-- idem: fork, join
+- unsupported: fork, join
+- idem: state alias
 - idem: choice
 - idem: entry/exit point
 - idem: pin
 - idem: expansion
-- idem: note
 - idem: inline color
 - idem: skinparam
 - idem: style
-- idem: alias
 - idem: json
 
 Additions:
