@@ -24,9 +24,8 @@
 #include <source_location>
 
 
-#define ENABLE_AST_DEBUG (1)
-#  define AST_DEBUG(x)  x
 #ifdef ENABLE_AST_DEBUG
+#  define AST_DEBUG(x)  x
 #else
 #  define AST_DEBUG(x)  
 #endif // ENABLE_AST_DEBUG

@@ -2,39 +2,90 @@
 
 @startuml
 
+//
+// Test we can parse all kinds of constructs
+// 
 
-#one line comment
+//----------------------------------------------
+// stufffor the skipper
+
 // one line comment
 /*
  multi line
- comment
+ omment
  */
 
 hide empty description
-state "long state name" as ignored
-#state alias4 as "long name"
+
+// unsupported:
+//state "long state name" as ignored
+//state "Idle mode" as Idle <<Warning>>
+
+state ignoredAgain as "long name" 
+
 note left of active : this is a note
 note left of active
   line
   line
 end note
 
-#Deploy : this  is useless
+skinparam backgroundColor LightYellow
+/*
+skinparam state {
+  StartColor MediumBlue
+  EndColor Red
+  BackgroundColor Peru
+  BackgroundColor<<Warning>> Olive
+  BorderColor Gray
+  FontName Impact
+}
+*/
+
+<style>
+stateDiagram {
+  BackgroundColor Peru
+  'LineColor Gray
+  FontName Impact
+  FontColor Red
+  arrow {
+    FontSize 13
+    LineColor Blue
+  }
+}
+</style>
+
+// unsupported:
+///*
+//json jsonJ {
+//   "fruit":"Apple",
+//   "size":"Large",
+//   "color": ["Red", "Green"]
+//}
+//*/
+
+//----------------------------------------------
+// stuff for the state machine
 
 Deploy -1down-> Operation : Event1 [Guard] / Effect
 Deploy --> Operation  
 
-state Operation {
+state Operation #lightblue {
 
 [*] -2down-> Operation_Launch
 
-Operation_Launch -2down-> Operation_Auto_Monitor
+Operation_Launch -2down-> Operation_Auto_Monitor : EvtLaunch
 --
 [*] -3down-> Operation_BizData_Collection
 
 Operation_BizData_Collection -3down-> Operation_BizData_Anylasis
 ||
 [*] -4down-> Operation_Next_Preparation
+
+  //state SubOperation {
+  state "Some Long Stuff" as SubOperation #lightblue {
+    [*] --> SubLaunch
+    SubLaunch --> SubLaunchAutoMonitor : EvtSubLaunch
+  }
 
 }
 

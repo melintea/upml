@@ -219,7 +219,7 @@ inline indent& region::trace(indent& id, std::ostream& os) const
 {
     ++id;
     os << id << '(' << static_cast<location>(*this) << ")\n";
-    os << id << "-- " << _id << "{\n";
+    os << id << "-- " << _id << " {\n";
     for (const auto& [k, v] : _substates)
     {
         v->trace(id, os);

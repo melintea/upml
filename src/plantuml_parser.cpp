@@ -8,7 +8,6 @@
  *
  */
 
-#define BOOST_SPIRIT_DEBUG      1
 #define BOOST_SPIRIT_DEBUG_OUT  std::cerr
 #define BOOST_SPIRIT_USE_PHOENIX_V3
 
@@ -40,17 +39,20 @@ struct skipper final : qi::grammar<It>
     skipper() : skipper::base_type(rule) {}
 
     const qi::rule<It> rule = encoding::space 
-            | ("#"  >> *~encoding::char_("\n")   >> -qi::eol)
             | ("//" >> *~encoding::char_("\n")   >> -qi::eol)
             | ("/*" >> *(encoding::char_ - "*/") >> "*/")
-            /// legit plantuml not needed
+            // --- legit plantuml not needed
             | ("hide empty description")
             // state "long state name" as ignored
-            | ("state \"" >> *~encoding::char_("\"") >> "\" as"  >> *~encoding::char_("\n") >> -qi::eol)
-            // alias
-            //| ("state \"" >> *encoding::char_("a-zA-Z0-9_") >> "\" as"  >> *~encoding::char_("\n") >> -qi::eol)
+            //| ("state \"" >> *~encoding::char_("\"") >> "\" as"  >> *(encoding::char_ - "{\n") >> -qi::eol)
+            // state alias4 as "long name"
+            | ("state " >> *encoding::char_("a-zA-Z0-9_") >> " as"  >> *~encoding::char_("\n") >> -qi::eol)
             | ("note" >> *~encoding::char_(":") >> ":"  >> *~encoding::char_("\n") >> -qi::eol)
             | ("note" >> *~encoding::char_("end note") >> *~encoding::char_("\n") >> -qi::eol)
+            | ("skinparam" >> *~encoding::char_("\n")   >> -qi::eol)
+            | ("skinparam" >> *(encoding::char_ - "}") >> "}")
+            | ("<style>" >> *(encoding::char_ - "</style>") >> "</style>")
+            //| ("json" >> *(encoding::char_ - "}") >> "}")
             ;
 };
 
@@ -107,9 +109,9 @@ template <typename ITER,
          >
 struct plantuml_grammar final 
     : qi::grammar<ITER, 
-                      ast_machine(), 
-                      qi::locals<std::string>,
-                      SKIPPER/*bs::ascii::space_type*/>
+                  ast_machine(), 
+                  qi::locals<std::string>,
+                  SKIPPER/*bs::ascii::space_type*/>
 {
     plantuml_grammar(ITER first) 
         : plantuml_grammar::base_type(start)
@@ -132,10 +134,13 @@ struct plantuml_grammar final
 
 
         state = qi::lit("state") 
-              >> rstring
-              >> qi::lit("{")
-              >> regions 
-              >> qi::lit("}")
+                    >> -qi::omit[qstring]             // long name
+                    >> -qi::omit[qi::string("as")]
+                    >> rstring
+                    >> -qi::omit[*(qi::char_ - '{')] // optional color
+                    >> qi::lit("{")
+                    >> regions 
+                    >> qi::lit("}")
               ;
         //            _fromState  -->               _toState            _event                _guard                    _effect
         transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> rstring > ']') >> -('/' >> rstring);
