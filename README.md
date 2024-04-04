@@ -27,5 +27,11 @@ Depends on boost (spirit, optional).
 
 ## Usage
 
+Notes:
+- each region executes in its own thread.
+- a state execute in thread's region that owns it unless it has 
+  multiple regions regions, in which case all its regions 
+  are threaded separately from the owning region.
+
 TBD
 

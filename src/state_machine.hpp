@@ -151,6 +151,8 @@ struct state : public location
 
     id_t           _id;
     regions_t      _regions;
+    // transitions are in the default region
+    // a simple state should have no explicit regions
     transitions_t  _transitions;
     bool           _initial{false};
     bool           _final{false};
