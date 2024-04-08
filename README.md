@@ -32,6 +32,7 @@ Notes:
 - a state execute in thread's region that owns it unless it has 
   multiple regions regions, in which case all its regions 
   are threaded separately from the owning region.
+- event names are unique per plantuml file
 
 ```
 ./upml --in ../plantuml/t0.plantuml --out ./t0.promela -- dump ./to.upml
