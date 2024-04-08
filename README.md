@@ -28,18 +28,30 @@ Depends on boost (spirit, program_options).
 ## Usage
 
 Notes:
-- each region executes in its own thread.
-- a state execute in thread's region that owns it unless it has 
-  multiple regions regions, in which case all its regions 
-  are threaded separately from the owning region.
-- event names are unique per plantuml file
+- each region executes in its own (promela) process.
+- a state execute in the process/region that owns it unless it
+  has multiple regions, in which case all its regions 
+  are separate processes from the owning region.
+- events are asynchronous messages. Event names are unique per 
+  plantuml file.
+
+To process [sip.plantuml]({{ site.baseurl }}/plantuml/sip.plantuml):
+![image]({{ site.baseurl }}/plantuml/sip.png)
 
 ```
-./upml --in ../plantuml/t0.plantuml --out ./t0.promela -- dump ./to.upml
+./upml --in ../plantuml/sip.plantuml --out ./sip.promela -- dump ./to.upml
 
 # or
-cat ../plantuml/t0.plantuml | ./umpl > ./t0.promela
+cat ../plantuml/sip.plantuml | ./umpl > ./sip.promela
 
-TBD
+# see e.g. https://spinroot.com/spin/Man/Manual.html
+spin -c ./sip.promela
+
+# or
+spin -a ./sip.promela
+gcc -o pan pan.c
+./pan -c0
+...
+
 ```
 

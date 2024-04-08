@@ -1,0 +1,42 @@
+@startuml
+
+note as N1
+  plantuml limitations:
+  - state names must be unique
+  - no explicit on entry/exit notation
+  - cannot draw sending events between 
+    states in different regions
+end note
+
+state Alice {
+  [*] --> AIdle
+  AIdle --> AInitiated : Dial [guard] /effect
+  
+  AInitiated: Entry --> Bob: INVITE
+  AInitiated --> AInitiated : 1xx
+  AInitiated --> AEstablished : 2xx
+  
+  AEstablished: Entry: --> Bob : ACK
+  AEstablished --> Aterminated : Hangup
+  
+  Aterminated: Entry: --> Bob : BYE
+  Aterminated --> [*]
+}
+
+||
+
+state Bob {
+  [*] --> BIdle
+  BIdle --> BInitiated : INVITE
+  
+  BInitiated: Entry: --> Alice : 1xx
+  BInitiated --> BEstablished : Pickup
+  
+  BEstablished: Entry: --> Alice: 2xx
+  BEstablished --> Bterminated : BYE
+  
+  Bterminated --> [*]
+}
+
+@enduml
+
