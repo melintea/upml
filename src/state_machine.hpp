@@ -89,6 +89,11 @@ using stateptr_t = std::shared_ptr<state>; // break circular dep between regions
 using states_t   = std::map<id_t, stateptr_t>;
 //using states_t   = std::set<ptr_t, hasher<state>>;
 
+struct event 
+{
+    static constexpr const char _tag = 'e';
+};
+
 // transition: trigger [guard] /effect
 struct transition : public location
 {

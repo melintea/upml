@@ -24,11 +24,11 @@
 #include <source_location>
 
 
-#ifdef ENABLE_AST_DEBUG
+#ifdef ENABLE_UPML_DEBUG
 #  define AST_DEBUG(x)  x
 #else
 #  define AST_DEBUG(x)  
-#endif // ENABLE_AST_DEBUG
+#endif // ENABLE_UPML_DEBUG
 
 // In the global scope
 struct ast_null;
@@ -162,6 +162,13 @@ struct ast_base_visitor : public boost::static_visitor<>
         t._event     = n._event;
         t._guard     = n._guard;
         t._effect    = n._effect;
+
+        if (t._event.empty())
+        {
+            t._event = sm::tag(sm::event::_tag, t._line);
+            std::cerr << "transition with unnamed event at line " 
+                      << t._line << ": " << t._event << "\n";
+        }
 
         return t;
     }
@@ -357,9 +364,6 @@ inline void ast_visitor<upml::sm::region>::operator()(ast_transition& n) const
         to._id   = n._toState;
         this->_target._substates[to._id]   = std::make_shared<upml::sm::state>(to);
     }
-
-    //TODO: warn if no _event
-    // TODO: automatically add a (default) region to every new state
 } // region
 
 inline void ast_visitor<upml::sm::region>::operator()(ast_region& n) const
