@@ -8,6 +8,7 @@ WIP, nothing to see yet.
 
 @see [the plantuml state diagram](https://plantuml.com/state-diagram):
 
+- unsupported: ```state "long state name" as xxx``` declarations 
 - unsupported: history
 - unsupported: fork, join
 - idem: choice
@@ -22,7 +23,7 @@ Additions:
 
 ## Build
 
-Depends on boost (spirit, optional).
+Depends on boost (spirit, program_options).
 
 ## Usage
 
@@ -32,5 +33,12 @@ Notes:
   multiple regions regions, in which case all its regions 
   are threaded separately from the owning region.
 
+```
+./upml --in ../plantuml/t0.plantuml --out ./t0.promela -- dump ./to.upml
+
+# or
+cat ../plantuml/t0.plantuml | ./umpl > ./t0.promela
+
 TBD
+```
 

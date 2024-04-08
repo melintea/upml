@@ -18,8 +18,8 @@
 hide empty description
 
 // unsupported:
-state "long state name" as ignored
-state "Idle mode" as Idle <<Warning>>
+//state "long state name" as ignored
+//state "Idle mode" as Idle <<Warning>>
 
 state ignoredAgain as "long name" 
 

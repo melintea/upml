@@ -12,9 +12,11 @@
 
 namespace upml {
 
-bool promela_generator(const upml::sm::state_machine& sm)
+bool promela_generator(
+    std::ostream&                  out,
+    const upml::sm::state_machine& sm)
 {
-    std::cout << '\n' << sm << '\n';
+    out << '\n' << sm << '\n';
     return true;
 }
 
