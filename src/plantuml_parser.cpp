@@ -46,7 +46,7 @@ struct skipper final : qi::grammar<It>
             // state "long state name" as ignored
             //| ("state \"" >> *~encoding::char_("\"") >> "\" as"  >> *(encoding::char_ - "{\n") >> -qi::eol)
             // state alias4 as "long name"
-            | ("state " >> *encoding::char_("a-zA-Z0-9_") >> " as"  >> *~encoding::char_("\n") >> -qi::eol)
+            | ("state" >> *encoding::char_("a-zA-Z0-9_") >> " as"  >> *~encoding::char_("\n") >> -qi::eol)
             | ("note" >> *~encoding::char_(":") >> ":"  >> *~encoding::char_("\n") >> -qi::eol)
             | ("note" >> *~encoding::char_("end note") >> *~encoding::char_("\n") >> -qi::eol)
             | ("skinparam" >> *~encoding::char_("\n")   >> -qi::eol)
@@ -132,6 +132,8 @@ struct plantuml_grammar final
                  |  qi::string("[*]")
                  ;
 
+        //discard = qi::lit("state") >> qstring >> qi::string("as") >> *(qi::char_ - '{')
+        //        ;
 
         state = qi::lit("state") 
                     >> -qi::omit[qstring]             // long name
@@ -182,6 +184,7 @@ struct plantuml_grammar final
     bp::function<on_success_handler<ITER>> locate;
     bp::function<on_error_handler>         errorout;
     
+    //qi::rule<ITER>   discard;
     qi::rule<ITER, std::string()> arrow;
     qi::rule<ITER, std::string()> qstring;
     qi::rule<ITER, std::string()> rstring;

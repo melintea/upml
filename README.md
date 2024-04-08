@@ -8,7 +8,6 @@ WIP, nothing to see yet.
 
 @see [the plantuml state diagram](https://plantuml.com/state-diagram):
 
-- unsupported: declarations of state long names
 - unsupported: history
 - unsupported: fork, join
 - idem: choice
