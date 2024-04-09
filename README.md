@@ -8,18 +8,25 @@ WIP, nothing to see yet.
 
 @see [the plantuml state diagram](https://plantuml.com/state-diagram):
 
-- unsupported: ```state "long state name" as xxx``` declarations 
 - unsupported: history
 - unsupported: fork, join
 - idem: choice
 - idem: entry/exit point
 - idem: pin
 - idem: expansion
-- idem: json
+- unsupported plantuml constructs:
+  - state declarations such as:
+    - ```state "long state name" as xxx``` 
+    - ```state ignoredAgain as "long name"```
+  - json
+  - skinparam
 
 Additions:
-- comments: //, /**/
+- comments: ```//```, ```/**/```. If you can, use note instead.
 - transition: state --> state : event [guard]/effect
+- state actions: ```entry```, ```exit```
+- ```send``` event from state:
+  ```entry: send INVITE to Bob;```
 
 ## Build
 
@@ -35,11 +42,11 @@ Notes:
 - events are asynchronous messages. Event names are unique per 
   plantuml file.
 
-To process [sip.plantuml](plantuml/sip.plantuml):
+To process this non-RFC3261-conformant-and-simplified [sip.plantuml](plantuml/sip.plantuml):
 ![image](plantuml/sip.png)
 
 ```
-./upml --in ../plantuml/sip.plantuml --out ./sip.promela -- dump ./to.upml
+./upml --in ../plantuml/sip.plantuml --out ./sip.promela --dump ./sip.upmldmp
 
 # or
 cat ../plantuml/sip.plantuml | ./umpl > ./sip.promela

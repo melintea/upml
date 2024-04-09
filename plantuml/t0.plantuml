@@ -21,7 +21,7 @@ hide empty description
 //state "long state name" as ignored
 //state "Idle mode" as Idle <<Warning>>
 
-state ignoredAgain as "long name" 
+//state ignoredAgain as "long name" 
 
 note left of active : this is a note
 note left of active
@@ -29,7 +29,18 @@ note left of active
   line
 end note
 
+note as N1
+  plantuml limitations:
+  - state names must be unique
+  - no explicit on entry/exit notation
+  - cannot draw sending events between 
+    states in different regions
+end note
+
 skinparam backgroundColor LightYellow
+
+// unsupported: 
+/*
 skinparam state {
   StartColor MediumBlue
   EndColor Red
@@ -38,6 +49,7 @@ skinparam state {
   BorderColor Gray
   FontName Impact
 }
+*/
 
 <style>
 stateDiagram {

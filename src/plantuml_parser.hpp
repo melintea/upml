@@ -33,6 +33,7 @@
 // In the global scope
 struct ast_null;
 struct ast_transition;
+struct ast_activity;
 struct ast_state;
 struct ast_region;
 struct ast_machine;
@@ -40,6 +41,7 @@ struct ast_machine;
 using ast_node =  boost::variant<
     ast_null,
     ast_transition, 
+    ast_activity, 
     boost::recursive_wrapper<ast_state>, 
     boost::recursive_wrapper<ast_region>,
     ast_machine
@@ -73,6 +75,17 @@ BOOST_FUSION_ADAPT_STRUCT(
     (upml::sm::id_t, _event)
     (upml::sm::id_t, _guard)
     (upml::sm::id_t, _effect)
+)
+
+struct ast_activity 
+    : public upml::sm::activity 
+{};
+BOOST_FUSION_ADAPT_STRUCT(
+    ast_activity,
+    //(upml::sm::id_t, _id)
+    (upml::sm::id_t, _state)
+    (upml::sm::id_t, _activity)
+    (upml::sm::activity::args, _args)
 )
 
 
@@ -182,6 +195,14 @@ struct ast_base_visitor : public boost::static_visitor<>
         this->_target._id   = n._id.empty() ? this->tag() : n._id;
     }
 
+    void operator()(ast_activity& n) const
+    {
+        const auto loc(std::source_location::current());
+        AST_DEBUG(std::cout << tab() << "bv error: " << loc.function_name() 
+                            << " at line " << n._line
+                            << std::endl;);
+    }
+
     void operator()(ast_transition& n) const
     {
         const auto loc(std::source_location::current());
@@ -226,6 +247,12 @@ struct ast_visitor : public ast_base_visitor<UPML_T>
     void operator()(ast_null& n) const
     {
         AST_DEBUG(std::cout << this->tab() << "v error: ast_null line " << n._line << std::endl;)
+    }
+
+    void operator()(ast_activity& n) const
+    {
+        AST_DEBUG(std::cout << this->tab() << "v ast_activity line " << n._line << std::endl;);
+        this->annotate_target_from(n);
     }
 
     void operator()(ast_transition& n) const

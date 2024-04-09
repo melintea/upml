@@ -43,15 +43,15 @@ struct skipper final : qi::grammar<It>
             | ("/*" >> *(encoding::char_ - "*/") >> "*/")
             // --- legit plantuml not needed
             | ("hide empty description")
+            | ("note" >> *(encoding::char_ - "end note") >> "end note")
+            | ("note" >> *(encoding::char_ - ":") >> ":" >> *~encoding::char_("\n") >> -qi::eol)
+            | ("skinparam" >> *~encoding::char_("\n")   >> -qi::eol)
+            | ("skinparam state" >> *(encoding::char_ - "}") >> "}")
+            | ("<style>" >> *(encoding::char_ - "</style>") >> "</style>")
+            //| ("state" >> *encoding::char_("a-zA-Z0-9_") >> " as"  >> *~encoding::char_("\n") >> -qi::eol)
             // state "long state name" as ignored
             //| ("state \"" >> *~encoding::char_("\"") >> "\" as"  >> *(encoding::char_ - "{\n") >> -qi::eol)
             // state alias4 as "long name"
-            | ("state" >> *encoding::char_("a-zA-Z0-9_") >> " as"  >> *~encoding::char_("\n") >> -qi::eol)
-            | ("note" >> *~encoding::char_(":") >> ":"  >> *~encoding::char_("\n") >> -qi::eol)
-            | ("note" >> *~encoding::char_("end note") >> *~encoding::char_("\n") >> -qi::eol)
-            | ("skinparam" >> *~encoding::char_("\n")   >> -qi::eol)
-            | ("skinparam" >> *(encoding::char_ - "}") >> "}")
-            | ("<style>" >> *(encoding::char_ - "</style>") >> "</style>")
             //| ("json" >> *(encoding::char_ - "}") >> "}")
             ;
 };
@@ -144,12 +144,15 @@ struct plantuml_grammar final
                     >> regions 
                     >> qi::lit("}")
               ;
+        //            _state    :     _activity   :      args
+        activity %= rstring >> ':' >> rstring >> ':' >> *(rstring) >> ';';
+
         //            _fromState  -->               _toState            _event                _guard                    _effect
         transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> rstring > ']') >> -('/' >> rstring);
 
         // There is one known limitation though, when you try to use a struct that has a single element that is also a container compilation fails unless you add qi::eps >> ... to your rule
         // https://stackoverflow.com/questions/78241220/boostspirit-error-no-type-named-value-type-in-struct-xxx
-        region %= eps >> +(transition | state)
+        region %= eps >> +(activity | transition | state)
                ;
 
         regions %= region/*default region*/ 
@@ -162,6 +165,7 @@ struct plantuml_grammar final
             >> qi::lit("@enduml")
             ;
 
+        on_success(activity,   locate(_val, _1, _3));
         on_success(transition, locate(_val, _1, _3));
         on_success(state,      locate(_val, _1, _3));
         on_success(region,     locate(_val, _1, _3));
@@ -171,12 +175,14 @@ struct plantuml_grammar final
         on_error<fail>(start,      errorout(_1, _2, _3, _4));
         on_error<fail>(region,     errorout(_1, _2, _3, _4));
         on_error<fail>(state,      errorout(_1, _2, _3, _4));
+        on_error<fail>(activity,   errorout(_1, _2, _3, _4));
         on_error<fail>(transition, errorout(_1, _2, _3, _4));
         
         BOOST_SPIRIT_DEBUG_NODES(
             (start)
             (regions)
             (region)
+            (activity)
             (transition)
         );
     }
@@ -188,6 +194,7 @@ struct plantuml_grammar final
     qi::rule<ITER, std::string()> arrow;
     qi::rule<ITER, std::string()> qstring;
     qi::rule<ITER, std::string()> rstring;
+    qi::rule<ITER, ast_activity(), SKIPPER>      activity;
     qi::rule<ITER, ast_transition(), SKIPPER>    transition;
     qi::rule<ITER, ast_state(), SKIPPER>         state;
     qi::rule<ITER, ast_region(), SKIPPER>        region;

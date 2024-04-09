@@ -115,6 +115,23 @@ struct transition : public location
 using transitions_t = std::map<id_t, transition>;
 using graph_t       = std::map<id_t/*fromState*/, transitions_t>; // TODO: use BGL?
 
+struct activity : public location
+{
+    static constexpr const char _tag = 'a';
+    using args = std::vector<std::string>;
+
+    id_t _id;
+    id_t _state;     // owner
+    id_t _activity;  // enter, exit
+    args _args;      // specific to each type of _activity
+
+    indent& trace(indent& id, std::ostream& os) const;
+    
+    friend std::ostream& operator<<(std::ostream& os, const activity& t);
+}; // transition
+
+using activities_t = std::vector<activity>;
+
 
 /*
  https://www.omg.org/spec/UML/2.5.1/About-UML
@@ -159,6 +176,7 @@ struct state : public location
     // transitions are in the default region
     // a simple state should have no explicit regions
     transitions_t  _transitions;
+    activities_t   _activities;
     bool           _initial{false};
     bool           _final{false};
 
@@ -216,6 +234,27 @@ inline std::ostream& operator<<(std::ostream& os, const transition& t)
     return os;
 }
 
+inline indent& activity::trace(indent& id, std::ostream& os) const
+{
+    ++id;
+    os  << id 
+        << '(' << static_cast<location>(*this) << ") "
+        << _state << ":" << _activity << ": "
+        ;
+    std::ranges::copy(_args, std::ostream_iterator<args::value_type>(os, ","));
+    os  << " (" << _id << ")\n"
+        ;
+    --id;
+    return id;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const activity& a)
+{
+    indent id("");
+    a.trace(id, os);
+    return os;
+}
+
 inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, transition>& pt)
 {
     os << pt.first << ":" << pt.second;
@@ -258,6 +297,10 @@ inline indent& state::trace(indent& id, std::ostream& os) const
        << " final:" << _final << ";initial:" << _initial 
        << " {\n";
     for (const auto& [k, v] : _transitions)
+    {
+        v.trace(id, os);
+    }
+    for (const auto& v : _activities)
     {
         v.trace(id, os);
     }

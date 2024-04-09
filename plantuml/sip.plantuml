@@ -12,14 +12,14 @@ state Alice {
   [*] --> AIdle
   AIdle --> AInitiated : Dial [guard] /effect
   
-  AInitiated: Entry --> Bob: INVITE
+  AInitiated: entry: send INVITE to Bob;
   AInitiated --> AInitiated : 1xx
   AInitiated --> AEstablished : 2xx
   
-  AEstablished: Entry: --> Bob : ACK
+  AEstablished: entry: send ACK to Bob;
   AEstablished --> Aterminated : Hangup
   
-  Aterminated: Entry: --> Bob : BYE
+  Aterminated: entry: send BYE to Bob;
   Aterminated --> [*]
 }
 
@@ -29,10 +29,10 @@ state Bob {
   [*] --> BIdle
   BIdle --> BInitiated : INVITE
   
-  BInitiated: Entry: --> Alice : 1xx
+  BInitiated: entry: send 1xx to Alice;
   BInitiated --> BEstablished : Pickup
   
-  BEstablished: Entry: --> Alice: 2xx
+  BEstablished: entry: send 2xx to Alice;
   BEstablished --> Bterminated : BYE
   
   Bterminated --> [*]
