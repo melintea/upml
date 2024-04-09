@@ -35,8 +35,8 @@ Notes:
 - events are asynchronous messages. Event names are unique per 
   plantuml file.
 
-To process [sip.plantuml]({{ site.baseurl }}/plantuml/sip.plantuml):
-![image]({{ site.baseurl }}/plantuml/sip.png)
+To process [sip.plantuml](plantuml/sip.plantuml):
+![image](plantuml/sip.png)
 
 ```
 ./upml --in ../plantuml/sip.plantuml --out ./sip.promela -- dump ./to.upml
