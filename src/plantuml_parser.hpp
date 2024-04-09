@@ -157,6 +157,26 @@ struct ast_base_visitor : public boost::static_visitor<>
         return upml::sm::tag(this->_target._tag, this->_target._line);
     }
 
+    static sm::activity from_ast(const ast_activity& n)
+    {
+        sm::activity t;
+
+        t._line      = n._line;
+        t._col       = n._col;
+        t._file      = n._file;
+
+        t._id        = n._id;
+        if (t._id.empty()) {
+            t._id = sm::tag(sm::activity::_tag, n._line);
+        }
+
+        t._state     = n._state;
+        t._activity  = n._activity;
+        t._args      = n._args;  // TODO: move
+
+        return t;
+    }
+
     static sm::transition from_ast(const ast_transition& n)
     {
         sm::transition t;
@@ -293,6 +313,7 @@ struct ast_visitor<upml::sm::region> : public ast_base_visitor<upml::sm::region>
     using ast_base_visitor<upml::sm::region>::operator();
 
     void operator()(ast_state& n)      const;
+    void operator()(ast_activity& n)   const;
     void operator()(ast_transition& n) const;
     void operator()(ast_region& n)     const;
 }; // ast_visitor<upml::sm::region>
@@ -340,6 +361,23 @@ inline void ast_visitor<upml::sm::region>::operator()(ast_state& n) const
     ast_node v = n; // TODO: is this a deep copy?
     boost::apply_visitor(upml::ast_visitor(st, this->_depth+1), v);
     this->_target._substates[st._id] = std::make_shared<upml::sm::state>(st);
+} // region
+
+inline void ast_visitor<upml::sm::region>::operator()(ast_activity& n) const
+{
+    auto tr(from_ast(n));
+    AST_DEBUG(std::cout << this->tab() 
+                << "r ast_activityn line " << n._line 
+                << ' ' << tr._id << std::endl;);
+
+   
+    if (this->_target._substates.find(n._state) == this->_target._substates.end())
+    {           
+        upml::sm::state s;
+        s._id = n._state; 
+        this->_target._substates[s._id] = std::make_shared<upml::sm::state>(s);
+    }
+    this->_target._substates[n._state]->_activities.push_back(tr);
 } // region
 
 inline void ast_visitor<upml::sm::region>::operator()(ast_transition& n) const

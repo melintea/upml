@@ -23,10 +23,10 @@ WIP, nothing to see yet.
 
 Additions:
 - comments: ```//```, ```/**/```. If you can, use note instead.
-- transition: state --> state : event [guard]/effect
+- transition: ```state --> state : event [guard]/effect```
 - state actions: ```entry```, ```exit```
-- ```send``` event from state:
-  ```entry: send INVITE to Bob;```
+  - ```send``` event from state:
+    ```entry: send INVITE to Bob;```
 
 ## Build
 
