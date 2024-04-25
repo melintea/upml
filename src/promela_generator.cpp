@@ -132,10 +132,10 @@ struct state_machine
         : _sm(sm)
     {
         _events  = names("", sm.events());
-        _events.emplace("StateChange", _events.size());
+        _events.emplace(name("", "StateChange"), _events.size());
 
         _states  = names("", sm.states(true));
-        _states.emplace("StateMachineEventGenerator", _states.size());
+        _states.emplace(name("", "StateMachineEventGenerator"), _states.size());
 
         _regions = names("", sm.regions(true));
     }
