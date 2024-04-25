@@ -24,15 +24,15 @@ using idx_t   = int;
 using map_t   = std::map<upml::sm::id_t, idx_t>;
 
 // e.g. "event:xyz" or "event_xyz".
-struct typed_name
+struct scoped_name
 {
     // TODO: use string slices
     std::string _type;
     std::string _name;
 
-    static typed_name create(const std::string& scopedName)
+    static scoped_name create(const std::string& scopedName)
     {
-        typed_name t;
+        scoped_name t;
 
         // assumption: there is only one such
         auto sep(scopedName.find(':')); 
@@ -80,7 +80,7 @@ map_t names(const id_t& prefix, const upml::sm::names_t& evts)
     map_t ret;
     idx_t i(0);
     for (const auto& e : evts) {
-        typed_name te(typed_name::create(e));
+        scoped_name te(scoped_name::create(e));
         ret[name(prefix, te._name)] = i++;
     }
     return ret;
@@ -130,10 +130,15 @@ struct state_machine
 
     state_machine(const upml::sm::state_machine& sm)
         : _sm(sm)
-        , _events(names("", sm.events()))
-        , _states(names("", sm.states(true)))
-        , _regions(names("", sm.regions(true)))
-    {}
+    {
+        _events  = names("", sm.events());
+        _events.emplace("StateChange", _events.size());
+
+        _states  = names("", sm.states(true));
+        _states.emplace("StateMachineEventGenerator", _states.size());
+
+        _regions = names("", sm.regions(true));
+    }
 }; // state_machine
 
 void visit(
@@ -160,11 +165,11 @@ void visit_activity(
     const state_machine&      psm)
 {
     assert("send" == a._args[upml::sm::activity::_argOrder::aoActivity]);
-    const auto toSt(typed_name::create(a._args[upml::sm::activity::_argOrder::aoState]));
+    const auto toSt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoState]));
     assert(toSt._type == "state");
     const auto* destReg(psm._sm.owner_region(toSt._name));
     assert(destReg);
-    const auto evt(typed_name::create(a._args[upml::sm::activity::_argOrder::aoEvent]));
+    const auto evt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoEvent]));
     assert(evt._type == "event");
 
     out << " send_event(" << idx(region(destReg->_id))
@@ -186,7 +191,7 @@ void visit_guard(
 
     out << " && ";
     for (const auto& tok: t._guard) {
-        const auto ttok(typed_name::create(tok));
+        const auto ttok(scoped_name::create(tok));
         if (ttok._type.empty()) {
             out << tok << ' ';
         } else {
@@ -220,8 +225,8 @@ void visit_transition(
     const upml::sm::transition& t,
     const state_machine&        psm)
 {
-    const auto evt(typed_name::create(t._event));
-    const auto toSt(typed_name::create(t._toState));
+    const auto evt(scoped_name::create(t._event));
+    const auto toSt(scoped_name::create(t._toState));
 
     out << "    //" << t;
     out << "    :: (crtState == " << idxCrtState
@@ -479,7 +484,6 @@ void visit(
     }
 
     std::set<upml::sm::id_t> evts;
-    evts.insert(event("StateChange")); // event_StateChange
     for (const auto& [k, e] : psm._events) {
         evts.insert(event(k));
     }
