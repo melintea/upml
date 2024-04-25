@@ -8,18 +8,19 @@ note as N1
     states in different regions
 end note
 
+
 state Alice {
   [*] --> AIdle
-  AIdle --> AInitiated : Dial [guard] /effect
+  AIdle --> AInitiated : Dial
   
-  AInitiated: entry: send INVITE to Bob;
+  AInitiated: entry: send event:INVITE to state:Bob;
   AInitiated --> AInitiated : 1xx
   AInitiated --> AEstablished : 2xx
   
-  AEstablished: entry: send ACK to Bob;
+  AEstablished: entry: send event:ACK to state:Bob;
   AEstablished --> Aterminated : Hangup
   
-  Aterminated: entry: send BYE to Bob;
+  Aterminated: entry: send event:BYE to state:Bob;
   Aterminated --> [*]
 }
 
@@ -29,10 +30,11 @@ state Bob {
   [*] --> BIdle
   BIdle --> BInitiated : INVITE
   
-  BInitiated: entry: send 1xx to Alice;
+  BInitiated: entry: send event:1xx to state:Alice;
   BInitiated --> BEstablished : Pickup
   
-  BEstablished: entry: send 2xx to Alice;
+  BEstablished: entry: send event:2xx to state:Alice;
+  BEstablished --> BEstablished : ACK
   BEstablished --> Bterminated : BYE
   
   Bterminated --> [*]

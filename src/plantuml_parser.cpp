@@ -128,9 +128,13 @@ struct plantuml_grammar final
         arrow    %= qi::lit('-') >> *(qi::char_ - '-') >> qi::lit("->");
         
         qstring  %= qi::lexeme['"' >> +(qi::char_ - '"') >> '"'];
-        rstring  %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_") ] ]
+        rstring  %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_.") ] ]
                  |  qi::string("[*]")
                  ;
+        tokstring  %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_.:") ] ]
+                   |  qi::string("==")
+                   |  qi::string("!=")
+                   ;
 
         //discard = qi::lit("state") >> qstring >> qi::string("as") >> *(qi::char_ - '{')
         //        ;
@@ -145,10 +149,11 @@ struct plantuml_grammar final
                     >> qi::lit("}")
               ;
         //            _state    :     _activity   :      args
-        activity %= rstring >> ':' >> rstring >> ':' >> *(rstring) >> ';';
+        activity %= rstring >> ':' >> rstring >> ':' >> *(tokstring) >> ';';
 
-        //            _fromState  -->               _toState            _event                _guard                    _effect
-        transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> rstring > ']') >> -('/' >> rstring);
+        //            _fromState  -->               _toState            _event               _guard                        _effect
+        //transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> *(rstring) > ']') >> -('/' >> *(rstring));
+        transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> +(tokstring) > ']') >> -('/' >> +(tokstring) > ';');
 
         // There is one known limitation though, when you try to use a struct that has a single element that is also a container compilation fails unless you add qi::eps >> ... to your rule
         // https://stackoverflow.com/questions/78241220/boostspirit-error-no-type-named-value-type-in-struct-xxx
@@ -192,8 +197,9 @@ struct plantuml_grammar final
     
     //qi::rule<ITER>   discard;
     qi::rule<ITER, std::string()> arrow;
-    qi::rule<ITER, std::string()> qstring;
-    qi::rule<ITER, std::string()> rstring;
+    qi::rule<ITER, std::string()> qstring;   // "in quotes"
+    qi::rule<ITER, std::string()> rstring;   // name string
+    qi::rule<ITER, std::string()> tokstring; // found in exptression
     qi::rule<ITER, ast_activity(), SKIPPER>      activity;
     qi::rule<ITER, ast_transition(), SKIPPER>    transition;
     qi::rule<ITER, ast_state(), SKIPPER>         state;

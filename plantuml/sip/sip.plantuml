@@ -1,0 +1,51 @@
+@startuml
+
+note as N1
+  plantuml limitations:
+  - state names must be unique
+  - no explicit on entry/exit notation
+  - cannot draw sending events between 
+    states in different regions
+end note
+
+[*] --> StateMachineEventGenerator 
+StateMachineEventGenerator: entry: send event:Dial to state:Alice;
+//StateMachineEventGenerator --> StateMachineEventGenerator : StateChange [evtRecv.fromState == state:AIdle] /send event:Dial to state:Alice;
+StateMachineEventGenerator --> StateMachineEventGenerator : StateChange [evtRecv.fromState == state:BInitiated] /send event:Pickup to state:Bob;
+StateMachineEventGenerator --> StateMachineEventGenerator : StateChange [evtRecv.fromState == state:AEstablished] /send event:Hangup to state:Alice;
+--
+
+
+state Alice {
+  [*] --> AIdle
+  AIdle --> AInitiated : Dial
+  
+  AInitiated: entry: send event:INVITE to state:Bob;
+  AInitiated --> AInitiated : 1xx
+  AInitiated --> AEstablished : 2xx
+  
+  AEstablished: entry: send event:ACK to state:Bob;
+  AEstablished --> Aterminated : Hangup
+  
+  Aterminated: entry: send event:BYE to state:Bob;
+  Aterminated --> [*]
+}
+
+||
+
+state Bob {
+  [*] --> BIdle
+  BIdle --> BInitiated : INVITE
+  
+  BInitiated: entry: send event:1xx to state:Alice;
+  BInitiated --> BEstablished : Pickup
+  
+  BEstablished: entry: send event:2xx to state:Alice;
+  BEstablished --> BEstablished : ACK
+  BEstablished --> Bterminated : BYE
+  
+  Bterminated --> [*]
+}
+
+@enduml
+

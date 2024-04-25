@@ -24,7 +24,11 @@
 
 namespace upml::sm {
 
-inline std::string tag(char c, int num)
+using id_t      = std::string;
+using names_t   = std::set<id_t>;
+
+
+inline id_t tag(char c, int num)
 {
     //return std::vformat("{}{}", std::make_format_args(c, num));
     return std::string(1, c) + std::to_string(num);
@@ -74,8 +78,6 @@ inline std::ostream& operator<<(std::ostream& os, const indent& i)
 }
 
 
-using id_t = std::string;
-
 // helper
 template <typename T> struct hasher
 {
@@ -92,6 +94,8 @@ using states_t   = std::map<id_t, stateptr_t>;
 struct event 
 {
     static constexpr const char _tag = 'e';
+
+    id_t _id;
 };
 
 // transition: trigger [guard] /effect
@@ -99,12 +103,15 @@ struct transition : public location
 {
     static constexpr const char _tag = 't';
 
-    id_t _id;
-    id_t _fromState;
-    id_t _toState;
-    id_t _event;  // trigger
-    id_t _guard;
-    id_t _effect;
+    using guard  = std::vector<std::string>;
+    using effect = std::vector<std::string>;
+
+    id_t   _id;
+    id_t   _fromState;
+    id_t   _toState;
+    id_t   _event;  // trigger
+    guard  _guard;
+    effect _effect;
 
     indent& trace(indent& id, std::ostream& os) const;
     
@@ -118,17 +125,23 @@ using graph_t       = std::map<id_t/*fromState*/, transitions_t>; // TODO: use B
 struct activity : public location
 {
     static constexpr const char _tag = 'a';
+    enum _argOrder{
+        aoActivity = 0,  // send
+        aoEvent    = 1,  // ACK
+        aoIgnore   = 2,  // to
+        aoState    = 3,  // Bob
+    };
     using args = std::vector<std::string>;
 
     id_t _id;
     id_t _state;     // owner
-    id_t _activity;  // enter, exit
+    id_t _activity;  // entry, exit
     args _args;      // specific to each type of _activity
 
     indent& trace(indent& id, std::ostream& os) const;
     
     friend std::ostream& operator<<(std::ostream& os, const activity& t);
-}; // transition
+}; // activity
 
 using activities_t = std::vector<activity>;
 
@@ -151,6 +164,10 @@ struct region : public location
 
     id_t       _id;
     states_t   _substates;
+
+    names_t events() const;
+    names_t states(bool recursive)  const;
+    names_t regions(bool recursive) const;
 
     bool operator==(const region& other) const { return other._id == _id; }
 
@@ -180,12 +197,14 @@ struct state : public location
     bool           _initial{false};
     bool           _final{false};
 
-    bool operator==(const state& other) const { return other._id == _id; }
+    names_t events() const;
+    names_t states(bool recursive)  const;
+    names_t regions(bool recursive) const;
 
-    state& add(const state& newState)
-    {
-        return *this;
-    }
+    //  which region has @param state 
+    const region* owner_region(const id_t& state) const;
+
+    bool operator==(const state& other) const { return other._id == _id; }
 
     indent& trace(indent& id, std::ostream& os) const;
 
@@ -208,11 +227,167 @@ struct state_machine : public location
     id_t       _id;
     regions_t  _regions;
 
+    // all events across all regions and states
+    names_t events() const;
+    names_t states(bool recursive)  const;
+    names_t regions(bool recursive) const;
+
+    /// which region contains @param state
+    const region* owner_region(const id_t& state) const;
+
     indent& trace(indent& id, std::ostream& os) const;
 
     friend std::ostream& operator<<(std::ostream& os, const state_machine& sm);
 }; // state_machine
 
+//-----------------------------------------------------------------------------
+
+inline names_t state::events() const
+{
+    names_t evts;
+
+    for (const auto& [k, r] : _regions) {
+        names_t revts(r.events());
+        evts.insert(revts.begin(), revts.end());
+    }
+    for (const auto& [k, t] : _transitions) {
+        evts.insert(t._event);
+    }
+    for (const auto& a : _activities) {
+        evts.insert(a._args[activity::_argOrder::aoEvent]);
+    }
+    return evts;
+}
+
+inline names_t region::events() const
+{
+    names_t evts;
+    for (const auto& [k, s] : _substates) {
+        names_t revts(s->events());
+        evts.insert(revts.begin(), revts.end());
+    }
+    return evts;
+}
+
+inline names_t state_machine::events() const
+{
+    names_t evts;
+    for (const auto& [k, r] : _regions) {
+        names_t revts(r.events());
+        evts.insert(revts.begin(), revts.end());
+    }
+    return evts;
+}
+
+inline names_t state::states(bool recursive) const
+{
+    names_t evts;
+
+    for (const auto& [k, r] : _regions) {
+        names_t revts(r.states(recursive));
+        evts.insert(revts.begin(), revts.end());
+    }
+    evts.insert(_id);
+    return evts;
+}
+
+inline names_t region::states(bool recursive) const
+{
+    names_t evts;
+    for (const auto& [k, s] : _substates) {
+        if (recursive) {
+            names_t revts(s->states(recursive));
+            evts.insert(revts.begin(), revts.end());
+        }
+        evts.insert(s->_id);
+    }
+    return evts;
+}
+
+inline names_t state_machine::states(bool recursive) const
+{
+    names_t evts;
+    for (const auto& [k, r] : _regions) {
+        names_t revts(r.states(recursive));
+        evts.insert(revts.begin(), revts.end());
+    }
+    return evts;
+}
+
+inline names_t state::regions(bool recursive) const
+{
+    names_t evts;
+    for (const auto& [k, r] : _regions) {
+        names_t revts(r.regions(recursive));
+        evts.insert(revts.begin(), revts.end());
+        evts.insert(r._id);
+    }
+    return evts;
+}
+
+inline names_t region::regions(bool recursive) const
+{
+    names_t evts;
+    for (const auto& [k, s] : _substates) {
+        names_t revts(s->regions(recursive));
+        evts.insert(revts.begin(), revts.end());
+    }
+    return evts;
+}
+
+inline names_t state_machine::regions(bool recursive) const
+{
+    names_t evts;
+    for (const auto& [k, r] : _regions) {
+        if (recursive) {
+            names_t revts(r.regions(recursive));
+            evts.insert(revts.begin(), revts.end());
+        }
+        evts.insert(r._id);
+    }
+    return evts;
+}
+
+inline const region* state::owner_region(const id_t& state) const
+{
+    for (const auto& [k, r] : _regions) {
+        if (r._substates.find(state) != r._substates.end()) {
+            return &r;
+        }
+        for (const auto& [k, s] : r._substates) {
+            const region* pr(s->owner_region(state));
+            if (pr) {
+                return pr;
+            }
+        }
+    }
+    return nullptr;
+}
+
+inline const region* state_machine::owner_region(const id_t& state) const
+{
+    for (const auto& [k, r] : _regions) {
+        if (r._substates.find(state) != r._substates.end()) {
+            return &r;
+        }
+        for (const auto& [k, s] : r._substates) {
+            const region* pr(s->owner_region(state));
+            if (pr) {
+                return pr;
+            }
+        }
+    }
+    return nullptr;
+}
+
+//-----------------------------------------------------------------------------
+inline std::ostream& operator<<(std::ostream& os, const transition::guard& as)
+{
+    for (const auto& a : as) {
+        os << a << ',';
+    }
+    return os;
+}
 
 inline indent& transition::trace(indent& id, std::ostream& os) const
 {

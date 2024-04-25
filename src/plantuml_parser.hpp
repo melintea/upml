@@ -73,8 +73,8 @@ BOOST_FUSION_ADAPT_STRUCT(
     (upml::sm::id_t, _fromState)
     (upml::sm::id_t, _toState)
     (upml::sm::id_t, _event)
-    (upml::sm::id_t, _guard)
-    (upml::sm::id_t, _effect)
+    (upml::sm::transition::guard,  _guard)
+    (upml::sm::transition::effect, _effect)
 )
 
 struct ast_activity 

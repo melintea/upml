@@ -29,7 +29,6 @@ int main(int argc, char* argv[])
         ("help,h", "Print usage")
         ("in,i",   bpo::value<std::string>(), "Plantuml input file. Default: stdin")
         ("out,o",  bpo::value<std::string>(), "Promela output file. Default: stdout")
-        ("dump,d", bpo::value<std::string>(), "Dump upml structures and maybe more")
         ;
 
     bpo::store(bpo::parse_command_line(argc, argv, po), vm);
@@ -56,29 +55,6 @@ int main(int argc, char* argv[])
     bool ret =  upml::plantuml_parser(infs.is_open() ? infs : std::cin,
                                       sm);
 
-    if (vm.count("dump"))
-    {
-        const std::string& df(vm["dump"].as<std::string>());
-        std::ofstream dfs(df);
-        if (dfs.fail())
-        {
-            std::cerr << df << ": " << ::strerror(errno) << "\n";
-#ifdef ENABLE_UPML_DEBUG
-            std::cerr << sm;
-#endif
-        }
-        else
-        {
-            dfs << sm;
-        }
-    } 
-    else
-    {
-#ifdef ENABLE_UPML_DEBUG
-        //std::cerr << sm;
-#endif
-    }// dump
-
     std::ofstream  outfs;
     if (vm.count("out"))
     {
@@ -89,6 +65,11 @@ int main(int argc, char* argv[])
             std::cerr << outf << ": " << ::strerror(errno) << "\n";
             ::exit(EXIT_FAILURE);
         }
+        outfs << "/*\n";
+        for (int i=0; i<argc; ++i) {
+            outfs << argv[i] <<  ' ';
+        }
+        outfs << "\n*/\n";
     }
 
 
