@@ -21,8 +21,8 @@ namespace upml {
  *
  */
 bool promela_generator(
-    std::ostream&                  out,
-    const upml::sm::state_machine& sm);
+    std::ostream&            out,
+    upml::sm::state_machine& sm);
 
 } //namespace upml
 

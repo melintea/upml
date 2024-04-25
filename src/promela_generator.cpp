@@ -123,21 +123,39 @@ id_t idx(const upml::sm::id_t& s)
 
 struct state_machine
 {
-    const upml::sm::state_machine& _sm;
+    upml::sm::state_machine& _sm;
     map_t  _events;
     map_t  _states;
     map_t  _regions;
 
-    state_machine(const upml::sm::state_machine& sm)
+    state_machine(upml::sm::state_machine& sm)
         : _sm(sm)
     {
         _events  = names("", sm.events());
         _events.emplace(name("", "StateChange"), _events.size());
 
-        _states  = names("", sm.states(true));
-        _states.emplace(name("", "StateMachineEventGenerator"), _states.size());
+        if ( ! monitor_region()) {
+            const auto r0 = upml::sm::tag(upml::sm::region::_tag, 0);
+            auto [itR, dummyR] = _sm._regions.emplace(r0, upml::sm::region{
+                ._id = r0
+            });
+            
+            const auto s0 = "StateMachineEventGenerator";
+            auto [itS, dummyS] = itR->second._substates.emplace(
+                s0, 
+                std::make_shared<upml::sm::state>(upml::sm::state{
+                    ._id = s0
+                }));
+        }
 
         _regions = names("", sm.regions(true));
+        _states  = names("", sm.states(true));
+    }
+
+    const upml::sm::region* monitor_region() const
+    {
+        const upml::sm::region* pr(_sm.owner_region("StateMachineEventGenerator"));
+        return pr;
     }
 }; // state_machine
 
@@ -437,7 +455,7 @@ void visit(
         )--";
     } // activities
 
-    const auto* monitorReg(psm._sm.owner_region("StateMachineEventGenerator"));
+    const auto* monitorReg(psm.monitor_region());
     assert(monitorReg);
     if (finalState != "idx_unknown") {
         out << "\n    if"
@@ -460,8 +478,8 @@ void visit(
 }
 
 void visit(
-    std::ostream&                  out,
-    const upml::sm::state_machine& sm)
+    std::ostream&            out,
+    upml::sm::state_machine& sm)
 {
     const auto now(std::chrono::system_clock::now());
     const auto nt(std::chrono::system_clock::to_time_t(now));
@@ -523,8 +541,8 @@ inline send_event(channel, evt, fs, ts)
 } // spin
 
 bool promela_generator(
-    std::ostream&                  out,
-    const upml::sm::state_machine& sm)
+    std::ostream&            out,
+    upml::sm::state_machine& sm)
 {
     spin::visit(out, sm);
     return true;
