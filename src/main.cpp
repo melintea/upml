@@ -26,9 +26,15 @@ int main(int argc, char* argv[])
     bpo::variables_map       vm;
 
     po.add_options()
-        ("help,h", "Print usage")
-        ("in,i",   bpo::value<std::string>(), "Plantuml input file. Default: stdin")
-        ("out,o",  bpo::value<std::string>(), "Promela output file. Default: stdout")
+        ("help,h",         "Print usage")
+        ("backend,b",      bpo::value<std::string>()->default_value("spin"), 
+                           "spin or tla. Default: spin")
+        ("in,i",           bpo::value<std::string>(), 
+                           "Plantuml input file. Default: stdin")
+        ("add-monitor,m",  bpo::value<bool>()->default_value(true), 
+                           "Insert an StateMachineEventGenerator if not present")
+        ("out,o",          bpo::value<std::string>(), 
+                           "Backend output file. Default: stdout")
         ;
 
     bpo::store(bpo::parse_command_line(argc, argv, po), vm);
@@ -73,8 +79,19 @@ int main(int argc, char* argv[])
     }
 
 
-    ret = ret & upml::promela_generator(outfs.is_open() ? outfs : std::cout,
-                                        sm);
+    sm._addMonitor = vm["add-monitor"].as<bool>();
+
+    const std::string& backend(vm["backend"].as<std::string>());
+    if (backend == "spin") {
+        ret = ret & upml::promela_generator(outfs.is_open() ? outfs : std::cout,
+                                            sm);
+    } else if (backend == "tla") {
+        std::cerr << "WIP: " << backend << '\n';
+        ret = EXIT_FAILURE;
+    } else {
+        std::cerr << "Unsupported backend: " << backend << '\n';
+        ret = EXIT_FAILURE;
+    }
     
     return ret ? EXIT_SUCCESS : EXIT_FAILURE;
 }

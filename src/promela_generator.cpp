@@ -132,20 +132,23 @@ struct state_machine
         : _sm(sm)
     {
         _events  = names("", sm.events());
-        _events.emplace(name("", "StateChange"), _events.size());
 
-        if ( ! monitor_region()) {
-            const auto r0 = upml::sm::tag(upml::sm::region::_tag, 0);
-            auto [itR, dummyR] = _sm._regions.emplace(r0, upml::sm::region{
-                ._id = r0
-            });
-            
-            const auto s0 = "StateMachineEventGenerator";
-            auto [itS, dummyS] = itR->second._substates.emplace(
-                s0, 
-                std::make_shared<upml::sm::state>(upml::sm::state{
-                    ._id = s0
-                }));
+        if (sm._addMonitor) {
+            _events.emplace(name("", "StateChange"), _events.size());
+
+            if ( ! monitor_region()) {
+                const auto r0 = upml::sm::tag(upml::sm::region::_tag, 0);
+                auto [itR, dummyR] = _sm._regions.emplace(r0, upml::sm::region{
+                    ._id = r0
+                });
+
+                const auto s0 = "StateMachineEventGenerator";
+                auto [itS, dummyS] = itR->second._substates.emplace(
+                    s0, 
+                    std::make_shared<upml::sm::state>(upml::sm::state{
+                        ._id = s0
+                    }));
+            }
         }
 
         _regions = names("", sm.regions(true));
@@ -455,14 +458,16 @@ void visit(
         )--";
     } // activities
 
-    const auto* monitorReg(psm.monitor_region());
-    assert(monitorReg);
-    if (finalState != "idx_unknown") {
-        out << "\n    if"
-            << "\n    :: (newState != crtState) -> send_event(" << idx(region(monitorReg->_id)) 
-              << ", " << event("StateChange")
-              << ", newState, idx_unknown); printf(\"state change: %d -> %d\\n\", crtState, newState); "
-            << "\n    ::else\n    fi";
+    if (psm._sm._addMonitor) {
+        const auto* monitorReg(psm.monitor_region());
+        assert(monitorReg);
+        if (finalState != "idx_unknown") {
+            out << "\n    if"
+                << "\n    :: (newState != crtState) -> send_event(" << idx(region(monitorReg->_id)) 
+                << ", " << event("StateChange")
+                << ", newState, idx_unknown); printf(\"state change: %d -> %d\\n\", crtState, newState); "
+                << "\n    ::else\n    fi";
+        }
     }
     out << "\n\n    crtState = newState; "
         << "\n    terminate = (crtState == finalState) && (finalState != idx_unknown); "

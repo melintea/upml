@@ -226,6 +226,7 @@ struct state_machine : public location
 
     id_t       _id;
     regions_t  _regions;
+    bool       _addMonitor{false};
 
     // all events across all regions and states
     names_t events() const;
