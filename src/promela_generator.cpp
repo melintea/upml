@@ -52,6 +52,7 @@ struct scoped_name
 
 };
 
+// TODO: fold these into Visitor?
 id_t name(const id_t& prefix, const upml::sm::id_t& evt)
 {
     std::string sep = evt.length() && evt[0] != '_' ? "_" : "";
@@ -121,111 +122,131 @@ id_t idx(const upml::sm::id_t& s)
     return name("idx", s);
 }
 
-struct state_machine
+class Visitor
 {
     upml::sm::state_machine& _sm;
+    std::ostream&            _out;
     map_t  _events;
     map_t  _states;
     map_t  _regions;
 
-    state_machine(upml::sm::state_machine& sm)
-        : _sm(sm)
-    {
-        _events  = names("", sm.events());
+public: 
 
-        if (sm._addMonitor) {
-            _events.emplace(name("", "StateChange"), _events.size());
-
-            if ( ! monitor_region()) {
-                const auto r0 = upml::sm::tag(upml::sm::region::_tag, 0);
-                auto [itR, dummyR] = _sm._regions.emplace(r0, upml::sm::region{
-                    ._id = r0
-                });
-
-                const auto s0 = "StateMachineEventGenerator";
-                auto [itS, dummyS] = itR->second._substates.emplace(
-                    s0, 
-                    std::make_shared<upml::sm::state>(upml::sm::state{
-                        ._id = s0
-                    }));
-            }
-        }
-
-        _regions = names("", sm.regions(true));
-        _states  = names("", sm.states(true));
-    }
+    Visitor(upml::sm::state_machine& sm,
+            std::ostream&             out);
+    Visitor()                          = delete;
+    ~Visitor()                         = default;
+    Visitor(const Visitor&)            = delete;
+    Visitor& operator=(const Visitor&) = delete;
+    Visitor(Visitor&&)                 = delete;
+    Visitor& operator=(Visitor&&)      = delete;
 
     const upml::sm::region* monitor_region() const
     {
         const upml::sm::region* pr(_sm.owner_region("StateMachineEventGenerator"));
         return pr;
     }
-}; // state_machine
 
-void visit(
-    std::ostream&            out,
-    const upml::sm::region&  r,
-    const state_machine&     psm);
+    void visit() const;
+    void visit(const upml::sm::region& r) const;
+    void visit(const upml::sm::state& s) const;
+    void visit_exit_activities(const upml::sm::state& s) const;
+    void visit_entry_activities(const upml::sm::state& s) const;
+    void visit_initial_entry_activities(const upml::sm::state& s) const;
+    void visit_transitions(const upml::sm::state& s) const;
+    void visit_transition(
+        const upml::spin::id_t&     idxCrtState,
+        const upml::sm::transition& t) const;
+    void visit_effect(
+        const upml::spin::id_t&     idxCrtState,
+        const upml::sm::transition& t) const;
+    void visit_guard(
+        const upml::spin::id_t&     idxCrtState,
+        const upml::sm::transition& t) const;
+    void visit_activity(
+        const upml::spin::id_t&   idxCrtState,
+        const upml::sm::activity& a) const;
+}; // Visitor
 
-void visit(
-    std::ostream&            out,
-    const upml::sm::state&   s,
-    const state_machine&     psm)
+Visitor::Visitor(upml::sm::state_machine& sm,
+                 std::ostream&             out)
+    : _sm(sm)
+    , _out(out)
 {
-    int myIdx(psm._states.find(s._id)->second);
+    _events  = names("", sm.events());
+
+    if (sm._addMonitor) {
+        _events.emplace(name("", "StateChange"), _events.size());
+
+        if ( ! monitor_region()) {
+            const auto r0 = upml::sm::tag(upml::sm::region::_tag, 0);
+            auto [itR, dummyR] = _sm._regions.emplace(r0, upml::sm::region{
+                ._id = r0
+            });
+
+            const auto s0 = "StateMachineEventGenerator";
+            auto [itS, dummyS] = itR->second._substates.emplace(
+                s0, 
+                std::make_shared<upml::sm::state>(upml::sm::state{
+                    ._id = s0
+                }));
+        }
+    }
+
+    _regions = names("", sm.regions(true));
+    _states  = names("", sm.states(true));
+}
+
+void Visitor::visit(const upml::sm::state& s) const
+{
+    int myIdx(_states.find(s._id)->second);
 
     for (const auto& [k, r] : s._regions) {
-        spin::visit(out, r, psm);
+        visit(r);
     }
 }
 
-void visit_activity(
-    std::ostream&             out,
+void Visitor::visit_activity(
     const upml::spin::id_t&   idxCrtState,
-    const upml::sm::activity& a,
-    const state_machine&      psm)
+    const upml::sm::activity& a) const
 {
     assert("send" == a._args[upml::sm::activity::_argOrder::aoActivity]);
     const auto toSt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoState]));
     assert(toSt._type == "state");
-    const auto* destReg(psm._sm.owner_region(toSt._name));
+    const auto* destReg(_sm.owner_region(toSt._name));
     assert(destReg);
     const auto evt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoEvent]));
     assert(evt._type == "event");
 
-    out << " send_event(" << idx(region(destReg->_id))
-        << ", " << event(evt._name)
-        << ", " << idxCrtState
-        << ", " << idx(state(toSt._name))
-        << "); \n";
+    _out << " send_event(" << idx(region(destReg->_id))
+         << ", " << event(evt._name)
+         << ", " << idxCrtState
+         << ", " << idx(state(toSt._name))
+         << "); \n";
 }
 
-void visit_guard(
-    std::ostream&               out,
+void Visitor::visit_guard(
     const upml::spin::id_t&     idxCrtState,
-    const upml::sm::transition& t,
-    const state_machine&        psm)
+    const upml::sm::transition& t) const
 {
     if (t._guard.empty()) {
         return;
     }
 
-    out << " && ";
+    _out << " && ";
     for (const auto& tok: t._guard) {
         const auto ttok(scoped_name::create(tok));
         if (ttok._type.empty()) {
-            out << tok << ' ';
+            _out << tok << ' ';
         } else {
-            out << idx(name(ttok._type, ttok._name)) << ' ';
+            _out << idx(name(ttok._type, ttok._name)) << ' ';
         }
     }
 }
 
-void visit_effect(
-    std::ostream&               out,
+void Visitor::visit_effect(
     const upml::spin::id_t&     idxCrtState,
-    const upml::sm::transition& t,
-    const state_machine&        psm)
+    const upml::sm::transition& t) const
 {
     if (t._effect.empty()) {
         return;
@@ -237,122 +258,104 @@ void visit_effect(
         ._activity = t._effect[0],
         ._args      = upml::sm::activity::args(t._effect.begin(), t._effect.end())
     };
-    visit_activity(out, idxCrtState, a, psm);
+    visit_activity( idxCrtState, a);
 }
 
-void visit_transition(
-    std::ostream&               out,
+void Visitor::visit_transition(
     const upml::spin::id_t&     idxCrtState,
-    const upml::sm::transition& t,
-    const state_machine&        psm)
+    const upml::sm::transition& t) const
 {
     const auto evt(scoped_name::create(t._event));
     const auto toSt(scoped_name::create(t._toState));
 
-    out << "    //" << t;
-    out << "    :: (crtState == " << idxCrtState
-        << " && evtRecv.evId == " << event(evt._name); 
-        visit_guard(out, idxCrtState, t, psm);
-    out << ") -> newState = " << idx(state(toSt._name)) << "; ";
-        visit_effect(out, idxCrtState, t, psm);
-    out << "\n";
+    _out << "    //" << t;
+    _out << "    :: (crtState == " << idxCrtState
+         << " && evtRecv.evId == " << event(evt._name); 
+         visit_guard(idxCrtState, t);
+    _out << ") -> newState = " << idx(state(toSt._name)) << "; ";
+         visit_effect(idxCrtState, t);
+    _out << "\n";
 }
 
-void visit_transitions(
-    std::ostream&            out,
-    const upml::sm::state&   s,
-    const state_machine&     psm)
+void Visitor::visit_transitions(const upml::sm::state& s) const
 {
-    const int myIdx(psm._states.find(s._id)->second);
+    const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
 
-    out << " \n    /* state " << idxCrtState << "[*/\n";
+    _out << " \n    /* state " << idxCrtState << "[*/\n";
 
     if ( ! s._transitions.empty()) {
-        out << "\n    /* transitions " << idxCrtState << "[*/\n"
-            << "    if\n";
+        _out << "\n    /* transitions " << idxCrtState << "[*/\n"
+             << "    if\n";
         for (const auto& [k, t] : s._transitions) {
-           visit_transition(out, idxCrtState, t, psm);
+           visit_transition(idxCrtState, t);
         }
-        out << "    :: else \n"
-            << "    fi\n"
-            << "    /*]transitions " << idxCrtState << "*/\n"
-            ;
+        _out << "    :: else \n"
+             << "    fi\n"
+             << "    /*]transitions " << idxCrtState << "*/\n"
+             ;
     }
 
-    out << " \n    /*]state " << idxCrtState << "*/\n";
+    _out << " \n    /*]state " << idxCrtState << "*/\n";
 }
 
-// TODO: a real visitor impl
-void visit_entry_activities(
-    std::ostream&            out,
-    const upml::sm::state&   s,
-    const state_machine&     psm)
+void Visitor::visit_entry_activities(const upml::sm::state& s) const
 {
-    const int myIdx(psm._states.find(s._id)->second);
+    const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
 
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
-            out << "    //" << a;
+            _out << "    //" << a;
             if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
                 if (a._activity == "entry") {
-                    out << "    :: (newState == " << idxCrtState << ") -> ";
-                    visit_activity(out, idxCrtState, a, psm);
+                    _out << "    :: (newState == " << idxCrtState << ") -> ";
+                    visit_activity(idxCrtState, a);
                 }
             }
         }
     }
 }
 
-void visit_initial_entry_activities(
-    std::ostream&            out,
-    const upml::sm::state&   s,
-    const state_machine&     psm)
+void Visitor::visit_initial_entry_activities(const upml::sm::state& s) const
 {
-    const int myIdx(psm._states.find(s._id)->second);
+    const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
 
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
-            out << "\n    //" << a;
+            _out << "\n    //" << a;
             if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
                 if (a._activity == "entry") {
-                    out << "    ";
-                    visit_activity(out, idxCrtState, a, psm);
+                    _out << "    ";
+                    visit_activity(idxCrtState, a);
                 }
             }
         }
     }
 }
 
-void visit_exit_activities(
-    std::ostream&            out,
-    const upml::sm::state&   s,
-    const state_machine&     psm)
+void Visitor::visit_exit_activities(const upml::sm::state& s) const
 {
-    const int myIdx(psm._states.find(s._id)->second);
+    const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
 
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
-            out << "    //" << a;
+            _out << "    //" << a;
             if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
                 if (a._activity == "exit") {
-                    out << "    :: (crtState == " << idxCrtState << ") -> ";
-                    visit_activity(out, idxCrtState, a, psm);
+                    _out << "    :: (crtState == " << idxCrtState << ") -> ";
+                    visit_activity(idxCrtState, a);
                 }
             }
         }
     }
 }
 
-void visit(
-    std::ostream&            out,
-    const upml::sm::region&  r,
-    const state_machine&     psm)
+void Visitor::visit(const upml::sm::region&  r) const
 {
-    const int myIdx(psm._regions.find(r._id)->second);
+    const int myIdx(_regions.find(r._id)->second);
     const id_t rname(name("region", r._id));
     const id_t llabel(name("loop", r._id));
     const id_t elabel(name("end", r._id));
@@ -367,43 +370,43 @@ void visit(
         }
     }
 
-    out << "\n\nproctype " << name("region", r._id) << "()"
-        << "\n{"
-        << "\n    local short myIdx = " << idx(region(r._id)) << ";"
-        << "\n    local event evtRecv; "
-        << "\n    local short initialState = " << initialState << "; "
-        << "\n    local short finalState = " << finalState << "; "
-        << "\n    local short crtState = initialState; "
-        << "\n    local short newState = initialState; "
-        << "\n    bool terminate = false; "
-        << "\n"
-        ;
+    _out << "\n\nproctype " << name("region", r._id) << "()"
+         << "\n{"
+         << "\n    local short myIdx = " << idx(region(r._id)) << ";"
+         << "\n    local event evtRecv; "
+         << "\n    local short initialState = " << initialState << "; "
+         << "\n    local short finalState = " << finalState << "; "
+         << "\n    local short crtState = initialState; "
+         << "\n    local short newState = initialState; "
+         << "\n    bool terminate = false; "
+         << "\n"
+         ;
 
     for (const auto& [k, s] : r._substates) {
         if (s->_initial) {
-            visit_initial_entry_activities(out, *s, psm);
+            visit_initial_entry_activities(*s);
             break;
         }
     }
 
-    out << "\n" << llabel << ":";
+    _out << "\n" << llabel << ":";
     if (finalState == "idx_unknown") {
-        out << "\n" << elabel << ":";
+        _out << "\n" << elabel << ":";
     }
-    out << "\n    _channels[myIdx]?evtRecv; "
-        << "\n    printf(\"> %d " << region(r._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, crtState); "
-        << "\n\n"
-        ;
+    _out << "\n    _channels[myIdx]?evtRecv; "
+         << "\n    printf(\"> %d " << region(r._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, crtState); "
+         << "\n\n"
+         ;
     const auto subregions(r.regions(false));
     for (const auto& sr : subregions) {
-        out << "\n    _channels[" << idx(region(sr)) << "]!evtRecv; "
-            << "\n    printf(\"< %d " << region(r._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, crtState); "
-            ;
+        _out << "\n    _channels[" << idx(region(sr)) << "]!evtRecv; "
+             << "\n    printf(\"< %d " << region(r._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, crtState); "
+             ;
     }
 
     if ( ! r._substates.empty()) {
         for (const auto& [k, s] : r._substates) {
-            visit_transitions(out, *s, psm);
+            visit_transitions(*s);
         }
     }
 
@@ -420,7 +423,7 @@ void visit(
         }
     }
     if (exitActivities) {
-        out << R"--(
+        _out << R"--(
 
     ///* exit activities [
     if
@@ -428,9 +431,9 @@ void visit(
        if
         )--";
         for (const auto& [k, s] : r._substates) {
-            visit_exit_activities(out, *s, psm);
+            visit_exit_activities(*s);
         }
-        out << R"--(
+        _out << R"--(
        :: else
        fi
     :: else
@@ -439,7 +442,7 @@ void visit(
         )--";
     } // activities
     if (entryActivities) {
-        out << R"--(
+        _out << R"--(
 
     ///* entry activities [
     if
@@ -447,9 +450,9 @@ void visit(
        if
         )--";
         for (const auto& [k, s] : r._substates) {
-            visit_entry_activities(out, *s, psm);
+            visit_entry_activities(*s);
         }
-        out << R"--(
+        _out << R"--(
        :: else
        fi
     :: else
@@ -458,67 +461,63 @@ void visit(
         )--";
     } // activities
 
-    if (psm._sm._addMonitor) {
-        const auto* monitorReg(psm.monitor_region());
+    if (_sm._addMonitor) {
+        const auto* monitorReg(monitor_region());
         assert(monitorReg);
         if (finalState != "idx_unknown") {
-            out << "\n    if"
-                << "\n    :: (newState != crtState) -> send_event(" << idx(region(monitorReg->_id)) 
-                << ", " << event("StateChange")
-                << ", newState, idx_unknown); printf(\"state change: %d -> %d\\n\", crtState, newState); "
-                << "\n    ::else\n    fi";
+            _out << "\n    if"
+                 << "\n    :: (newState != crtState) -> send_event(" << idx(region(monitorReg->_id)) 
+                 << ", " << event("StateChange")
+                 << ", newState, idx_unknown); printf(\"state change: %d -> %d\\n\", crtState, newState); "
+                 << "\n    ::else\n    fi";
         }
     }
-    out << "\n\n    crtState = newState; "
-        << "\n    terminate = (crtState == finalState) && (finalState != idx_unknown); "
-        << "\n    if"
-        << "\n    :: (terminate); printf(\"" << region(r._id) << " terminating\\n\"); "
-        << "\n    :: else -> goto " << llabel << ";"
-        << "\n    fi"
-        << "\n} // " << rname << "\n";
+    _out << "\n\n    crtState = newState; "
+         << "\n    terminate = (crtState == finalState) && (finalState != idx_unknown); "
+         << "\n    if"
+         << "\n    :: (terminate); printf(\"" << region(r._id) << " terminating\\n\"); "
+         << "\n    :: else -> goto " << llabel << ";"
+         << "\n    fi"
+         << "\n} // " << rname << "\n";
 
     for (const auto& [k, s] : r._substates) {
-        spin::visit(out, *s, psm);
+        visit(*s);
     }
 }
 
-void visit(
-    std::ostream&            out,
-    upml::sm::state_machine& sm)
+void Visitor::visit() const
 {
     const auto now(std::chrono::system_clock::now());
     const auto nt(std::chrono::system_clock::to_time_t(now));
 
-    out << "/*\n   Generated by UPML v" << UPML_VERSION 
-        << "\n   " << std::ctime(&nt)
+    _out << "/*\n   Generated by UPML v" << UPML_VERSION 
+         << "\n   " << std::ctime(&nt)
         ;
-    out << "\n\n" << sm << "\n*/\n\n";
+    _out << "\n\n" << _sm << "\n*/\n\n";
 
-    spin::state_machine psm(sm);
-
-    out << "\n#define idx_unknown -1\n";
-    for (const auto& [k, s] : psm._states) {
-        out << "\n#define " << idx(state(k)) << " " << s;
+    _out << "\n#define idx_unknown -1\n";
+    for (const auto& [k, s] : _states) {
+        _out << "\n#define " << idx(state(k)) << " " << s;
     }
 
-    out << "\n";
-    for (const auto& [k, r] : psm._regions) {
-        out << "\n#define " << idx(region(k)) << " " << r;
+    _out << "\n";
+    for (const auto& [k, r] : _regions) {
+        _out << "\n#define " << idx(region(k)) << " " << r;
     }
 
     std::set<upml::sm::id_t> evts;
-    for (const auto& [k, e] : psm._events) {
+    for (const auto& [k, e] : _events) {
         evts.insert(event(k));
     }
-    out << "\n\nmtype = { ";
+    _out << "\n\nmtype = { ";
     for (const auto& e : evts) {
-        out << e << ", ";
+        _out << e << ", ";
     }
-    out << "}\n";
-    out << "\ntypedef event {mtype evId; short fromState; short toState};";
-    out << "\n\nchan _channels[" << psm._regions.size() << "] = [1] of {event};";
+    _out << "}\n";
+    _out << "\ntypedef event {mtype evId; short fromState; short toState};";
+    _out << "\n\nchan _channels[" << _regions.size() << "] = [1] of {event};";
 
-    out << R"--(
+    _out << R"--(
 
 
 inline send_event(channel, evt, fs, ts)
@@ -531,16 +530,16 @@ inline send_event(channel, evt, fs, ts)
 }
     )--";
 
-    for (const auto& [k, r] : psm._sm._regions) {
-        spin::visit(out, r, psm);
+    for (const auto& [k, r] : _sm._regions) {
+        visit(r);
     }
 
-    out << "\ninit {\n"
+    _out << "\ninit {\n"
         << "    atomic {\n";
-    for (const auto& [k, r] : psm._regions) {
-        out << "        run " << region(k) << "(); \n";
+    for (const auto& [k, r] : _regions) {
+        _out << "        run " << region(k) << "(); \n";
     }
-    out << "    }\n}\n\n/*UPML end*/\n\n";
+    _out << "    }\n}\n\n/*UPML end*/\n\n";
 }
 
 } // spin
@@ -549,7 +548,8 @@ bool promela_generator(
     std::ostream&            out,
     upml::sm::state_machine& sm)
 {
-    spin::visit(out, sm);
+    spin::Visitor psm(sm, out);
+    psm.visit();
     return true;
 }
 
