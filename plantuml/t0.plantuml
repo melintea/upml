@@ -95,6 +95,12 @@ Operation_BizData_Collection -3down-> Operation_BizData_Anylasis
   state "Some Long Stuff" as SubOperation #lightblue {
     [*] --> SubLaunch
     SubLaunch --> SubLaunchAutoMonitor : EvtSubLaunch
+    SubLaunch: entry: send event:INVITE to state:Bob;
+    SubLaunch: exit: send event:INVITE to state:Bob;
+    SubLaunch: timeout: send event:INVITE to state:Bob;
+    SubLaunch: precondition: ((x==y) && (z!=1 || z!=2));
+    SubLaunch: postcondition: ((x==y) && (z!=1 || z!=2));
+    //SubLaunch: invariant: ((x==y) && (z!=1 || z!=2));
   }
 
 }
