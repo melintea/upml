@@ -100,7 +100,7 @@ Operation_BizData_Collection -3down-> Operation_BizData_Anylasis
     SubLaunch: timeout: send event:INVITE to state:Bob;
     SubLaunch: precondition: ((x==y) && (z!=1 || z!=2));
     SubLaunch: postcondition: ((x==y) && (z!=1 || z!=2));
-    //SubLaunch: invariant: ((x==y) && (z!=1 || z!=2));
+    SubLaunch: invariant: ((x==y) && (z!=1 || z!=2));
   }
 
 }

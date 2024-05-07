@@ -153,6 +153,10 @@ public:
     void visit_exit_activities(const upml::sm::state& s) const;
     void visit_entry_activities(const upml::sm::state& s) const;
     void visit_initial_entry_activities(const upml::sm::state& s) const;
+    void visit_invariants(const upml::sm::state& s) const;
+    void visit_preconditions(const upml::sm::state& s) const;
+    void visit_postconditions(const upml::sm::state& s) const;
+    void visit_timeout(const upml::sm::state& s) const;
     void visit_transitions(const upml::sm::state& s) const;
     void visit_transition(
         const upml::spin::id_t&     idxCrtState,
@@ -284,18 +288,25 @@ void Visitor::visit_transitions(const upml::sm::state& s) const
 
     _out << " \n    /* state " << idxCrtState << "[*/\n";
 
+    visit_invariants(s);
+    visit_preconditions(s);
+
     if ( ! s._transitions.empty()) {
         _out << "\n    /* transitions " << idxCrtState << "[*/\n"
              << "    if\n";
         for (const auto& [k, t] : s._transitions) {
            visit_transition(idxCrtState, t);
         }
+        visit_timeout(s);
         _out << "    :: else \n"
              << "    fi\n"
              << "    /*]transitions " << idxCrtState << "*/\n"
              ;
     }
 
+    visit_invariants(s);
+    visit_postconditions(s);
+    
     _out << " \n    /*]state " << idxCrtState << "*/\n";
 }
 
@@ -315,6 +326,22 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
             }
         }
     }
+}
+
+void Visitor::visit_invariants(const upml::sm::state& s) const
+{
+}
+
+void Visitor::visit_preconditions(const upml::sm::state& s) const
+{
+}
+
+void Visitor::visit_postconditions(const upml::sm::state& s) const
+{
+}
+
+void Visitor::visit_timeout(const upml::sm::state& s) const
+{
 }
 
 void Visitor::visit_initial_entry_activities(const upml::sm::state& s) const

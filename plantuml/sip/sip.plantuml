@@ -23,6 +23,11 @@ state Alice {
   AInitiated: entry: send event:INVITE to state:Bob;
   AInitiated --> AInitiated : 1xx
   AInitiated --> AEstablished : 2xx
+
+  //AInitiated: timeout: send event:Hangup to state:Alice;
+  //AInitiated: precondition: ((x==y) && (z!=1 || z!=2));
+  //AInitiated: postcondition: ((x==y) && (z!=1 || z!=2));
+  //AInitiated: invariant: ((x==y) && (z!=1 || z!=2));
   
   AEstablished: entry: send event:ACK to state:Bob;
   AEstablished --> Aterminated : Hangup
