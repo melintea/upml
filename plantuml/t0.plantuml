@@ -76,7 +76,7 @@ stateDiagram {
 //----------------------------------------------
 // stuff for the state machine
 
-Deploy -1down-> Operation : Event1 [Guard] / Effect
+Deploy -1down-> Operation : Event1 [Guard] / Effect;
 Deploy --> Operation  
 
 state Operation #lightblue {

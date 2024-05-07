@@ -14,6 +14,11 @@ all:  upml
 upml: *.cpp *.h* Makefile 
 	g++ *.cpp $(FLAGS) -lpthread -o $@
 	#clang-tidy promela_generator.cpp -- $(FLAGS) 
+	
+test: upml
+	./upml  --backend none --in ../plantuml/t0.plantuml
+	./upml --add-monitor=false --in ../plantuml/sip/sip.plantuml
+	@echo "*** Pass ***"
 
 lint:
 	clang-tidy promela_generator.cpp -- $(FLAGS) 

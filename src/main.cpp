@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
     po.add_options()
         ("help,h",         "Print usage")
         ("backend,b",      bpo::value<std::string>()->default_value("spin"), 
-                           "spin or tla. Default: spin")
+                           "none, spin or tla. Default: spin")
         ("in,i",           bpo::value<std::string>(), 
                            "Plantuml input file. Default: stdin")
         ("add-monitor,m",  bpo::value<bool>()->default_value(true), 
@@ -88,6 +88,8 @@ int main(int argc, char* argv[])
     } else if (backend == "tla") {
         std::cerr << "WIP: " << backend << '\n';
         ret = EXIT_FAILURE;
+    } else if (backend == "none") {
+        ; // 
     } else {
         std::cerr << "Unsupported backend: " << backend << '\n';
         ret = EXIT_FAILURE;
