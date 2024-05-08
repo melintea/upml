@@ -367,7 +367,7 @@ inline void ast_visitor<upml::sm::region>::operator()(ast_activity& n) const
 {
     auto tr(from_ast(n));
     AST_DEBUG(std::cout << this->tab() 
-                << "r ast_activityn line " << n._line 
+                << "r ast_activity line " << n._line 
                 << ' ' << tr._id << std::endl;);
 
    
