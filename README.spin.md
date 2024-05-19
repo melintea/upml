@@ -13,6 +13,26 @@ Notes:
   - state ```StateMachineEventGenerator```. It watches for state changes and injects "external" events as needed.
   - event ```StateChange```
 
+### Cheat Sheet
+
+```
+# safety: assertions, non-reacheable code, race conditions
+spin -a pmlfile
+gcc -DSAFETY -o pan pan.c
+./pan
+
+# acceptance cycles
+gcc -o pan pan.c
+./pan -a
+
+# non-progress cycles
+
+gcc -DNP -o pan pan.c
+./pan -l
+
+```
+
+
 ### Simulation
 
 To process this non-RFC3261-conformant-and-simplified [sip0.plantuml](plantuml/sip/sip0.plantuml):
