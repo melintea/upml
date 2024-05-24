@@ -618,7 +618,6 @@ void Visitor::visit() const
 
     _out << R"--(
 
-
 inline send_event(channel, evt, fs, ts)
 {
     local event evtSend;
@@ -628,6 +627,15 @@ inline send_event(channel, evt, fs, ts)
     _channels[channel]!evtSend;
 }
     )--";
+
+    _out << "\n\nnever {"
+         << "\n    do"
+         << "\n    :: assert( (1 == 1) ); // never clause cannot be empty";
+    for (const auto& [k, r] : _sm._regions) {
+        visit_invariants(r);
+    }
+    _out << "\n    od"
+         << "\n} // never\n\n";
 
     for (const auto& [k, r] : _sm._regions) {
         visit(r);
