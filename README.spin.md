@@ -35,6 +35,8 @@ Notes:
 
 ### Cheat Sheet
 
+(just use xspin/ispin.tcl)
+
 ```
 # safety: assertions, non-reacheable code, race conditions
 spin -a pmlfile
