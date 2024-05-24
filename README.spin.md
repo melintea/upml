@@ -1,3 +1,21 @@
+## Install spin
+
+```
+sudo apt install spin
+```
+Note: this lacks xspin and other tools included in the distribution.
+
+<details>
+<summary>From source</summary>
+```
+git clone https://github.com/nimble-code/Spin.git
+cd Spin
+make # result: Src/spin
+
+#xspin is under optional_gui/ispin.tcl
+```
+</details>
+
 ## Usage
 
 Notes:

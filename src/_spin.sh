@@ -1,15 +1,21 @@
 #!/bin/bash
 
 #
+# Usage: _spin.sh file.promela
 #
-#
+
+#exespin=/usr/bin/spin
+exespin=${HOME}/work/Spin/Src/spin
+xexespin=${HOME}/work/Spin/optional_gui/ispin.tcl
+
 
 function spinit()
 {
     echo "==== spin $*"
-    spin $*
+    ${exespin} $*
 }
 
+${xexespin} $1&
 spinit -c $1
 spinit -r $1
 spinit -p $1
