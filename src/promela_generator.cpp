@@ -445,6 +445,7 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
     }
 }
 
+// TODO: states can be goto labels
 void Visitor::visit(const upml::sm::region&  r) const
 {
     const int myIdx(_regions.find(r._id)->second);

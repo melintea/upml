@@ -13,7 +13,7 @@ StateMachineEventGenerator: entry: send event:Dial to state:Alice;
 //StateMachineEventGenerator --> StateMachineEventGenerator : StateChange [evtRecv.fromState == state:AIdle] /send event:Dial to state:Alice;
 StateMachineEventGenerator --> StateMachineEventGenerator : StateChange [evtRecv.fromState == state:BInitiated] /send event:Pickup to state:Bob;
 StateMachineEventGenerator --> StateMachineEventGenerator : StateChange [evtRecv.fromState == state:AEstablished] /send event:Hangup to state:Alice;
---
+//--
 
 
 state Alice {
@@ -36,7 +36,7 @@ state Alice {
   Aterminated --> [*]
 }
 
-||
+//||
 
 state Bob {
   [*] --> BIdle
