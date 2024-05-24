@@ -161,11 +161,11 @@ public:
     }
 
     void visit() const;
-    void visit(const upml::sm::region& r) const;
+    void visit_region(const upml::sm::region& r, const id_t& ownerTag) const;
     void visit_invariants(const upml::sm::region&  r) const;
     void visit_preconditions(const upml::sm::region&  r) const;
     void visit_postconditions(const upml::sm::region&  r) const;
-    void visit(const upml::sm::state& s) const;
+    void visit_state(const upml::sm::state& s) const;
     void visit_invariants(const upml::sm::state& s) const;
     void visit_preconditions(const upml::sm::state& s) const;
     void visit_postconditions(const upml::sm::state& s) const;
@@ -217,12 +217,12 @@ Visitor::Visitor(upml::sm::state_machine& sm,
     _states  = names("", sm.states(true));
 }
 
-void Visitor::visit(const upml::sm::state& s) const
+void Visitor::visit_state(const upml::sm::state& s) const
 {
     int myIdx(_states.find(s._id)->second);
 
     for (const auto& [k, r] : s._regions) {
-        visit(r);
+        visit_region(r, s._id);
     }
 }
 
@@ -446,7 +446,7 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
 }
 
 // TODO: states can be goto labels
-void Visitor::visit(const upml::sm::region&  r) const
+void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) const
 {
     const int myIdx(_regions.find(r._id)->second);
     const id_t rname(name("region", r._id));
@@ -463,7 +463,7 @@ void Visitor::visit(const upml::sm::region&  r) const
         }
     }
 
-    _out << "\n\nproctype " << name("region", r._id) << "()"
+    _out << "\n\nproctype " << name("region", r._id) << "() // " << ownerTag
          << "\n{"
          << "\n    local short myIdx = " << idx(region(r._id)) << ";"
          << "\n    local event evtRecv; "
@@ -580,7 +580,7 @@ void Visitor::visit(const upml::sm::region&  r) const
          << "\n} // " << rname << "\n";
 
     for (const auto& [k, s] : r._substates) {
-        visit(*s);
+        visit_state(*s);
     }
 }
 
@@ -638,7 +638,7 @@ inline send_event(channel, evt, fs, ts)
          << "\n} // never\n\n";
 
     for (const auto& [k, r] : _sm._regions) {
-        visit(r);
+        visit_region(r, _sm._id);
     }
 
     _out << "\ninit {\n"
