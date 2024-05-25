@@ -15,7 +15,11 @@ function spinit()
     ${exespin} $*
 }
 
-${xexespin} $1&
+if [ -f "${xexespin}" ]; then
+    ${xexespin} $1&
+    #exit 0
+fi
+
 spinit -c $1
 spinit -r $1
 spinit -p $1

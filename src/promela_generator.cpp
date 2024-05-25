@@ -120,9 +120,14 @@ map_t states(const upml::sm::names_t& ss)
     return names("state", ss);
 }
 
-id_t region(const upml::sm::id_t& evt)
+id_t region(const upml::sm::id_t& r)
 {
-    return name("region", evt);
+    return name("region", r);
+}
+
+id_t region(const upml::sm::id_t& r, const upml::sm::id_t& ownerTag)
+{
+    return region(r) + '_' + ownerTag;
 }
 
 map_t regions(const upml::sm::names_t& ss)
@@ -487,13 +492,13 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
         _out << "\n" << elabel << ":";
     }
     _out << "\n    _channels[myIdx]?evtRecv; "
-         << "\n    printf(\"> %d " << region(r._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, crtState); "
+         << "\n    printf(\"MSC: > %d " << region(r._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, crtState); "
          << "\n\n"
          ;
     const auto subregions(r.regions(false));
     for (const auto& sr : subregions) {
         _out << "\n    _channels[" << idx(region(sr)) << "]!evtRecv; "
-             << "\n    printf(\"< %d " << region(r._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, crtState); "
+             << "\n    printf(\"MSC: < %d " << region(r._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, crtState); "
              ;
     }
 
@@ -567,14 +572,14 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
             _out << "\n    if"
                  << "\n    :: (newState != crtState) -> send_event(" << idx(region(monitorReg->_id)) 
                  << ", " << event("StateChange")
-                 << ", newState, idx_unknown); printf(\"state change: %d -> %d\\n\", crtState, newState); "
+                 << ", newState, idx_unknown); printf(\"MSC: state change: %d -> %d\\n\", crtState, newState); "
                  << "\n    ::else\n    fi";
         }
     }
     _out << "\n\n    crtState = newState; "
          << "\n    terminate = (crtState == finalState) && (finalState != idx_unknown); "
          << "\n    if"
-         << "\n    :: (terminate); printf(\"" << region(r._id) << " terminating\\n\"); "
+         << "\n    :: (terminate); printf(\"MSC: " << region(r._id) << " terminating\\n\"); "
          << "\n    :: else -> goto " << llabel << ";"
          << "\n    fi"
          << "\n} // " << rname << "\n";
@@ -630,7 +635,7 @@ inline send_event(channel, evt, fs, ts)
 
     _out << "\n\nnever {"
          << "\n    do"
-         << "\n    :: assert( (1 == 1) ); // never clause cannot be empty";
+         << "\n    :: assert( 1 == 1 ); // never clause cannot be empty";
     for (const auto& [k, r] : _sm._regions) {
         visit_invariants(r);
     }
