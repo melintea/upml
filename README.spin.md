@@ -54,11 +54,26 @@ gcc -DNP -o pan pan.c
 
 ```
 
+### A lamp switch
 
-### Simulation
+A double (lamp & wall) switch lamp [switch.plantuml](plantuml/switch/switch.plantuml) model:
+![image](plantuml/switch/switch.png)
 
-To process this non-RFC3261-conformant-and-simplified [sip0.plantuml](plantuml/sip/sip0.plantuml):
+#### Simulation
+
+WIP
+
+#### Verification
+
+WIP
+
+### SIP stuff
+
+A non-RFC3261-conformant-and-simplified [sip0.plantuml](plantuml/sip/sip0.plantuml) model:
 ![image](plantuml/sip/sip0.png)
+
+#### Simulation
+
 
 ```
 ./upml --in ../plantuml/sip/sip0.plantuml --out ./sip0.promela 
@@ -159,7 +174,7 @@ final state:
 ```
 
 
-### Verification
+#### Verification
 
 WIP
 

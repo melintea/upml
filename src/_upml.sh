@@ -4,7 +4,7 @@
 # Usage: _upml.sh file.plantuml
 #
 
-pumlfile="../plantuml/sip/sip.plantuml" #"$1"
+pumlfile="$1" #"../plantuml/sip/sip.plantuml" #"$1"
 spinfile="${pumlfile%.*}.promela"
 #echo "$pumlfile => $spinfile" && exit 0
 
