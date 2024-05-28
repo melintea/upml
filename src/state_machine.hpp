@@ -135,7 +135,7 @@ struct activity : public location
 
     id_t _id;
     id_t _state;     // owner
-    id_t _activity;  // entry, exit
+    id_t _activity;  // entry, exit, precondition, postcondition, invariant, timeout
     args _args;      // specific to each type of _activity
 
     indent& trace(indent& id, std::ostream& os) const;
@@ -255,7 +255,10 @@ inline names_t state::events() const
         evts.insert(t._event);
     }
     for (const auto& a : _activities) {
-        evts.insert(a._args[activity::_argOrder::aoEvent]);
+        if (a._activity == "entry" || a._activity == "exit") {
+            //TODO: asert this is a send activity
+            evts.insert(a._args[activity::_argOrder::aoEvent]);
+        }
     }
     return evts;
 }
