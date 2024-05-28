@@ -1,0 +1,29 @@
+@startuml
+
+note as N1
+  A lamp controlled by a wall switch
+  and a lamp switch. Both must be on
+  for the lamp to be on.
+
+  plantuml limitations:
+  - state names must be unique
+  - no explicit on entry/exit notation
+  - cannot draw sending events between 
+    states in different regions
+end note
+
+[*] --> BothOff
+BothOff --> WallOff : LampSwitch
+WallOff --> BothOff : LampSwitch
+
+BothOff --> LampOff : WallSwitch
+LampOff --> BothOff : WallSwitch
+
+WallOff --> On : WallSwitch
+On --> WallOff : LampSwitch
+
+LampOff --> On : LampSwitch
+On --> LampOff : WallSwitch
+
+@enduml
+
