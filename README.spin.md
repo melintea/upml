@@ -1,3 +1,13 @@
+- [Install spin](#install-spin)
+- [Usage](#usage)
+  - [Cheat Sheet](#cheat-sheet)
+  - [A lamp switch](#a-lamp-switch)
+    - [Simulation](#simulation)
+    - [Verification](#verification)
+  - [SIP stuff](#sip-stuff)
+    - [Simulation](#simulation-1)
+    - [Verification](#verification-1)
+
 ## Install spin
 
 ```
