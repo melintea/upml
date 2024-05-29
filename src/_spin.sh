@@ -20,9 +20,9 @@ if [ -f "${xexespin}" ]; then
     #exit 0
 fi
 
-spinit -c $1
-spinit -r $1
-spinit -p $1
+spinit -c -u200 $1
+spinit -r -u200 $1
+spinit -p -u200 $1
 
 # spin -a $1
 # gcc -DBFS -o pan pan.c
