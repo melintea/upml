@@ -1,4 +1,4 @@
-# upml - from plantuml to promela
+# upml - from plantuml to promela and TLA+/PlusCal
 
 A tool to convert an UML state machine (a subset of the whole spec) to:
 - a [promela model](README.spin.md) for [spin](https://github.com/nimble-code/Spin) checking. 
@@ -36,7 +36,10 @@ Additions:
 - preconditions: ```SubLaunch: precondition: ((x==y) && (z!=1 || z!=2)) ;```
 - postconditions: ```SubLaunch: postcondition: ((x==y) && (z!=1 || z!=2)) ;```
 - invariants: ```SubLaunch: invariant: ((x==y) && (z!=1 || z!=2)) ;```
-- timeout: ```SubLaunch: timeout: ((x==y) && (z!=1 || z!=2)) ;```
+- configuration:
+  - ```config: noInboundEvents```: this state receives no events
+- ```NullEvent```: reserved event name to force transitions statements to be executable without an external event
+- timeout: ```WIP```
 
 ## Build
 
