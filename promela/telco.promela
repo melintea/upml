@@ -1,0 +1,45 @@
+
+mtype = { offhook, digits, onhook };
+
+chan tpc = [0] of { mtype};
+
+active proctype subscriber()
+{
+
+Idle: tpc!offhook;
+
+Busy: if
+      :: tpc!digits -> goto Busy
+      :: tpc!onhook -> goto Idle
+      fi
+}
+
+
+active proctype switch()
+{
+
+Idle: if
+      :: tpc?offhook -> printf("MSC: dial tone\n"); goto Dial;
+      fi
+
+Dial: if
+      :: tpc?digits -> printf("MSC: no tone\n") -> goto Wait;
+      :: tpc?onhook -> printf("MSC: no tone\n") -> goto Idle;
+      fi
+
+Wait: if
+      :: printf("MSC: ring tone\n") -> goto Connect;
+      :: printf("MSC: busy tone\n") -> goto Busy;
+      fi
+
+Connect: if
+      :: printf("MSC: busy tone\n") -> goto Busy;
+      :: printf("MSC: no tone\n")   -> goto Busy;
+      fi
+
+Busy: if
+      :: tpc?onhook -> printf("MSC: no tone\n"); goto Idle;
+      fi
+
+}
+
