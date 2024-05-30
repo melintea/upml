@@ -40,8 +40,8 @@ Notes:
 - events are asynchronous messages. Event names are unique per 
   plantuml file.
 - reserved:
-  - state ```StateMachineEventGenerator```. It watches for state changes and injects "external" events as needed.
-  - event ```StateChange```
+  - event ```NullEvent``` for ```noChannel``` states: it allows for 
+    transitions to become executable.
 
 ### Cheat Sheet
 
@@ -67,7 +67,7 @@ gcc -DNP -o pan pan.c
 ### A lamp switch
 
 A double (lamp & wall) switch lamp [switch.plantuml](plantuml/switch/switch.plantuml) model:
-![image](plantuml/switch/switch.png)
+![image](plantuml/switch/switch0.png)
 
 #### Simulation
 

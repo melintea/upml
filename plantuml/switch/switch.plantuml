@@ -12,6 +12,21 @@ note as N1
     states in different regions
 end note
 
+
+
+state Human {
+
+[*] --> Flip
+//Flip: setup: noChannel = true;
+Flip --> Flip : NullEvent /send event:LampSwitch to state:Switch;
+Flip --> Flip : NullEvent /send event:WallSwitch to state:Switch;
+
+}
+
+
+
+state Switch {
+
 [*] --> BothOff
 BothOff --> WallOff : LampSwitch
 WallOff --> BothOff : LampSwitch
@@ -24,6 +39,8 @@ On --> WallOff : LampSwitch
 
 LampOff --> On : LampSwitch
 On --> LampOff : WallSwitch
+
+}
 
 @enduml
 

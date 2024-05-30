@@ -213,6 +213,7 @@ Visitor::Visitor(upml::sm::state_machine& sm,
     , _out(out)
 {
     _events  = names("", sm.events());
+    _events.emplace(name("", "NullEvent"), _events.size());
 
     if (sm._addMonitor) {
         _events.emplace(name("", "StateChange"), _events.size());
@@ -242,21 +243,34 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     const auto idxCrtState(idx(state(s._id)));
     const id_t ilabel(name("entry", s._id));
     const id_t blabel(name("body", s._id));
+    const id_t llabel(name("loop", s._id));
+
+    if (s._transitions.empty()) {
+        _out << indent0 << "\n/* state " << idxCrtState << " has no transitions */\n";
+        return;
+    }
 
     _out << indent0 << "\n/* state " << idxCrtState << "[*/\n";
-    _out << indent0 << ilabel << ':';
+    _out << indent0 << ilabel << ':'
+         << indent4 << "crtState = newState;";
     visit_invariants(s);
     visit_preconditions(s);
     //visit_initial_entry_activities(s);
     visit_entry_activities(s);
 
     _out << "\n\n" << blabel << ':';
-    if ( ! s._initial) {
-        _out << indent4 << "_channels[myIdx]?evtRecv; "
-             << indent4 << "printf(\"MSC: > %d " << region(rd._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, crtState); "
-             << "\n\n"
-             ;
+    if (s._initial || s._final) {
+        _out << "\n" << llabel << ':';
     }
+    _out << indent4 << "if"
+            << indent4 << ":: ( noChannel == false ) ->"
+            << indent8 << "_channels[myIdx]?evtRecv; "
+            << indent8 << "printf(\"MSC: > %d " << region(rd._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, crtState); "
+            << indent4 << ":: else"
+            << indent8 << "evtRecv.evId = " << event("NullEvent") << ";"
+            << indent4 << "fi"
+            << "\n\n"
+            ;
 
     visit_transitions(s, rd);
 
@@ -508,8 +522,6 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     regionData._id        = r._id;
     regionData._regionIdx = _regions.find(r._id)->second;
     const id_t rname(name("region", r._id));
-    const id_t llabel(name("loop", r._id));
-    const id_t elabel(name("end", r._id));
 
     regionData._initialState = "idx_unknown";
     regionData._finalState   = "idx_unknown";
@@ -530,7 +542,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
          << "\n    local short finalState = " << regionData._finalState << "; "
          << "\n    local short crtState = initialState; "
          << "\n    local short newState = initialState; "
-         << "\n    bool terminate = false; "
+         << "\n    local bool noChannel = false; "
          << "\n"
          ;
 
