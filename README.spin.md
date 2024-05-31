@@ -1,10 +1,13 @@
-- [or](#or)
-- [see e.g. https://spinroot.com/spin/Man/Manual.html](#see-eg-httpsspinrootcomspinmanmanualhtml)
-- [or](#or-1)
-      - [Verification](#verification)
-    - [SIP stuff](#sip-stuff)
-      - [Simulation](#simulation-1)
-      - [Verification](#verification-1)
+- [Install spin](#install-spin)
+- [Usage](#usage)
+  - [Cheat Sheet](#cheat-sheet)
+  - [A lamp switch](#a-lamp-switch)
+    - [Simulation](#simulation)
+    - [Verification](#verification)
+  - [SIP stuff](#sip-stuff)
+    - [Simulation](#simulation-1)
+    - [Verification](#verification-1)
+
 
 ## Install spin
 
@@ -70,8 +73,16 @@ Left as above, only manual simulation is possible. A "human" can be added to ran
 flip the switches:
 
 ```
+state Human {
+  [*] --> Flip
+  Flip: config: noInboundEvents
+  Flip --> Flip : NullEvent /send event:LampSwitch to state:Switch;
+  Flip --> Flip : NullEvent /send event:WallSwitch to state:Switch;
+}
 ```
+
 ![image](plantuml/switch/switch.png)
+
 
 ```
 ./upml --in ../plantuml/switch/switch.plantuml --out ../plantuml/switch/switch.promela 
@@ -87,6 +98,7 @@ spin -a ./sip.promela
 gcc -o pan pan.c
 ./pan -c0 -u200
 ...
+```
 
 #### Verification
 
