@@ -31,8 +31,6 @@ int main(int argc, char* argv[])
                            "none, spin or tla. Default: spin")
         ("in,i",           bpo::value<std::string>(), 
                            "Plantuml input file. Default: stdin")
-        ("add-monitor,m",  bpo::value<bool>()->default_value(true), 
-                           "Insert an StateMachineEventGenerator if not present")
         ("out,o",          bpo::value<std::string>(), 
                            "Backend output file. Default: stdout")
         ;
@@ -78,8 +76,6 @@ int main(int argc, char* argv[])
         outfs << "\n*/\n";
     }
 
-
-    sm._addMonitor = vm["add-monitor"].as<bool>();
 
     const std::string& backend(vm["backend"].as<std::string>());
     if (backend == "spin") {

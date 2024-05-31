@@ -172,12 +172,6 @@ public:
     Visitor(Visitor&&)                 = delete;
     Visitor& operator=(Visitor&&)      = delete;
 
-    const upml::sm::region* monitor_region() const
-    {
-        const upml::sm::region* pr(_sm.owner_region("StateMachineEventGenerator"));
-        return pr;
-    }
-
     void visit() const;
     void visit_region(const upml::sm::region& r, const id_t& ownerTag) const;
     void visit_invariants(const upml::sm::region&  r) const;
@@ -214,24 +208,6 @@ Visitor::Visitor(upml::sm::state_machine& sm,
 {
     _events  = names("", sm.events());
     _events.emplace(name("", "NullEvent"), _events.size());
-
-    if (sm._addMonitor) {
-        _events.emplace(name("", "StateChange"), _events.size());
-
-        if ( ! monitor_region()) {
-            const auto r0 = upml::sm::tag(upml::sm::region::_tag, 0);
-            auto [itR, dummyR] = _sm._regions.emplace(r0, upml::sm::region{
-                ._id = r0
-            });
-
-            const auto s0 = "StateMachineEventGenerator";
-            auto [itS, dummyS] = itR->second._substates.emplace(
-                s0, 
-                std::make_shared<upml::sm::state>(upml::sm::state{
-                    ._id = s0
-                }));
-        }
-    }
 
     _regions = names("", sm.regions(true));
     _states  = names("", sm.states(true));

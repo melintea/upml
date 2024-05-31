@@ -11,7 +11,6 @@ spinfile="${pumlfile%.*}.promela"
 make || exit 1
 
 ./upml \
-    --add-monitor=false \
     --in "$pumlfile" \
     --backend spin \
     --out "$spinfile" \
