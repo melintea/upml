@@ -34,6 +34,7 @@
 struct ast_null;
 struct ast_transition;
 struct ast_activity;
+struct ast_config_setting;
 struct ast_state;
 struct ast_region;
 struct ast_machine;
@@ -42,6 +43,7 @@ using ast_node =  boost::variant<
     ast_null,
     ast_transition, 
     ast_activity, 
+    ast_config_setting,
     boost::recursive_wrapper<ast_state>, 
     boost::recursive_wrapper<ast_region>,
     ast_machine
@@ -88,6 +90,17 @@ BOOST_FUSION_ADAPT_STRUCT(
     (upml::sm::activity::args, _args)
 )
 
+struct ast_config_setting
+    : public upml::sm::location
+{
+    upml::sm::id_t _state;
+    std::string    _setting;
+};
+BOOST_FUSION_ADAPT_STRUCT(
+    ast_config_setting,
+    (upml::sm::id_t, _state)
+    (std::string,    _setting)
+)
 
 struct ast_state 
     : public upml::sm::state
@@ -231,6 +244,14 @@ struct ast_base_visitor : public boost::static_visitor<>
                             << std::endl;);
     }
 
+    void operator()(ast_config_setting& n) const
+    {
+        const auto loc(std::source_location::current());
+        AST_DEBUG(std::cout << tab() << "bv error: " << loc.function_name() 
+                            << " at line " << n._line
+                            << std::endl;);
+    }
+
     void operator()(ast_null& n) const
     {
         const auto loc(std::source_location::current());
@@ -312,10 +333,11 @@ struct ast_visitor<upml::sm::region> : public ast_base_visitor<upml::sm::region>
 
     using ast_base_visitor<upml::sm::region>::operator();
 
-    void operator()(ast_state& n)      const;
-    void operator()(ast_activity& n)   const;
-    void operator()(ast_transition& n) const;
-    void operator()(ast_region& n)     const;
+    void operator()(ast_state& n)            const;
+    void operator()(ast_config_setting& n)   const;
+    void operator()(ast_activity& n)         const;
+    void operator()(ast_transition& n)       const;
+    void operator()(ast_region& n)           const;
 }; // ast_visitor<upml::sm::region>
 
 template <> 
@@ -362,6 +384,22 @@ inline void ast_visitor<upml::sm::region>::operator()(ast_state& n) const
     boost::apply_visitor(upml::ast_visitor(st, this->_depth+1), v);
     this->_target._substates[st._id] = std::make_shared<upml::sm::state>(st);
 } // region
+
+inline void ast_visitor<upml::sm::region>::operator()(ast_config_setting& n) const
+{
+    AST_DEBUG(std::cout << this->tab() 
+                << "r ast_config_setting line " << n._line 
+                << ' ' << std::endl;);
+
+   
+    if (this->_target._substates.find(n._state) == this->_target._substates.end())
+    {           
+        upml::sm::state s;
+        s._id = n._state; 
+        this->_target._substates[s._id] = std::make_shared<upml::sm::state>(s);
+    }
+    this->_target._substates[n._state]->_config.insert(n._setting);
+} // config_setting
 
 inline void ast_visitor<upml::sm::region>::operator()(ast_activity& n) const
 {

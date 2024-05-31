@@ -153,13 +153,16 @@ struct plantuml_grammar final
         //            _state    :     _activity   :      args
         activity %= rstring >> ':' >> rstring >> ':' >> *(tokstring) >> ';';
 
+        //                _state:           config:                     _setting
+        config_setting %= rstring >> ':' >> qi::lit("config") >> ':' >> rstring >> ';';
+
         //            _fromState  -->               _toState            _event               _guard                        _effect
         //transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> *(rstring) > ']') >> -('/' >> *(rstring));
         transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> +(tokstring) > ']') >> -('/' >> +(tokstring) > ';');
 
         // There is one known limitation though, when you try to use a struct that has a single element that is also a container compilation fails unless you add qi::eps >> ... to your rule
         // https://stackoverflow.com/questions/78241220/boostspirit-error-no-type-named-value-type-in-struct-xxx
-        region %= eps >> +(activity | transition | state)
+        region %= eps >> +(config_setting | activity | transition | state)
                ;
 
         regions %= region/*default region*/ 
@@ -172,18 +175,20 @@ struct plantuml_grammar final
             >> qi::lit("@enduml")
             ;
 
-        on_success(activity,   locate(_val, _1, _3));
-        on_success(transition, locate(_val, _1, _3));
-        on_success(state,      locate(_val, _1, _3));
-        on_success(region,     locate(_val, _1, _3));
-        on_success(start,      locate(_val, _1, _3));
+        on_success(activity,       locate(_val, _1, _3));
+        on_success(transition,     locate(_val, _1, _3));
+        on_success(config_setting, locate(_val, _1, _3));
+        on_success(state,          locate(_val, _1, _3));
+        on_success(region,         locate(_val, _1, _3));
+        on_success(start,          locate(_val, _1, _3));
 
         // _3: errPosIt, _2: endIt, _1: rule enter pos
-        on_error<fail>(start,      errorout(_1, _2, _3, _4));
-        on_error<fail>(region,     errorout(_1, _2, _3, _4));
-        on_error<fail>(state,      errorout(_1, _2, _3, _4));
-        on_error<fail>(activity,   errorout(_1, _2, _3, _4));
-        on_error<fail>(transition, errorout(_1, _2, _3, _4));
+        on_error<fail>(start,          errorout(_1, _2, _3, _4));
+        on_error<fail>(region,         errorout(_1, _2, _3, _4));
+        on_error<fail>(state,          errorout(_1, _2, _3, _4));
+        on_error<fail>(activity,       errorout(_1, _2, _3, _4));
+        on_error<fail>(transition,     errorout(_1, _2, _3, _4));
+        on_error<fail>(config_setting, errorout(_1, _2, _3, _4));
         
         BOOST_SPIRIT_DEBUG_NODES(
             (start)
@@ -191,6 +196,7 @@ struct plantuml_grammar final
             (region)
             (activity)
             (transition)
+            (config_setting)
         );
     }
 
@@ -202,11 +208,12 @@ struct plantuml_grammar final
     qi::rule<ITER, std::string()> qstring;   // "in quotes"
     qi::rule<ITER, std::string()> rstring;   // name string
     qi::rule<ITER, std::string()> tokstring; // found in exptression
-    qi::rule<ITER, ast_activity(), SKIPPER>      activity;
-    qi::rule<ITER, ast_transition(), SKIPPER>    transition;
-    qi::rule<ITER, ast_state(), SKIPPER>         state;
-    qi::rule<ITER, ast_region(), SKIPPER>        region;
-    qi::rule<ITER, ast_nodes_t(), SKIPPER>       regions;
+    qi::rule<ITER, ast_activity(), SKIPPER>        activity;
+    qi::rule<ITER, ast_transition(), SKIPPER>      transition;
+    qi::rule<ITER, ast_config_setting(), SKIPPER>  config_setting;
+    qi::rule<ITER, ast_state(), SKIPPER>           state;
+    qi::rule<ITER, ast_region(), SKIPPER>          region;
+    qi::rule<ITER, ast_nodes_t(), SKIPPER>         regions;
     qi::rule<ITER, ast_machine(), qi::locals<std::string>, SKIPPER> start;
     
 }; // plantuml_grammar

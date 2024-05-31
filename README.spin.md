@@ -75,7 +75,7 @@ flip the switches:
 ```
 state Human {
   [*] --> Flip
-  Flip: config: noInboundEvents
+  Flip: config: noInboundEvents;
   Flip --> Flip : NullEvent /send event:LampSwitch to state:Switch;
   Flip --> Flip : NullEvent /send event:WallSwitch to state:Switch;
 }

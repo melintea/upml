@@ -229,6 +229,9 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     _out << indent0 << "\n/* state " << idxCrtState << "[*/\n";
     _out << indent0 << ilabel << ':'
          << indent4 << "crtState = newState;";
+    if (s._config.count("noInboundEvents")) {
+        _out << indent4 << "noChannel = true;";
+    }
     visit_invariants(s);
     visit_preconditions(s);
     //visit_initial_entry_activities(s);

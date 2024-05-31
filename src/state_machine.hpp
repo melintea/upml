@@ -185,6 +185,7 @@ struct state : public location
     using states_t      = sm::states_t;
     using transitions_t = sm::transitions_t;
     using regions_t     = sm::regions_t;
+    using config_t      = std::set<std::string>;
     
     static constexpr const char _tag = 's';
 
@@ -196,6 +197,7 @@ struct state : public location
     activities_t   _activities;
     bool           _initial{false};
     bool           _final{false};
+    config_t       _config;  // noInboundEvents
 
     names_t events() const;
     names_t states(bool recursive)  const;
@@ -485,6 +487,17 @@ inline indent& state::trace(indent& id, std::ostream& os) const
     for (const auto& [k, v] : _regions)
     {
         v.trace(id, os);
+    }
+    if (_config.size())
+    {
+        ++id;
+        os << id;
+        for (const auto& cf : _config)
+        {
+            os << cf << ',';
+        }
+        os << '\n';
+        --id;
     }
     os << id << "}\n";
     --id;
