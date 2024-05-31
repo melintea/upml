@@ -171,6 +171,8 @@ struct region : public location
 
     bool operator==(const region& other) const { return other._id == _id; }
 
+    stateptr_t state(const id_t& state) const;
+    
     indent& trace(indent& id, std::ostream& os) const;
 
     friend std::ostream& operator<<(std::ostream& os, const region& r);
@@ -236,6 +238,8 @@ struct state_machine : public location
 
     /// which region contains @param state
     const region* owner_region(const id_t& state) const;
+
+    stateptr_t state(const id_t& state) const;
 
     indent& trace(indent& id, std::ostream& os) const;
 
@@ -383,6 +387,39 @@ inline const region* state_machine::owner_region(const id_t& state) const
         }
     }
     return nullptr;
+}
+
+inline stateptr_t region::state(const id_t& state) const
+{
+    for (const auto& [k, s] : _substates) {
+        if (k == state) {
+            return s;
+        }
+        for (const auto& [k, r] : s->_regions) {
+            stateptr_t pS(r.state(state));
+            if (pS) {
+                return pS;
+            }
+        }
+    }
+    return {};
+}
+
+inline stateptr_t state_machine::state(const id_t& state) const
+{
+    for (const auto& [k, r] : _regions) {
+        const auto itS(r._substates.find(state));
+        if (itS != r._substates.end()) {
+            return itS->second;
+        }
+        for (const auto& [k, r] : _regions) {
+            stateptr_t pS(r.state(state));
+            if (pS) {
+                return pS;
+            }
+        }
+    }
+    return {};
 }
 
 //-----------------------------------------------------------------------------

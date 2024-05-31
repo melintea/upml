@@ -278,11 +278,15 @@ void Visitor::visit_activity(
     const auto evt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoEvent]));
     assert(evt._type == "event");
 
-    _out << " send_event(" << idx(region(destReg->_id))
-         << ", " << event(evt._name)
-         << ", " << idxCrtState
-         << ", " << idx(state(toSt._name))
-         << "); \n";
+    const auto& destStatePtr(_sm.state(toSt._name));
+    assert(destStatePtr != nullptr); // unless someone made a typo
+    for (const auto& [k, destReg] : destStatePtr->_regions) {
+        _out << " send_event(" << idx(region(destReg._id))
+            << ", " << event(evt._name)
+            << ", " << idxCrtState
+            << ", " << idx(state(toSt._name))
+            << "); \n";
+    }
 }
 
 void Visitor::visit_guard(
