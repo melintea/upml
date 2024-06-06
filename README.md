@@ -49,6 +49,7 @@ Depends on boost (spirit, program_options).
 
 - ```vUML```. I could not get my hands on it.
 - [Translating UML State Machine Diagram into Promela](https://www.iaeng.org/publication/IMECS2017/IMECS2017_pp512-516.pdf)
+- [Tau https://data.caltech.edu/records/8exsc-7h074]
 - TLA+
   - [Lamport](https://lamport.azurewebsites.net/tla/standalone-tools.html?back-link=tools.html)
   - [presenation & links](https://www.moritz.systems/blog/an-introduction-to-formal-verification/)
