@@ -316,7 +316,7 @@ void Visitor::visit_effect(
         ._id       = upml::sm::tag(upml::sm::activity::_tag, t._line),
         ._state    = idxCrtState,
         ._activity = t._effect[0],
-        ._args      = upml::sm::activity::args(t._effect.begin(), t._effect.end())
+        ._args     = upml::sm::activity::args(t._effect.begin(), t._effect.end())
     };
     visit_activity( idxCrtState, a);
 }
@@ -610,6 +610,9 @@ inline send_event(channel, evt, fs, ts)
 }
     )--";
 
+#if 0
+    // - verify invariants inside protype()s only
+    // - reserve the never clause for LTL, non-progress checks and such
     _out << "\n\nnever {"
          << "\n    do"
          << "\n    :: assert( 1 == 1 ); // never clause cannot be empty";
@@ -618,6 +621,7 @@ inline send_event(channel, evt, fs, ts)
     }
     _out << "\n    od"
          << "\n} // never\n\n";
+#endif
 
     for (const auto& [k, r] : _sm._regions) {
         visit_region(r, _sm._id);

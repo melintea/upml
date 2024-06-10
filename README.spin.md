@@ -69,8 +69,8 @@ A double (lamp & wall) switch lamp [switch.plantuml](plantuml/switch/switch.plan
 
 #### Simulation
 
-Left as above, only manual simulation is possible. A "human" can be added to randomly 
-flip the switches:
+Left as above, only interactive simulation is possible. A "human" can be added to randomly 
+flip the switches; also wrap the switch spec into its own ```Switch``` composite state:
 
 ```
 state Human {
