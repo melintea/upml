@@ -29,6 +29,10 @@ make # result: Src/spin
 ```
 [comment]</details>
 
+## Timeline editor
+
+Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
+
 ## Usage
 
 Notes:

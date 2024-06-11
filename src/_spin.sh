@@ -20,15 +20,28 @@ if [ -f "${xexespin}" ]; then
     #exit 0
 fi
 
-spinit -c -u200 $1
-spinit -r -u200 $1
+# -c columnated output
+# -g global vars
+spinit -c -g -l -u200 $1
+
+# -r print receive events
+# -s
+spinit -r -s -u200 $1
+
+# -p print all statements
+# -d symbol table
+# -C use of channels
+# -A warnings about useless statements
 spinit -p -u200 $1
 
 # spin -a $1
-# gcc -DBFS -o pan pan.c
+# gcc -DBFS -DVERBOSE -o pan pan.c
 # gcc -DREACH -o pan pan.c
 # pan -i -m55
 # spin -p -t $1 # follow trail file
 
 # pan -D | dot -Tps | ps2pdf - pan.pdf
+
+# acceptance: pan -a
+
 
