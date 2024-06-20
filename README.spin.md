@@ -1,4 +1,5 @@
 - [Install spin](#install-spin)
+- [Timeline editor](#timeline-editor)
 - [Usage](#usage)
   - [Cheat Sheet](#cheat-sheet)
   - [A lamp switch](#a-lamp-switch)
@@ -73,8 +74,11 @@ A double (lamp & wall) switch lamp [switch.plantuml](plantuml/switch/switch.plan
 
 #### Simulation
 
-Left as above, only interactive simulation is possible. A "human" can be added to randomly 
-flip the switches; also wrap the switch spec into its own ```Switch``` composite state:
+Left as above, only interactive simulation is possible. A "human" must be added to randomly 
+flip the switches - the state machine needs the "environment" in which it operates for
+simulation and verification; verification needs a fully-specified/closed system.
+
+Then wrap the switch spec into its own ```Switch``` composite state:
 
 ```
 state Human {
