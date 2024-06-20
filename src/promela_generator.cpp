@@ -59,6 +59,7 @@ struct scoped_name
         return t;
     } // create
 
+    // state:xxx => idx_state_xxx
     friend std::ostream& operator<<(std::ostream& os, const scoped_name& sn)
     {
         if (sn._type.empty()) {
@@ -222,15 +223,9 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     const id_t llabel(name("loop", s._id));
     const id_t plabel(name("progress", s._id)); //TODO:non-progress cycles
 
-    //if (s._transitions.empty()) {
-    //    _out << indent0 << "\n/* state " << idxCrtState << " has no transitions */\n";
-    //    //TODO: issue labels: entry, body
-    //    return;
-    //}
-
     _out << indent0 << "\n/* state " << idxCrtState << "[*/\n";
     _out << indent0 << ilabel << ':'
-         << indent4 << "crtState = newState;";
+         << indent4 << "currentState = newState;";
     if (s._config.count("noInboundEvents")) {
         _out << indent4 << "noChannel = true;";
     }
@@ -246,7 +241,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     _out << indent4 << "if"
             << indent4 << ":: ( noChannel == false ) ->"
             << indent8 << "_channels[myIdx]?evtRecv; "
-            << indent8 << "printf(\"MSC: > %d " << region(rd._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, crtState); "
+            << indent8 << "printf(\"MSC: > %d " << region(rd._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, currentState); "
             << indent4 << ":: else"
             << indent8 << "evtRecv.evId = " << event("NullEvent") << ";"
             << indent4 << "fi"
@@ -306,7 +301,17 @@ void Visitor::visit_guard(
     _out << " && ";
     for (const auto& tok: t._guard) {
         const auto ttok(scoped_name::create(tok));
-        _out << ttok;
+        if (ttok._type == "currentState") {
+            const auto& destStatePtr(_sm.state(ttok._name));
+            assert(destStatePtr != nullptr);
+            assert(destStatePtr->_regions.size() == 1); // TODO: synthax error if multiple regions
+            for (const auto& [k, destReg] : destStatePtr->_regions) {
+                _out << region(destReg._id) << ":" << ttok._type << ' ';
+            }
+        }
+        else {
+            _out << ttok;
+        }
     }
 }
 
@@ -529,7 +534,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
          << "\n    local event evtRecv; "
          << "\n    local short initialState = " << regionData._initialState << "; "
          << "\n    local short finalState = " << regionData._finalState << "; "
-         << "\n    local short crtState = initialState; "
+         << "\n    local short currentState = initialState; "
          << "\n    local short newState = initialState; "
          << "\n    local bool noChannel = false; "
          << "\n"
