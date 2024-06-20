@@ -220,11 +220,13 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     const id_t ilabel(name("entry", s._id));
     const id_t blabel(name("body", s._id));
     const id_t llabel(name("loop", s._id));
+    const id_t plabel(name("progress", s._id)); //TODO:non-progress cycles
 
-    if (s._transitions.empty()) {
-        _out << indent0 << "\n/* state " << idxCrtState << " has no transitions */\n";
-        return;
-    }
+    //if (s._transitions.empty()) {
+    //    _out << indent0 << "\n/* state " << idxCrtState << " has no transitions */\n";
+    //    //TODO: issue labels: entry, body
+    //    return;
+    //}
 
     _out << indent0 << "\n/* state " << idxCrtState << "[*/\n";
     _out << indent0 << ilabel << ':'
@@ -251,6 +253,10 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
             << "\n\n"
             ;
 
+    //if (s._transitions.empty()) {
+    //    _out << indent0 << "\n/* state " << idxCrtState << " has no transitions */\n";
+    //    return;
+    //}
     visit_transitions(s, rd);
 
     visit_invariants(s);
