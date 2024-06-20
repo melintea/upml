@@ -611,8 +611,7 @@ inline send_event(channel, evt, fs, ts)
     )--";
 
 #if 0
-    // - verify invariants inside protype()s only
-    // - reserve the never clause for LTL, non-progress checks and such
+    // Reserve the never clause for LTL, non-progress checks and such
     _out << "\n\nnever {"
          << "\n    do"
          << "\n    :: assert( 1 == 1 ); // never clause cannot be empty";
@@ -621,6 +620,20 @@ inline send_event(channel, evt, fs, ts)
     }
     _out << "\n    od"
          << "\n} // never\n\n";
+    
+    // TODO: use instead a proctype? 
+    // Remoterefs proc[0]@label or proc[x]:var are valid only in a never claim
+    // See also: spin -O 
+    /*
+        active proctype invariants()
+        {
+        end_invariants:
+            do
+            :: ! ((1 == 1)) -> assert(1 == 1);
+            :: ! (other invariant) -> assert
+            od
+        }
+    */
 #endif
 
     for (const auto& [k, r] : _sm._regions) {
