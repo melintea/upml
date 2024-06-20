@@ -611,7 +611,7 @@ inline send_event(channel, evt, fs, ts)
     )--";
 
 #if 0
-    // Reserve the never clause for LTL, non-progress checks and such
+    // Reserve the never clause for LTL, non-progress checks and such; use a proctype instead
     _out << "\n\nnever {"
          << "\n    do"
          << "\n    :: assert( 1 == 1 ); // never clause cannot be empty";
@@ -620,25 +620,28 @@ inline send_event(channel, evt, fs, ts)
     }
     _out << "\n    od"
          << "\n} // never\n\n";
-    
-    // TODO: use instead a proctype? 
-    // Remoterefs proc[0]@label or proc[x]:var are valid only in a never claim
+#endif
+
+    for (const auto& [k, r] : _sm._regions) {
+        visit_region(r, _sm._id);
+    }
+
+#if 0
+    // TODO: use in-lieu of as never claim 
+    // 
     // See also: spin -O 
     /*
         active proctype invariants()
         {
         end_invariants:
             do
-            :: ! ((1 == 1)) -> assert(1 == 1);
-            :: ! (other invariant) -> assert
+            // Per the doc, remoterefs proc[0]@label or proc[x]:var are valid 
+            // only in a never claim but this is accepted with spin 6.5.2
+            :: ! (region_r19:myIdx == idx_region_r19) -> assert(region_r19:myIdx == idx_region_r19);
             od
         }
     */
 #endif
-
-    for (const auto& [k, r] : _sm._regions) {
-        visit_region(r, _sm._id);
-    }
 
     _out << "\ninit {\n"
         << "    atomic {\n";
