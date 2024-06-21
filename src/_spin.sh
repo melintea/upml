@@ -22,17 +22,17 @@ fi
 
 # -c columnated output
 # -g global vars
-spinit -c -g -l -u200 $1
+spinit -c -g -l -u400 $1
 
 # -r print receive events
 # -s
-spinit -r -s -u200 $1
+spinit -r -s -u400 $1
 
 # -p print all statements
 # -d symbol table
 # -C use of channels
 # -A warnings about useless statements
-spinit -p -u200 $1
+spinit -p -u400 $1
 
 # spin -a $1
 # gcc -DBFS -DVERBOSE -o pan pan.c

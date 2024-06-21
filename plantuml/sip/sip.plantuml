@@ -1,11 +1,18 @@
 @startuml
 
 state ClosedSystemEnvironment {
-[*] --> StateMachineEventGenerator 
-StateMachineEventGenerator: config: noInboundEvents;
-StateMachineEventGenerator --> StateMachineEventGenerator : NullEvent [currentState:Alice == state:AIdle] /send event:Dial to state:Alice;
-StateMachineEventGenerator --> StateMachineEventGenerator : NullEvent [currentState:Bob == state:BInitiated] /send event:Pickup to state:Bob;
-StateMachineEventGenerator --> StateMachineEventGenerator : NullEvent [currentState:Alice == state:AEstablished] /send event:Hangup to state:Alice;
+[*] --> AliceDial 
+AliceDial: config: noInboundEvents;
+AliceDial --> BobPickup : NullEvent [currentState:Alice == state:AIdle] /send event:Dial to state:Alice;
+
+BobPickup: config: noInboundEvents;
+BobPickup --> AliceHangup : NullEvent [currentState:Bob == state:BInitiated] /send event:Pickup to state:Bob;
+
+AliceHangup: config: noInboundEvents;
+AliceHangup --> CallEnded : NullEvent [currentState:Alice == state:AEstablished] /send event:Hangup to state:Alice;
+
+CallEnded: config: noInboundEvents;
+CallEnded --> [*]
 }
 
 

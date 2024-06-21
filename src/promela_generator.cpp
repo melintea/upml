@@ -329,6 +329,9 @@ void Visitor::visit_effect(
         ._activity = t._effect[0],
         ._args     = upml::sm::activity::args(t._effect.begin(), t._effect.end())
     };
+    // TODO: UML transition semanic: exit old state, generate effect, enter new state
+    // unless new state == old state
+    //_out << "currentState = idx_unknown; "; 
     visit_activity( idxCrtState, a);
 }
 
