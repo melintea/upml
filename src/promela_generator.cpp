@@ -219,6 +219,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
     const id_t ilabel(name("entry", s._id));
+    const id_t elabel(name("end", s._id));
     const id_t blabel(name("body", s._id));
     const id_t llabel(name("loop", s._id));
     const id_t plabel(name("progress", s._id)); //TODO:non-progress cycles
@@ -226,10 +227,12 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     _out << indent0 << "\n/* state " << idxCrtState << "[*/\n";
     _out << indent0 << ilabel << ':'
          << indent4 << "currentState = newState;";
-    if (s._config.count("noInboundEvents")) {
+    if (  s._config.count("noInboundEvents") 
+       || s._transitions.empty()
+    ) {
         _out << indent4 << "noChannel = true;";
     }
-    visit_invariants(s);
+    //visit_invariants(s);
     visit_preconditions(s);
     //visit_initial_entry_activities(s);
     visit_entry_activities(s);
@@ -239,8 +242,11 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
         _out << "\n" << llabel << ':';
     }
     _out << indent4 << "if"
-            << indent4 << ":: ( noChannel == false ) ->"
-            << indent8 << "_channels[myIdx]?evtRecv; "
+         << indent4 << ":: ( noChannel == false ) ->";
+    if (s._final) {
+        _out << indent0 << elabel << ':'; // TODO: skip completely the channel read 
+    }
+    _out    << indent8 << "_channels[myIdx]?evtRecv; "
             << indent8 << "printf(\"MSC: > %d " << region(rd._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, currentState); "
             << indent4 << ":: else"
             << indent8 << "evtRecv.evId = " << event("NullEvent") << ";"
@@ -640,28 +646,27 @@ inline send_event(channel, evt, fs, ts)
         visit_region(r, _sm._id);
     }
 
-#if 0
-    // TODO: use in-lieu of as never claim 
-    // 
+    // Use in-lieu of as never claim, preserver the never claim for LTL checks
     // See also: spin -O 
-    /*
-        active proctype invariants()
-        {
-        end_invariants:
-            do
-            // Per the doc, remoterefs proc[0]@label or proc[x]:var are valid 
-            // only in a never claim but this is accepted with spin 6.5.2
-            :: ! (region_r19:myIdx == idx_region_r19) -> assert(region_r19:myIdx == idx_region_r19);
-            od
-        }
-    */
+    _out << indent0 << "proctype invariants() {"
+         << indent0 << "end_invariants:"
+         ;
+#if 0
+    //visit_invariants();
+    // Per the doc, remoterefs proc[0]@label or proc[x]:var are valid 
+    // only in a never claim but this is accepted with spin 6.5.2
+    do
+    :: ! (region_r19:myIdx == idx_region_r19) -> assert(region_r19:myIdx == idx_region_r19);
+    od
 #endif
+        _out << indent0 << "}\n\n";
 
     _out << "\ninit {\n"
         << "    atomic {\n";
     for (const auto& [k, r] : _regions) {
         _out << "        run " << region(k) << "(); \n";
     }
+    _out <<     "        run invariants(); \n";
     _out << "    }\n}\n\n/*UPML end*/\n\n";
 }
 
