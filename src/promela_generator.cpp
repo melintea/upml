@@ -648,7 +648,7 @@ inline send_event(channel, evt, fs, ts)
 
     // Use in-lieu of as never claim, preserver the never claim for LTL checks
     // See also: spin -O 
-    _out << indent0 << "proctype invariants() {"
+    _out << indent0 << "\nproctype invariants() {"
          << indent0 << "end_invariants:"
          ;
 #if 0
