@@ -17,8 +17,6 @@ sudo apt install spin
 ```
 Note: this lacks xspin and other tools included in the distribution.
 
-[comment]<details>
-[comment]<summary>From source</summary>
 From source:
 
 ```
@@ -28,7 +26,7 @@ make # result: Src/spin
 
 #xspin is under optional_gui/ispin.tcl
 ```
-[comment]</details>
+
 
 ## Timeline editor
 
