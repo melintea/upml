@@ -28,16 +28,21 @@ Flip --> Flip : NullEvent /send event:WallSwitch to state:Switch;
 state Switch {
 
 [*] --> BothOff
+BothOff: config: progressTag;
 BothOff --> WallOff : LampSwitch
 WallOff --> BothOff : LampSwitch
 
 BothOff --> LampOff : WallSwitch
 LampOff --> BothOff : WallSwitch
 
+WallOff: config: progressTag;
 WallOff --> On : WallSwitch
 On --> WallOff : LampSwitch
 
+LampOff: config: progressTag;
 LampOff --> On : LampSwitch
+
+On: config: progressTag;
 On --> LampOff : WallSwitch
 
 }

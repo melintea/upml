@@ -129,6 +129,7 @@ depth-limit (-u200 steps) reached
 
 #### Verification
 
+Mark states as ```progressTag``` e.g. ```On: config: progressTag;``` for non-progress checks.
 Use xspin/ispin.tcl.
 
 ### SIP stuff

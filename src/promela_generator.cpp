@@ -241,6 +241,9 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     if (s._initial || s._final) {
         _out << "\n" << llabel << ':';
     }
+    if (s._config.count("progressTag")) {
+        _out << "\n" << plabel << ':';
+    }
     _out << indent4 << "if"
          << indent4 << ":: ( noChannel == false ) ->";
     if (s._final) {

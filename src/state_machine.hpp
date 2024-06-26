@@ -199,7 +199,7 @@ struct state : public location
     activities_t   _activities;
     bool           _initial{false};
     bool           _final{false};
-    config_t       _config;  // noInboundEvents
+    config_t       _config;  // noInboundEvents, progressTag
 
     names_t events() const;
     names_t states(bool recursive)  const;

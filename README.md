@@ -38,6 +38,7 @@ Additions:
 - invariants: ```SubLaunch: invariant: ((x==y) && (z!=1 || z!=2)) ;```
 - configuration:
   - ```config: noInboundEvents```: this state receives no events
+  - ```progressTag```: mark state as permitted in an infinite execution cycle for starvation/non-progress loops checks
 - ```NullEvent```: reserved event name to force transitions statements to be executable without an external event
 - timeout: ```WIP```
 
