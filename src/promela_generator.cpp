@@ -239,7 +239,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     ) {
         _out << indent4 << "noChannel = true;";
     }
-    //visit_invariants(s);
+
     visit_preconditions(s);
     //visit_initial_entry_activities(s);
     visit_entry_activities(s);
@@ -269,8 +269,6 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     //    return;
     //}
     visit_transitions(s, rd);
-
-    visit_invariants(s);
     visit_postconditions(s);
 
     _out << indent0 << "/*]state " << idxCrtState << "*/\n";
@@ -375,13 +373,11 @@ void Visitor::visit_transition(
          visit_effect(idxCrtState, t);
     if (idx(state(toSt._name)) == idxCrtState) {
         visit_postconditions(s);
-        visit_invariants(s);
         _out << indent12<< "newState = " << idx(state(toSt._name)) << "; ";
         _out << indent12 << "goto " << name("body", s._id) << ';';
     } else {
         visit_exit_activities(s);
         visit_postconditions(s);
-        visit_invariants(s);
         _out << indent12 << "newState = " << idx(state(toSt._name)) << "; ";
         _out << indent12 << "goto " << name("entry", toSt._name) << ';';
     }
@@ -406,7 +402,6 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
     }
 
     visit_postconditions(s);
-    visit_invariants(s);
 }
 
 void Visitor::visit_entry_activities(const upml::sm::state& s) const
@@ -430,6 +425,9 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
 
 void Visitor::visit_invariants(const upml::sm::region&  r) const
 {
+    for (const auto& [k, s] : r._substates) {
+        visit_invariants(*s);
+    }
 }
 
 void Visitor::visit_invariants(const upml::sm::state&  s) const
@@ -437,14 +435,22 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "invariant") {
-                _out << indent8 << "//" << a;
-                _out << "        assert(";
+                _out << indent4 << "//" << a;
+                _out << indent4 << ":: (";
+                for (const auto& tok: a._args) {
+                    _out << token(tok);
+                }
+                _out << ") -> assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
                 _out << ");\n";
             }
         }
+    }
+
+    for (const auto& [k, r] : s._regions) {
+        visit_invariants(r);
     }
 }
 
@@ -563,7 +569,6 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
          << "\n"
          ;
 
-    visit_invariants(r);
     visit_preconditions(r);
 
     for (const auto& [k, s] : r._substates) {
@@ -589,7 +594,6 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
         }
     }
 
-    visit_invariants(r);
     visit_postconditions(r);
 
     _out << "\n} // " << rname << ' ' << ownerTag << "\n";
@@ -644,36 +648,24 @@ inline send_event(channel, evt, fs, ts)
 }
     )--";
 
-#if 0
-    // Reserve the never clause for LTL, non-progress checks and such; use a proctype instead
-    _out << "\n\nnever {"
-         << "\n    do"
-         << "\n    :: assert( 1 == 1 ); // never clause cannot be empty";
-    for (const auto& [k, r] : _sm._regions) {
-        visit_invariants(r);
-    }
-    _out << "\n    od"
-         << "\n} // never\n\n";
-#endif
-
     for (const auto& [k, r] : _sm._regions) {
         visit_region(r, _sm._id);
     }
 
-    // Use in-lieu of as never claim, preserver the never claim for LTL checks
+    // Reserve the never clause for LTL, non-progress checks and such; use a proctype instead
     // See also: spin -O 
     _out << indent0 << "\nproctype invariants() {"
          << indent0 << "end_invariants:"
+         << indent0 << "progress_invariants:"
+         << indent4 << "do"
+         << indent4 << ":: ! (1 != 2) -> assert(false); // ensure at least one statement"
          ;
-#if 0
-    //visit_invariants();
     // Per the doc, remoterefs proc[0]@label or proc[x]:var are valid 
     // only in a never claim but this is accepted with spin 6.5.2
-    do
-    :: ! (region_r19:myIdx == idx_region_r19) -> assert(region_r19:myIdx == idx_region_r19);
-    od
-#endif
-        _out << indent0 << "}\n\n";
+    for (const auto& [k, r] : _sm._regions) {
+        visit_invariants(r);
+    }
+    _out << indent4 << "od\n}\n\n";
 
     _out << "\ninit {\n"
         << "    atomic {\n";
