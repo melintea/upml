@@ -24,16 +24,16 @@ state Alice {
   AInitiated --> AInitiated : 1xx
   AInitiated --> AEstablished : 2xx
 
-  //AInitiated: timeout: send event:Hangup to state:Alice;
-  //AInitiated: precondition: ((x==y) && (z!=1 || z!=2));
-  //AInitiated: postcondition: ((x==y) && (z!=1 || z!=2));
-  //AInitiated: invariant: ((x==y) && (z!=1 || z!=2));
-  
   AEstablished: entry: send event:ACK to state:Bob;
   AEstablished --> Aterminated : Hangup
   
   Aterminated: entry: send event:BYE to state:Bob;
   Aterminated --> [*]
+
+  //AInitiated: timeout: send event:Hangup to state:Alice;
+  AInitiated: precondition: (currentState:Alice != state:BIdle);
+  AInitiated: postcondition: (currentState:Alice != state:BInitiated);
+  AInitiated: invariant: (currentState:Alice != state:Bterminated);
 }
 
 //||
@@ -50,6 +50,12 @@ state Bob {
   BEstablished --> Bterminated : BYE
   
   Bterminated --> [*]
+
+  //BInitiated: timeout: send event:Hangup to state:Alice;
+  BInitiated: precondition: (currentState:Bob != state:AIdle);
+  BInitiated: postcondition: (currentState:Bob != state:AInitiated);
+  BInitiated: invariant: (currentState:Bob != state:Aterminated);
+  
 }
 
 @enduml

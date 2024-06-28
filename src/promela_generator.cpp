@@ -59,14 +59,19 @@ struct scoped_name
         return t;
     } // create
 
+    std::string to_string() const
+    {
+        if (_type.empty()) {
+            return _name + ' ';
+        } else {
+            return idx(name(_type, _name)) + ' ';
+        }
+    }
+
     // state:xxx => idx_state_xxx
     friend std::ostream& operator<<(std::ostream& os, const scoped_name& sn)
     {
-        if (sn._type.empty()) {
-            os << sn._name << ' ';
-        } else {
-            os << idx(name(sn._type, sn._name)) << ' ';
-        }
+        os << sn.to_string();
         return os;
     }
 };
@@ -200,6 +205,8 @@ public:
     void visit_activity(
         const upml::spin::id_t&   idxCrtState,
         const upml::sm::activity& a) const;
+    // Turn a plantuml token in a guars/post/pre/condition/invariant into valid Promela.
+    std::string token(const std::string& tok) const;
 }; // Visitor
 
 Visitor::Visitor(upml::sm::state_machine& sm,
@@ -299,6 +306,26 @@ void Visitor::visit_activity(
     }
 }
 
+std::string Visitor::token(const std::string& tok) const
+{
+    const auto ttok(scoped_name::create(tok));
+    if (ttok._type == "currentState") {
+        const auto& destStatePtr(_sm.state(ttok._name));
+        assert(destStatePtr != nullptr);
+        assert(destStatePtr->_regions.size() == 1); // TODO: synthax error if multiple regions
+        for (const auto& [k, destReg] : destStatePtr->_regions) {
+            return region(destReg._id) + ":" + ttok._type + ' ';
+        }
+        assert(false);
+    }
+    else {
+        return ttok.to_string();
+    }
+
+    assert(false);
+    return tok;
+}
+
 void Visitor::visit_guard(
     const upml::spin::id_t&     idxCrtState,
     const upml::sm::transition& t) const
@@ -309,18 +336,7 @@ void Visitor::visit_guard(
 
     _out << " && ";
     for (const auto& tok: t._guard) {
-        const auto ttok(scoped_name::create(tok));
-        if (ttok._type == "currentState") {
-            const auto& destStatePtr(_sm.state(ttok._name));
-            assert(destStatePtr != nullptr);
-            assert(destStatePtr->_regions.size() == 1); // TODO: synthax error if multiple regions
-            for (const auto& [k, destReg] : destStatePtr->_regions) {
-                _out << region(destReg._id) << ":" << ttok._type << ' ';
-            }
-        }
-        else {
-            _out << ttok;
-        }
+        _out << token(tok);
     }
 }
 
@@ -412,12 +428,10 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
     }
 }
 
-// TODO: use never or a watch process
 void Visitor::visit_invariants(const upml::sm::region&  r) const
 {
 }
 
-// TODO: use never or a watch process
 void Visitor::visit_invariants(const upml::sm::state&  s) const
 {
     if ( ! s._activities.empty()) {
@@ -426,8 +440,7 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
                 _out << indent8 << "//" << a;
                 _out << "        assert(";
                 for (const auto& tok: a._args) {
-                    const auto ttok(scoped_name::create(tok));
-                    _out << ttok;
+                    _out << token(tok);
                 }
                 _out << ");\n";
             }
@@ -447,8 +460,7 @@ void Visitor::visit_preconditions(const upml::sm::state&  s) const
                 _out << indent8 << "//" << a;
                 _out << "        assert(";
                 for (const auto& tok: a._args) {
-                    const auto ttok(scoped_name::create(tok));
-                    _out << ttok;
+                    _out << token(tok);
                 }
                 _out << ");\n";
             }
@@ -468,8 +480,7 @@ void Visitor::visit_postconditions(const upml::sm::state&  s) const
                 _out << indent8 << "//" << a;
                 _out << "        assert(";
                 for (const auto& tok: a._args) {
-                    const auto ttok(scoped_name::create(tok));
-                    _out << ttok;
+                    _out << token(tok);
                 }
                 _out << ");\n";
             }
