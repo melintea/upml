@@ -214,5 +214,7 @@ q\p   0   1   2   3   4
 
 #### Verification
 
+(The plantuml file contains a few useless precondition, postcondition & invariant statements for demo and testing)
+
 Use xspin/ispin.tcl.
 
