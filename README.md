@@ -44,7 +44,7 @@ Additions:
 
 ## Build
 
-Depends on boost (spirit, program_options).
+Depends on boost (spirit, program_options, filesystem).
 
 ## Similar tools & various links
 

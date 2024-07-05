@@ -11,6 +11,7 @@
 #include "plantuml_parser.hpp"
 #include "promela_generator.hpp"
 
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
 #include <cstdlib>
@@ -43,6 +44,7 @@ int main(int argc, char* argv[])
     }
 
     std::ifstream  infs;
+    upml::sm::id_t smTag;
     if (vm.count("in"))
     {
         const std::string& inf(vm["in"].as<std::string>());
@@ -52,12 +54,14 @@ int main(int argc, char* argv[])
             std::cerr << inf << ": " << ::strerror(errno) << "\n";
             ::exit(EXIT_FAILURE);
         }
+        smTag = boost::filesystem::path(inf).stem().c_str();
     }
 
     upml::sm::state_machine sm;
-    
+
     bool ret =  upml::plantuml_parser(infs.is_open() ? infs : std::cin,
                                       sm);
+    sm._id = smTag; //TODO: fold it in the contructor, ensure not overriden by m1
 
     std::ofstream  outfs;
     if (vm.count("out"))
