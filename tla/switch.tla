@@ -7,15 +7,15 @@ EXTENDS TLC, Integers, Sequences
 (**********************************************************************
 
 --algorithm lamp {
-variables   state \in {"BothOff", "WallOff", "LampOff", "On"}
-          , v1 \in {1..1000}
-          , v2 \in {1, 2, 3}
-          ;
+variables   
+    state \in {"BothOff", "WallOff", "LampOff", "On"};
+    v1 \in {1..1000};
+    v2 \in {1, 2, 3};
 
 fair process (Switch = 100)
-variables   initialState = "BothOff"
-          , finalState  = "On"
-          ;
+variables
+    initialState = "BothOff";
+    finalState  = "On";
 {
   ProcBody:
     state := "BothOff";
