@@ -1,24 +1,51 @@
+/*
 Model for the double switch: https://learntla.com/topics/state-machines.html
+*/
 
 ---- MODULE switch ----
 
 EXTENDS TLC, Integers, Sequences
 
+(* constants disguised as vars *)
+idx_state_Min == 0 
+idx_state_BothOff == 0
+idx_state_LampOff == 1
+idx_state_WallOff == 2
+idx_state_On == 3
+idx_state_Unknown == 4
+idx_state_Max == 4
+
+idx_event_Min == 0 
+idx_event_LampSwitch == 0
+idx_event_WallSwitch == 1
+idx_event_Unknown == 2
+idx_event_Max == 2
+
+Event == [ evtId : {idx_event_Min..idx_event_Max}, 
+           fromState : {idx_state_Min..idx_state_Max}, (*sender*)
+           toState : {0..100}
+         ]
+
 (**********************************************************************
 
 --algorithm lamp {
 variables   
-    state \in {"BothOff", "WallOff", "LampOff", "On"};
+    
+    eventSink_Switch = << >>;
+    
     v1 \in {1..1000};
     v2 \in {1, 2, 3};
 
 fair process (Switch = 100)
 variables
+    state \in {"BothOff", "WallOff", "LampOff", "On"};
     initialState = "BothOff";
     finalState  = "On";
+    currentState \in {idx_state_Min..idx_state_Max};
 {
   ProcBody:
     state := "BothOff";
+    currentState := idx_state_Unknown;
     v1 := 2;
     v2 := 3;
     
@@ -83,48 +110,55 @@ fair process (ClosedEnv = 200)
 
 *******************************************************************)
 
-\* BEGIN TRANSLATION (chksum(pcal) = "54f37938" /\ chksum(tla) = "c3ccec8a")
-\* Label ProcBody of process Switch at line 21 col 5 changed to ProcBody_
-VARIABLES state, v1, v2, pc, initialState, finalState
+\* BEGIN TRANSLATION (chksum(pcal) = "dac4fe92" /\ chksum(tla) = "2e5e18e4")
+\* Label ProcBody of process Switch at line 47 col 5 changed to ProcBody_
+VARIABLES eventSink_Switch, v1, v2, pc, state, initialState, finalState, 
+          currentState
 
-vars == << state, v1, v2, pc, initialState, finalState >>
+vars == << eventSink_Switch, v1, v2, pc, state, initialState, finalState, 
+           currentState >>
 
 ProcSet == {100} \cup {200}
 
 Init == (* Global variables *)
-        /\ state \in {"BothOff", "WallOff", "LampOff", "On"}
+        /\ eventSink_Switch = << >>
         /\ v1 \in {1..1000}
         /\ v2 \in {1, 2, 3}
         (* Process Switch *)
+        /\ state \in {"BothOff", "WallOff", "LampOff", "On"}
         /\ initialState = "BothOff"
         /\ finalState = "On"
+        /\ currentState \in {idx_state_Min..idx_state_Max}
         /\ pc = [self \in ProcSet |-> CASE self = 100 -> "ProcBody_"
                                         [] self = 200 -> "ProcBody"]
 
 ProcBody_ == /\ pc[100] = "ProcBody_"
              /\ state' = "BothOff"
+             /\ currentState' = idx_state_Unknown
              /\ v1' = 2
              /\ v2' = 3
              /\ pc' = [pc EXCEPT ![100] = "EntryBothOff"]
-             /\ UNCHANGED << initialState, finalState >>
+             /\ UNCHANGED << eventSink_Switch, initialState, finalState >>
 
 EntryBothOff == /\ pc[100] = "EntryBothOff"
                 /\ TRUE
                 /\ pc' = [pc EXCEPT ![100] = "BodyBothOff"]
-                /\ UNCHANGED << state, v1, v2, initialState, finalState >>
+                /\ UNCHANGED << eventSink_Switch, v1, v2, state, initialState, 
+                                finalState, currentState >>
 
 BodyBothOff == /\ pc[100] = "BodyBothOff"
                /\ \/ /\ (/\ state = initialState /\ v1 = 3)
                      /\ PrintT(<<"Moving to WallOff", v1>>)
                      /\ state' = "WallOff"
                      /\ Assert((TRUE), 
-                               "Failure of assertion at line 32, column 9.")
+                               "Failure of assertion at line 59, column 9.")
                      /\ pc' = [pc EXCEPT ![100] = "BodyWallOff"]
                   \/ /\ (/\ state = initialState)
                      /\ PrintT(<<"Moving to LampOff", v1>>)
                      /\ state' = "LampOff"
                      /\ pc' = [pc EXCEPT ![100] = "BodyLampOff"]
-               /\ UNCHANGED << v1, v2, initialState, finalState >>
+               /\ UNCHANGED << eventSink_Switch, v1, v2, initialState, 
+                               finalState, currentState >>
 
 BodyLampOff == /\ pc[100] = "BodyLampOff"
                /\ \/ /\ state = "LampOff"
@@ -133,7 +167,8 @@ BodyLampOff == /\ pc[100] = "BodyLampOff"
                   \/ /\ state = "LampOff"
                      /\ state' = "On"
                      /\ pc' = [pc EXCEPT ![100] = "BodyOn"]
-               /\ UNCHANGED << v1, v2, initialState, finalState >>
+               /\ UNCHANGED << eventSink_Switch, v1, v2, initialState, 
+                               finalState, currentState >>
 
 BodyWallOff == /\ pc[100] = "BodyWallOff"
                /\ \/ /\ state = "WallOff"
@@ -142,7 +177,8 @@ BodyWallOff == /\ pc[100] = "BodyWallOff"
                   \/ /\ state = "WallOff"
                      /\ state' = "On"
                      /\ pc' = [pc EXCEPT ![100] = "BodyOn"]
-               /\ UNCHANGED << v1, v2, initialState, finalState >>
+               /\ UNCHANGED << eventSink_Switch, v1, v2, initialState, 
+                               finalState, currentState >>
 
 BodyOn == /\ pc[100] = "BodyOn"
           /\ \/ /\ state = "On"
@@ -151,7 +187,8 @@ BodyOn == /\ pc[100] = "BodyOn"
              \/ /\ state = "On"
                 /\ state' = "WallOff"
                 /\ pc' = [pc EXCEPT ![100] = "BodyWallOff"]
-          /\ UNCHANGED << v1, v2, initialState, finalState >>
+          /\ UNCHANGED << eventSink_Switch, v1, v2, initialState, finalState, 
+                          currentState >>
 
 Switch == ProcBody_ \/ EntryBothOff \/ BodyBothOff \/ BodyLampOff
              \/ BodyWallOff \/ BodyOn
@@ -159,7 +196,8 @@ Switch == ProcBody_ \/ EntryBothOff \/ BodyBothOff \/ BodyLampOff
 ProcBody == /\ pc[200] = "ProcBody"
             /\ TRUE
             /\ pc' = [pc EXCEPT ![200] = "Done"]
-            /\ UNCHANGED << state, v1, v2, initialState, finalState >>
+            /\ UNCHANGED << eventSink_Switch, v1, v2, state, initialState, 
+                            finalState, currentState >>
 
 ClosedEnv == ProcBody
 
