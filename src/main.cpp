@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
 
     bool ret =  upml::plantuml_parser(infs.is_open() ? infs : std::cin,
                                       sm);
-    sm._id = smTag; //TODO: fold it in the contructor, ensure not overriden by m1
+    sm._id = smTag; //TODO: fold it in the constructor, ensure not overriden by m1
 
     std::ofstream  outfs;
     if (vm.count("out"))

@@ -438,7 +438,7 @@ inline indent& transition::trace(indent& id, std::ostream& os) const
         << '(' << static_cast<location>(*this) << ") "
         << _fromState << " --> " << _toState << " " 
         << _event << '[' << _guard << "]/" << _effect
-        << " (" << _id << ")\n"
+        << " (" << _id << ")\n" // TODO: fix transitions printing
         ;
     --id;
     return id;
