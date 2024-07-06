@@ -6,6 +6,7 @@
   - unzip in a folder
   - replace the jar if newer
   - run toolbox/toolbox
+- install [tlapm](https://github.com/tlaplus/tlapm)
 
 Alternative toolbox: [Apalache](https://apalache.informal.systems/)
 

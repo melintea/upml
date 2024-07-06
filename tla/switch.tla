@@ -1,4 +1,5 @@
 /*
+Experimentation ground.
 Model for the double switch: https://learntla.com/topics/state-machines.html
 */
 
