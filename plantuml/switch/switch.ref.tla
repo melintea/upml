@@ -68,7 +68,7 @@ variables
     
     assert( Len(channels) = idx_proc_Max );
     print channels; \*error: print channels[myProcIdx]
-    send_event(idx_event_SendRecvTest, self, self);
+    S:send_event(idx_event_SendRecvTest, self, self);
     print channels;
     R:recv_event(evtRecv, self);
     print channels;
@@ -135,7 +135,7 @@ fair process (ClosedEnv = 200)
 
 **********************************************************************)
 
-\* BEGIN TRANSLATION (chksum(pcal) = "341f748a" /\ chksum(tla) = "f14f7542")
+\* BEGIN TRANSLATION (chksum(pcal) = "dce3ec9" /\ chksum(tla) = "2b033f9a")
 \* Label ProcBody of process Switch at line 64 col 5 changed to ProcBody_
 VARIABLES eventSink_Switch, channels, v1, v2, pc, state, initialState, 
           finalState, currentState, evtRecv, myProcIdx
@@ -168,12 +168,17 @@ ProcBody_(self) == /\ pc[self] = "ProcBody_"
                    /\ Assert(( Len(channels) = idx_proc_Max ), 
                              "Failure of assertion at line 69, column 5.")
                    /\ PrintT(channels)
-                   /\ PrintT(<<"P:", self, "o->", idx_event_SendRecvTest, " > P:", self>>)
-                   /\ channels' = [channels EXCEPT ![self] = Append(@, idx_event_SendRecvTest)]
-                   /\ PrintT(channels')
-                   /\ pc' = [pc EXCEPT ![self] = "R"]
-                   /\ UNCHANGED << eventSink_Switch, initialState, finalState, 
-                                   evtRecv, myProcIdx >>
+                   /\ pc' = [pc EXCEPT ![self] = "S"]
+                   /\ UNCHANGED << eventSink_Switch, channels, initialState, 
+                                   finalState, evtRecv, myProcIdx >>
+
+S(self) == /\ pc[self] = "S"
+           /\ PrintT(<<"P:", self, "o->", idx_event_SendRecvTest, " > P:", self>>)
+           /\ channels' = [channels EXCEPT ![self] = Append(@, idx_event_SendRecvTest)]
+           /\ PrintT(channels')
+           /\ pc' = [pc EXCEPT ![self] = "R"]
+           /\ UNCHANGED << eventSink_Switch, v1, v2, state, initialState, 
+                           finalState, currentState, evtRecv, myProcIdx >>
 
 R(self) == /\ pc[self] = "R"
            /\ Len(channels[self]) > 0
@@ -242,7 +247,7 @@ BodyOn(self) == /\ pc[self] = "BodyOn"
                                 initialState, finalState, currentState, 
                                 evtRecv, myProcIdx >>
 
-Switch(self) == ProcBody_(self) \/ R(self) \/ EntryBothOff(self)
+Switch(self) == ProcBody_(self) \/ S(self) \/ R(self) \/ EntryBothOff(self)
                    \/ BodyBothOff(self) \/ BodyLampOff(self)
                    \/ BodyWallOff(self) \/ BodyOn(self)
 
