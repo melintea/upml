@@ -2,29 +2,31 @@
 Model for the double switch: https://learntla.com/topics/state-machines.html
 */
 
----- MODULE switch ----
+---- MODULE switch ----------------------------------------------------
 
 EXTENDS TLC, Integers, Sequences
 
 (* constants disguised as vars *)
+idx_state_Unknown == -1
 idx_state_Min == 0 
 idx_state_BothOff == 0
 idx_state_LampOff == 1
 idx_state_WallOff == 2
 idx_state_On == 3
-idx_state_Unknown == 4
-idx_state_Max == 4
+idx_state_Max == 3
 
+idx_event_Unknown == -1
 idx_event_Min == 0 
 idx_event_LampSwitch == 0
 idx_event_WallSwitch == 1
-idx_event_Unknown == 2
-idx_event_Max == 2
+idx_event_Max == 1
+idx_event_SendRecvTest == 42
 
-Event == [ evtId : {idx_event_Min..idx_event_Max}, 
-           fromState : {idx_state_Min..idx_state_Max}, (*sender*)
-           toState : {0..100}
-         ]
+idx_proc_Unknown == -1
+idx_proc_Min == 1  \* must be 1-based for the channels' tuple
+idx_proc_Switch == 1
+idx_proc_Env == 2
+idx_proc_Max == 2
 
 (**********************************************************************
 
@@ -32,16 +34,31 @@ Event == [ evtId : {idx_event_Min..idx_event_Max},
 variables   
     
     eventSink_Switch = << >>;
+    \* channels = [i \in {idx_proc_Min..idx_proc_Max} |-> << >>];
+    channels = << <<>>, <<>> >>;
     
     v1 \in {1..1000};
     v2 \in {1, 2, 3};
 
-fair process (Switch = 100)
+macro send_event(evt, from, to) {
+    print <<"P:", from, "o->", evt, " > P:", to>>;
+    channels[to] := Append(@, evt);
+}
+macro recv_event(evt, to) {
+    await Len(channels[to]) > 0;
+    evt := Head(channels[to]);
+    print <<"P:", to, "<-i", evt>>;
+    channels[to] := Tail(@);
+}
+
+fair+ process (Switch \in {idx_proc_Switch})
 variables
     state \in {"BothOff", "WallOff", "LampOff", "On"};
     initialState = "BothOff";
     finalState  = "On";
-    currentState \in {idx_state_Min..idx_state_Max};
+    currentState  = idx_state_Unknown;
+    evtRecv = idx_event_Unknown;
+    myProcIdx = self;
 {
   ProcBody:
     state := "BothOff";
@@ -49,18 +66,26 @@ variables
     v1 := 2;
     v2 := 3;
     
+    assert( Len(channels) = idx_proc_Max );
+    print channels; \*error: print channels[myProcIdx]
+    send_event(idx_event_SendRecvTest, self, self);
+    print channels;
+    R:recv_event(evtRecv, self);
+    print channels;
+    assert(evtRecv = idx_event_SendRecvTest);
+    
   EntryBothOff:
     skip;
   BodyBothOff:
     either {
         await (/\ state = initialState /\ v1 = 3); \* <== dead !!
-        print <<"Moving to WallOff", v1>>;
+        print <<myProcIdx, ": moving to WallOff", v1>>;
         state := "WallOff";
         assert(TRUE);
         goto BodyWallOff;
     } or {
         await (/\ state = initialState);
-        print <<"Moving to LampOff", v1>>;
+        print <<myProcIdx, ": moving to LampOff", v1>>;
         state := "LampOff";
         goto BodyLampOff;
     };
@@ -108,96 +133,125 @@ fair process (ClosedEnv = 200)
 
 } \* algorithm lamp
 
-*******************************************************************)
+**********************************************************************)
 
-\* BEGIN TRANSLATION (chksum(pcal) = "dac4fe92" /\ chksum(tla) = "2e5e18e4")
-\* Label ProcBody of process Switch at line 47 col 5 changed to ProcBody_
-VARIABLES eventSink_Switch, v1, v2, pc, state, initialState, finalState, 
-          currentState
+\* BEGIN TRANSLATION (chksum(pcal) = "341f748a" /\ chksum(tla) = "f14f7542")
+\* Label ProcBody of process Switch at line 64 col 5 changed to ProcBody_
+VARIABLES eventSink_Switch, channels, v1, v2, pc, state, initialState, 
+          finalState, currentState, evtRecv, myProcIdx
 
-vars == << eventSink_Switch, v1, v2, pc, state, initialState, finalState, 
-           currentState >>
+vars == << eventSink_Switch, channels, v1, v2, pc, state, initialState, 
+           finalState, currentState, evtRecv, myProcIdx >>
 
-ProcSet == {100} \cup {200}
+ProcSet == ({idx_proc_Switch}) \cup {200}
 
 Init == (* Global variables *)
         /\ eventSink_Switch = << >>
+        /\ channels = << <<>>, <<>> >>
         /\ v1 \in {1..1000}
         /\ v2 \in {1, 2, 3}
         (* Process Switch *)
-        /\ state \in {"BothOff", "WallOff", "LampOff", "On"}
-        /\ initialState = "BothOff"
-        /\ finalState = "On"
-        /\ currentState \in {idx_state_Min..idx_state_Max}
-        /\ pc = [self \in ProcSet |-> CASE self = 100 -> "ProcBody_"
+        /\ state \in [{idx_proc_Switch} -> {"BothOff", "WallOff", "LampOff", "On"}]
+        /\ initialState = [self \in {idx_proc_Switch} |-> "BothOff"]
+        /\ finalState = [self \in {idx_proc_Switch} |-> "On"]
+        /\ currentState = [self \in {idx_proc_Switch} |-> idx_state_Unknown]
+        /\ evtRecv = [self \in {idx_proc_Switch} |-> idx_event_Unknown]
+        /\ myProcIdx = [self \in {idx_proc_Switch} |-> self]
+        /\ pc = [self \in ProcSet |-> CASE self \in {idx_proc_Switch} -> "ProcBody_"
                                         [] self = 200 -> "ProcBody"]
 
-ProcBody_ == /\ pc[100] = "ProcBody_"
-             /\ state' = "BothOff"
-             /\ currentState' = idx_state_Unknown
-             /\ v1' = 2
-             /\ v2' = 3
-             /\ pc' = [pc EXCEPT ![100] = "EntryBothOff"]
-             /\ UNCHANGED << eventSink_Switch, initialState, finalState >>
+ProcBody_(self) == /\ pc[self] = "ProcBody_"
+                   /\ state' = [state EXCEPT ![self] = "BothOff"]
+                   /\ currentState' = [currentState EXCEPT ![self] = idx_state_Unknown]
+                   /\ v1' = 2
+                   /\ v2' = 3
+                   /\ Assert(( Len(channels) = idx_proc_Max ), 
+                             "Failure of assertion at line 69, column 5.")
+                   /\ PrintT(channels)
+                   /\ PrintT(<<"P:", self, "o->", idx_event_SendRecvTest, " > P:", self>>)
+                   /\ channels' = [channels EXCEPT ![self] = Append(@, idx_event_SendRecvTest)]
+                   /\ PrintT(channels')
+                   /\ pc' = [pc EXCEPT ![self] = "R"]
+                   /\ UNCHANGED << eventSink_Switch, initialState, finalState, 
+                                   evtRecv, myProcIdx >>
 
-EntryBothOff == /\ pc[100] = "EntryBothOff"
-                /\ TRUE
-                /\ pc' = [pc EXCEPT ![100] = "BodyBothOff"]
-                /\ UNCHANGED << eventSink_Switch, v1, v2, state, initialState, 
-                                finalState, currentState >>
+R(self) == /\ pc[self] = "R"
+           /\ Len(channels[self]) > 0
+           /\ evtRecv' = [evtRecv EXCEPT ![self] = Head(channels[self])]
+           /\ PrintT(<<"P:", self, "<-i", evtRecv'[self]>>)
+           /\ channels' = [channels EXCEPT ![self] = Tail(@)]
+           /\ PrintT(channels')
+           /\ Assert((evtRecv'[self] = idx_event_SendRecvTest), 
+                     "Failure of assertion at line 75, column 5.")
+           /\ pc' = [pc EXCEPT ![self] = "EntryBothOff"]
+           /\ UNCHANGED << eventSink_Switch, v1, v2, state, initialState, 
+                           finalState, currentState, myProcIdx >>
 
-BodyBothOff == /\ pc[100] = "BodyBothOff"
-               /\ \/ /\ (/\ state = initialState /\ v1 = 3)
-                     /\ PrintT(<<"Moving to WallOff", v1>>)
-                     /\ state' = "WallOff"
-                     /\ Assert((TRUE), 
-                               "Failure of assertion at line 59, column 9.")
-                     /\ pc' = [pc EXCEPT ![100] = "BodyWallOff"]
-                  \/ /\ (/\ state = initialState)
-                     /\ PrintT(<<"Moving to LampOff", v1>>)
-                     /\ state' = "LampOff"
-                     /\ pc' = [pc EXCEPT ![100] = "BodyLampOff"]
-               /\ UNCHANGED << eventSink_Switch, v1, v2, initialState, 
-                               finalState, currentState >>
+EntryBothOff(self) == /\ pc[self] = "EntryBothOff"
+                      /\ TRUE
+                      /\ pc' = [pc EXCEPT ![self] = "BodyBothOff"]
+                      /\ UNCHANGED << eventSink_Switch, channels, v1, v2, 
+                                      state, initialState, finalState, 
+                                      currentState, evtRecv, myProcIdx >>
 
-BodyLampOff == /\ pc[100] = "BodyLampOff"
-               /\ \/ /\ state = "LampOff"
-                     /\ state' = "BothOff"
-                     /\ pc' = [pc EXCEPT ![100] = "BodyBothOff"]
-                  \/ /\ state = "LampOff"
-                     /\ state' = "On"
-                     /\ pc' = [pc EXCEPT ![100] = "BodyOn"]
-               /\ UNCHANGED << eventSink_Switch, v1, v2, initialState, 
-                               finalState, currentState >>
+BodyBothOff(self) == /\ pc[self] = "BodyBothOff"
+                     /\ \/ /\ (/\ state[self] = initialState[self] /\ v1 = 3)
+                           /\ PrintT(<<myProcIdx[self], ": moving to WallOff", v1>>)
+                           /\ state' = [state EXCEPT ![self] = "WallOff"]
+                           /\ Assert((TRUE), 
+                                     "Failure of assertion at line 84, column 9.")
+                           /\ pc' = [pc EXCEPT ![self] = "BodyWallOff"]
+                        \/ /\ (/\ state[self] = initialState[self])
+                           /\ PrintT(<<myProcIdx[self], ": moving to LampOff", v1>>)
+                           /\ state' = [state EXCEPT ![self] = "LampOff"]
+                           /\ pc' = [pc EXCEPT ![self] = "BodyLampOff"]
+                     /\ UNCHANGED << eventSink_Switch, channels, v1, v2, 
+                                     initialState, finalState, currentState, 
+                                     evtRecv, myProcIdx >>
 
-BodyWallOff == /\ pc[100] = "BodyWallOff"
-               /\ \/ /\ state = "WallOff"
-                     /\ state' = "BothOff"
-                     /\ pc' = [pc EXCEPT ![100] = "BodyBothOff"]
-                  \/ /\ state = "WallOff"
-                     /\ state' = "On"
-                     /\ pc' = [pc EXCEPT ![100] = "BodyOn"]
-               /\ UNCHANGED << eventSink_Switch, v1, v2, initialState, 
-                               finalState, currentState >>
+BodyLampOff(self) == /\ pc[self] = "BodyLampOff"
+                     /\ \/ /\ state[self] = "LampOff"
+                           /\ state' = [state EXCEPT ![self] = "BothOff"]
+                           /\ pc' = [pc EXCEPT ![self] = "BodyBothOff"]
+                        \/ /\ state[self] = "LampOff"
+                           /\ state' = [state EXCEPT ![self] = "On"]
+                           /\ pc' = [pc EXCEPT ![self] = "BodyOn"]
+                     /\ UNCHANGED << eventSink_Switch, channels, v1, v2, 
+                                     initialState, finalState, currentState, 
+                                     evtRecv, myProcIdx >>
 
-BodyOn == /\ pc[100] = "BodyOn"
-          /\ \/ /\ state = "On"
-                /\ state' = "LampOff"
-                /\ pc' = [pc EXCEPT ![100] = "BodyLampOff"]
-             \/ /\ state = "On"
-                /\ state' = "WallOff"
-                /\ pc' = [pc EXCEPT ![100] = "BodyWallOff"]
-          /\ UNCHANGED << eventSink_Switch, v1, v2, initialState, finalState, 
-                          currentState >>
+BodyWallOff(self) == /\ pc[self] = "BodyWallOff"
+                     /\ \/ /\ state[self] = "WallOff"
+                           /\ state' = [state EXCEPT ![self] = "BothOff"]
+                           /\ pc' = [pc EXCEPT ![self] = "BodyBothOff"]
+                        \/ /\ state[self] = "WallOff"
+                           /\ state' = [state EXCEPT ![self] = "On"]
+                           /\ pc' = [pc EXCEPT ![self] = "BodyOn"]
+                     /\ UNCHANGED << eventSink_Switch, channels, v1, v2, 
+                                     initialState, finalState, currentState, 
+                                     evtRecv, myProcIdx >>
 
-Switch == ProcBody_ \/ EntryBothOff \/ BodyBothOff \/ BodyLampOff
-             \/ BodyWallOff \/ BodyOn
+BodyOn(self) == /\ pc[self] = "BodyOn"
+                /\ \/ /\ state[self] = "On"
+                      /\ state' = [state EXCEPT ![self] = "LampOff"]
+                      /\ pc' = [pc EXCEPT ![self] = "BodyLampOff"]
+                   \/ /\ state[self] = "On"
+                      /\ state' = [state EXCEPT ![self] = "WallOff"]
+                      /\ pc' = [pc EXCEPT ![self] = "BodyWallOff"]
+                /\ UNCHANGED << eventSink_Switch, channels, v1, v2, 
+                                initialState, finalState, currentState, 
+                                evtRecv, myProcIdx >>
+
+Switch(self) == ProcBody_(self) \/ R(self) \/ EntryBothOff(self)
+                   \/ BodyBothOff(self) \/ BodyLampOff(self)
+                   \/ BodyWallOff(self) \/ BodyOn(self)
 
 ProcBody == /\ pc[200] = "ProcBody"
             /\ TRUE
             /\ pc' = [pc EXCEPT ![200] = "Done"]
-            /\ UNCHANGED << eventSink_Switch, v1, v2, state, initialState, 
-                            finalState, currentState >>
+            /\ UNCHANGED << eventSink_Switch, channels, v1, v2, state, 
+                            initialState, finalState, currentState, evtRecv, 
+                            myProcIdx >>
 
 ClosedEnv == ProcBody
 
@@ -205,11 +259,12 @@ ClosedEnv == ProcBody
 Terminating == /\ \A self \in ProcSet: pc[self] = "Done"
                /\ UNCHANGED vars
 
-Next == Switch \/ ClosedEnv
+Next == ClosedEnv
+           \/ (\E self \in {idx_proc_Switch}: Switch(self))
            \/ Terminating
 
 Spec == /\ Init /\ [][Next]_vars
-        /\ WF_vars(Switch)
+        /\ \A self \in {idx_proc_Switch} : SF_vars(Switch(self))
         /\ WF_vars(ClosedEnv)
 
 Termination == <>(\A self \in ProcSet: pc[self] = "Done")
