@@ -19,7 +19,7 @@ idx_event_Unknown == -1
 idx_event_Min == 0 
 idx_event_LampSwitch == 0
 idx_event_WallSwitch == 1
-idx_event_Max == 1
+idx_event_Max == 42
 idx_event_SendRecvTest == 42
 
 idx_proc_Unknown == -1
@@ -42,12 +42,17 @@ variables
 
 macro send_event(evt, from, to) {
     print <<"P:", from, "o->", evt, " > P:", to>>;
+    assert(from >= idx_proc_Min /\ from <= idx_proc_Max);
+    assert(to >= idx_proc_Min /\ to <= idx_proc_Max);
+    assert(evt >= idx_event_Min /\ evt <= idx_event_Max);
     channels[to] := Append(@, evt);
 }
 macro recv_event(evt, to) {
+    assert(to >= idx_proc_Min /\ to <= idx_proc_Max);
     await Len(channels[to]) > 0;
     evt := Head(channels[to]);
     print <<"P:", to, "<-i", evt>>;
+    assert(evt >= idx_event_Min /\ evt <= idx_event_Max);
     channels[to] := Tail(@);
 }
 
@@ -135,8 +140,8 @@ fair process (ClosedEnv = 200)
 
 **********************************************************************)
 
-\* BEGIN TRANSLATION (chksum(pcal) = "dce3ec9" /\ chksum(tla) = "2b033f9a")
-\* Label ProcBody of process Switch at line 64 col 5 changed to ProcBody_
+\* BEGIN TRANSLATION (chksum(pcal) = "6c4c62b0" /\ chksum(tla) = "8fa95b81")
+\* Label ProcBody of process Switch at line 69 col 5 changed to ProcBody_
 VARIABLES eventSink_Switch, channels, v1, v2, pc, state, initialState, 
           finalState, currentState, evtRecv, myProcIdx
 
@@ -166,7 +171,7 @@ ProcBody_(self) == /\ pc[self] = "ProcBody_"
                    /\ v1' = 2
                    /\ v2' = 3
                    /\ Assert(( Len(channels) = idx_proc_Max ), 
-                             "Failure of assertion at line 69, column 5.")
+                             "Failure of assertion at line 74, column 5.")
                    /\ PrintT(channels)
                    /\ pc' = [pc EXCEPT ![self] = "S"]
                    /\ UNCHANGED << eventSink_Switch, channels, initialState, 
@@ -174,6 +179,12 @@ ProcBody_(self) == /\ pc[self] = "ProcBody_"
 
 S(self) == /\ pc[self] = "S"
            /\ PrintT(<<"P:", self, "o->", idx_event_SendRecvTest, " > P:", self>>)
+           /\ Assert((self >= idx_proc_Min /\ self <= idx_proc_Max), 
+                     "Failure of assertion at line 45, column 5 of macro called at line 76, column 7.")
+           /\ Assert((self >= idx_proc_Min /\ self <= idx_proc_Max), 
+                     "Failure of assertion at line 46, column 5 of macro called at line 76, column 7.")
+           /\ Assert((idx_event_SendRecvTest >= idx_event_Min /\ idx_event_SendRecvTest <= idx_event_Max), 
+                     "Failure of assertion at line 47, column 5 of macro called at line 76, column 7.")
            /\ channels' = [channels EXCEPT ![self] = Append(@, idx_event_SendRecvTest)]
            /\ PrintT(channels')
            /\ pc' = [pc EXCEPT ![self] = "R"]
@@ -181,13 +192,17 @@ S(self) == /\ pc[self] = "S"
                            finalState, currentState, evtRecv, myProcIdx >>
 
 R(self) == /\ pc[self] = "R"
+           /\ Assert((self >= idx_proc_Min /\ self <= idx_proc_Max), 
+                     "Failure of assertion at line 51, column 5 of macro called at line 78, column 7.")
            /\ Len(channels[self]) > 0
            /\ evtRecv' = [evtRecv EXCEPT ![self] = Head(channels[self])]
            /\ PrintT(<<"P:", self, "<-i", evtRecv'[self]>>)
+           /\ Assert((evtRecv'[self] >= idx_event_Min /\ evtRecv'[self] <= idx_event_Max), 
+                     "Failure of assertion at line 55, column 5 of macro called at line 78, column 7.")
            /\ channels' = [channels EXCEPT ![self] = Tail(@)]
            /\ PrintT(channels')
            /\ Assert((evtRecv'[self] = idx_event_SendRecvTest), 
-                     "Failure of assertion at line 75, column 5.")
+                     "Failure of assertion at line 80, column 5.")
            /\ pc' = [pc EXCEPT ![self] = "EntryBothOff"]
            /\ UNCHANGED << eventSink_Switch, v1, v2, state, initialState, 
                            finalState, currentState, myProcIdx >>
@@ -204,7 +219,7 @@ BodyBothOff(self) == /\ pc[self] = "BodyBothOff"
                            /\ PrintT(<<myProcIdx[self], ": moving to WallOff", v1>>)
                            /\ state' = [state EXCEPT ![self] = "WallOff"]
                            /\ Assert((TRUE), 
-                                     "Failure of assertion at line 84, column 9.")
+                                     "Failure of assertion at line 89, column 9.")
                            /\ pc' = [pc EXCEPT ![self] = "BodyWallOff"]
                         \/ /\ (/\ state[self] = initialState[self])
                            /\ PrintT(<<myProcIdx[self], ": moving to LampOff", v1>>)
