@@ -7,6 +7,13 @@
   - replace the jar if newer
   - run toolbox/toolbox
 
+Alternative toolbox: (Apalache)[https://apalache.informal.systems/]
+
 ## Usage
 
 WIP
+
+## Varia
+
+- (All kinds of resources)[https://learntla.com/reference/other-resources.html]
+
