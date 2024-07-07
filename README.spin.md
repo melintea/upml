@@ -8,6 +8,7 @@
   - [SIP stuff](#sip-stuff)
     - [Simulation](#simulation-1)
     - [Verification](#verification-1)
+- [Various links](#various-links)
 
 
 ## Install spin
@@ -220,3 +221,6 @@ q\p   0   1   2   3   4
 
 Use xspin/ispin.tcl.
 
+## Various links
+- [Spin & Promela](https://spinroot.com)
+- [Tau](https://data.caltech.edu/records/8exsc-7h074)

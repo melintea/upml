@@ -1,3 +1,8 @@
+- [Install](#install)
+- [Usage](#usage)
+  - [Cheat sheet](#cheat-sheet)
+- [Varia](#varia)
+
 ## Install
 
 - [with snap](https://snapcraft.io/tlaplus)
@@ -46,5 +51,7 @@ TYPE_CONSTRAINT
 
 ## Varia
 
+- [Lamport](https://lamport.azurewebsites.net/tla/standalone-tools.html?back-link=tools.html)
 - [All kinds of resources](https://learntla.com/reference/other-resources.html)
+- [presentation & links](https://www.moritz.systems/blog/an-introduction-to-formal-verification/)
 
