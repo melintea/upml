@@ -181,7 +181,33 @@ public:
 
     void visit() const;
     void visit_region(const upml::sm::region& r, const id_t& ownerTag) const;
+    void visit_invariants(const upml::sm::region&  r) const;
+    void visit_preconditions(const upml::sm::region&  r) const;
+    void visit_postconditions(const upml::sm::region&  r) const;
+    void visit_state(const upml::sm::state& s, const RegionData& rd) const;
     void visit_state_regions(const upml::sm::state& s) const;
+    void visit_invariants(const upml::sm::state& s) const;
+    void visit_preconditions(const upml::sm::state& s) const;
+    void visit_postconditions(const upml::sm::state& s) const;
+    void visit_exit_activities(const upml::sm::state& s) const;
+    void visit_entry_activities(const upml::sm::state& s) const;
+    void visit_initial_entry_activities(const upml::sm::state& s) const;
+    void visit_timeout(const upml::sm::state& s) const;
+    void visit_transitions(const upml::sm::state& s, const RegionData& rd) const;
+    void visit_transition(
+        const upml::sm::state&      s,
+        const upml::sm::transition& t) const;
+    void visit_effect(
+        const upml::tla::id_t&      idxCrtState,
+        const upml::sm::transition& t) const;
+    void visit_guard(
+        const upml::tla::id_t&      idxCrtState,
+        const upml::sm::transition& t) const;
+    void visit_activity(
+        const upml::tla::id_t&    idxCrtState,
+        const upml::sm::activity& a) const;
+    // Turn a plantuml token in a guars/post/pre/condition/invariant into valid Promela.
+    std::string token(const std::string& tok) const;
 }; // Visitor
 
 Visitor::Visitor(upml::sm::state_machine& sm,
@@ -196,11 +222,107 @@ Visitor::Visitor(upml::sm::state_machine& sm,
     _states  = names("", sm.states(true));
 }
 
+void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
+{
+}
+
 void Visitor::visit_state_regions(const upml::sm::state& s) const
 {
     for (const auto& [k, r] : s._regions) {
         visit_region(r, s._id);
     }
+}
+
+
+void Visitor::visit_activity(
+    const upml::tla::id_t&    idxCrtState,
+    const upml::sm::activity& a) const
+{
+}
+
+std::string Visitor::token(const std::string& tok) const
+{
+    const auto ttok(scoped_name::create(tok));
+    if (ttok._type == "currentState") {
+        const auto& destStatePtr(_sm.state(ttok._name));
+        assert(destStatePtr != nullptr);
+        assert(destStatePtr->_regions.size() == 1); // TODO: synthax error if multiple regions
+        for (const auto& [k, destReg] : destStatePtr->_regions) {
+            return region(destReg._id) + ":" + ttok._type + ' ';
+        }
+        assert(false);
+    }
+    else {
+        return ttok.to_string();
+    }
+
+    assert(false);
+    return tok;
+}
+
+void Visitor::visit_guard(
+    const upml::tla::id_t&      idxCrtState,
+    const upml::sm::transition& t) const
+{
+}
+
+void Visitor::visit_effect(
+    const upml::tla::id_t&      idxCrtState,
+    const upml::sm::transition& t) const
+{
+}
+
+void Visitor::visit_transition(
+    const upml::sm::state&      s,
+    const upml::sm::transition& t) const
+{
+}
+
+void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) const
+{
+}
+
+void Visitor::visit_entry_activities(const upml::sm::state& s) const
+{
+}
+
+void Visitor::visit_invariants(const upml::sm::region&  r) const
+{
+    for (const auto& [k, s] : r._substates) {
+        visit_invariants(*s);
+    }
+}
+
+void Visitor::visit_invariants(const upml::sm::state&  s) const
+{
+}
+
+void Visitor::visit_preconditions(const upml::sm::region&  r) const
+{
+}
+
+void Visitor::visit_preconditions(const upml::sm::state&  s) const
+{
+}
+
+void Visitor::visit_postconditions(const upml::sm::region&  r) const
+{
+}
+
+void Visitor::visit_postconditions(const upml::sm::state&  s) const
+{
+}
+
+void Visitor::visit_timeout(const upml::sm::state& s) const
+{
+}
+
+void Visitor::visit_initial_entry_activities(const upml::sm::state& s) const
+{
+}
+
+void Visitor::visit_exit_activities(const upml::sm::state& s) const
+{
 }
 
 void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) const
@@ -222,10 +344,41 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     }
 
     _out << "\n\nfair+ process (" << rname << " \\in {" << idx(rname) << "}) \\* " << ownerTag
+         << "\n    evtRecv = idx_unknown; "
+         << "\n    initialState = " << regionData._initialState << "; "
+         << "\n    finalState = " << regionData._finalState << "; "
+         << "\n    currentState = initialState; "
+         << "\n    newState = initialState; "
+         << "\n    noChannel = FALSE; "
          << "\n{"
          ;
 
-    //TODO
+    visit_preconditions(r);
+
+    for (const auto& [k, s] : r._substates) {
+        if (s->_initial) {
+            assert(idx(state(k)) == regionData._initialState);
+            visit_state(*s, regionData);
+            break;  //only one such (supposedly)
+        }
+    }
+
+    for (const auto& [k, s] : r._substates) {
+        if (s->_initial || s->_final) {
+            continue;
+        }
+        visit_state(*s, regionData);
+    }
+
+    for (const auto& [k, s] : r._substates) {
+        if (s->_final) {
+            assert(idx(state(k)) == regionData._finalState);
+            visit_state(*s, regionData);
+            break;  //only one such (supposedly)
+        }
+    }
+
+    visit_postconditions(r);
 
     _out << "\n} \\* " << rname << ' ' << ownerTag << "\n";
 
