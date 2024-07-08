@@ -205,7 +205,7 @@ public:
     void visit_activity(
         const upml::spin::id_t&   idxCrtState,
         const upml::sm::activity& a) const;
-    // Turn a plantuml token in a guars/post/pre/condition/invariant into valid Promela.
+    // Turn a plantuml token in a guard/post/pre/condition/invariant into valid Promela.
     std::string token(const std::string& tok) const;
 }; // Visitor
 
@@ -310,7 +310,7 @@ std::string Visitor::token(const std::string& tok) const
     if (ttok._type == "currentState") {
         const auto& destStatePtr(_sm.state(ttok._name));
         assert(destStatePtr != nullptr);
-        assert(destStatePtr->_regions.size() == 1); // TODO: synthax error if multiple regions
+        assert(destStatePtr->_regions.size() == 1); // TODO: syntax error if multiple regions
         for (const auto& [k, destReg] : destStatePtr->_regions) {
             return region(destReg._id) + ":" + ttok._type + ' ';
         }

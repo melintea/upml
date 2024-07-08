@@ -206,7 +206,7 @@ public:
     void visit_activity(
         const upml::tla::id_t&    idxCrtState,
         const upml::sm::activity& a) const;
-    // Turn a plantuml token in a guars/post/pre/condition/invariant into valid PlusCal.
+    // Turn a plantuml token in a guard/post/pre/condition/invariant into valid PlusCal.
     std::string token(const std::string& tok) const;
 }; // Visitor
 
@@ -226,7 +226,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
 {
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
-    const id_t ilabel(name("entry", s._id) + ": skip;"); //skip becasue we cannot have two consecutive labels
+    const id_t ilabel(name("entry", s._id) + ": skip;"); //skip because we cannot have two consecutive labels
     const id_t elabel(name("end", s._id) + ": skip;");
     const id_t blabel(name("body", s._id) + ": skip;");
     const id_t llabel(name("loop", s._id) + ": skip;");
@@ -234,11 +234,11 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
 
     _out << indent0 << "\n\\* state " << idxCrtState << "[\n";
     _out << indent0 << ilabel 
-         << indent4 << "currentState = newState;";
+         << indent4 << "currentState := newState;";
     if (  s._config.count("noInboundEvents") 
        || s._transitions.empty()
     ) {
-        _out << indent4 << "noChannel = true;";
+        _out << indent4 << "noChannel := TRUE;";
     }
 
     visit_preconditions(s);
@@ -252,14 +252,13 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     if (s._config.count("progressTag")) {
         _out << "\n" << plabel;
     }
-    _out << indent4 << "if ( noChannel == false ) {";
+    _out << indent4 << "if ( noChannel = TRUE ) {";
     if (s._final) {
         _out << indent0 << elabel; // TODO: skip completely the channel read 
     }
-    _out    << indent8 << "_channels[self]?evtRecv; "
-            << indent8 << "printf(\"MSC: > %d " << region(rd._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, currentState); "
+    _out    << indent8 << "recv_event(evtRecv, self); "
             << indent4 << "} else {"
-            << indent8 << "evtRecv.evId = " << event("NullEvent") << ";"
+            << indent8 << "evtRecv.evId := " << event("NullEvent") << ";"
             << indent4 << "}"
             << "\n\n"
             ;
@@ -309,14 +308,15 @@ std::string Visitor::token(const std::string& tok) const
     static const std::map<std::string, std::string> tlaTokens{
         {"&&", "/\\"},
         {"||", "\\/"},
-        {"!",  "~"}
+        {"!",  "~"},
+        {"==", "="}
     };
 
     const auto ttok(scoped_name::create(tok));
     if (ttok._type == "currentState") {
         const auto& destStatePtr(_sm.state(ttok._name));
         assert(destStatePtr != nullptr);
-        assert(destStatePtr->_regions.size() == 1); // TODO: synthax error if multiple regions
+        assert(destStatePtr->_regions.size() == 1); // TODO: syntax error if multiple regions
         for (const auto& [k, destReg] : destStatePtr->_regions) {
             return region(destReg._id) + ":" + ttok._type + ' ';
         }
@@ -377,7 +377,7 @@ void Visitor::visit_transition(
     _out << indent12 << "\\* " << t;
     _out << indent12 << "await (evtRecv.evId == " << event(evt._name); 
          visit_guard(idxCrtState, t);
-    _out << "); \n" << indent12;
+    _out << ");" << indent12;
          visit_effect(idxCrtState, t);
     if (idx(state(toSt._name)) == idxCrtState) {
         visit_postconditions(s);
@@ -399,13 +399,17 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
 
     if ( ! s._transitions.empty()) {
         _out << indent4 << "\\* transitions " << idxCrtState << "[ "
-             << indent4 << "either {\n";
-        for (const auto& [k, t] : s._transitions) {
-           visit_transition(s, t);
-           _out << indent4 << "} or {"; //TODO skip if last one
-        }
+             << indent4 << "either {";
+        auto it = s._transitions.begin();
+        do {
+           visit_transition(s, it->second);
+           ++it;
+           if (it != s._transitions.end()) {
+               _out << indent4 << "} or {";
+           }
+        } while (it != s._transitions.end());
         visit_timeout(s);
-        _out << indent4 << "};"
+        _out << indent4 << "}; \\* either"
              << indent4 << "\\*]transitions " << idxCrtState << "\n"
              ;
     }
