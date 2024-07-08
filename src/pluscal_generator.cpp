@@ -224,6 +224,54 @@ Visitor::Visitor(upml::sm::state_machine& sm,
 
 void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
 {
+    const int myIdx(_states.find(s._id)->second);
+    const auto idxCrtState(idx(state(s._id)));
+    const id_t ilabel(name("entry", s._id) + ": skip;"); //skip becasue we cannot have two consecutive labels
+    const id_t elabel(name("end", s._id) + ": skip;");
+    const id_t blabel(name("body", s._id) + ": skip;");
+    const id_t llabel(name("loop", s._id) + ": skip;");
+    const id_t plabel(name("progress", s._id) + ": skip;"); //TODO:non-progress cycles
+
+    _out << indent0 << "\n\\* state " << idxCrtState << "[\n";
+    _out << indent0 << ilabel 
+         << indent4 << "currentState = newState;";
+    if (  s._config.count("noInboundEvents") 
+       || s._transitions.empty()
+    ) {
+        _out << indent4 << "noChannel = true;";
+    }
+
+    visit_preconditions(s);
+    //visit_initial_entry_activities(s);
+    visit_entry_activities(s);
+
+    _out << "\n\n" << blabel;
+    if (s._initial || s._final) {
+        _out << "\n" << llabel;
+    }
+    if (s._config.count("progressTag")) {
+        _out << "\n" << plabel;
+    }
+    _out << indent4 << "if ( noChannel == false ) {";
+    if (s._final) {
+        _out << indent0 << elabel; // TODO: skip completely the channel read 
+    }
+    _out    << indent8 << "_channels[self]?evtRecv; "
+            << indent8 << "printf(\"MSC: > %d " << region(rd._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, currentState); "
+            << indent4 << "} else {"
+            << indent8 << "evtRecv.evId = " << event("NullEvent") << ";"
+            << indent4 << "}"
+            << "\n\n"
+            ;
+
+    //if (s._transitions.empty()) {
+    //    _out << indent0 << "\n/* state " << idxCrtState << " has no transitions */\n";
+    //    return;
+    //}
+    visit_transitions(s, rd);
+    visit_postconditions(s);
+
+    _out << indent0 << "\\*]state " << idxCrtState << "\n";
 }
 
 void Visitor::visit_state_regions(const upml::sm::state& s) const
@@ -233,11 +281,27 @@ void Visitor::visit_state_regions(const upml::sm::state& s) const
     }
 }
 
-
 void Visitor::visit_activity(
     const upml::tla::id_t&    idxCrtState,
     const upml::sm::activity& a) const
 {
+    assert("send" == a._args[upml::sm::activity::_argOrder::aoActivity]);
+    const auto toSt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoState]));
+    assert(toSt._type == "state");
+    const auto* destReg(_sm.owner_region(toSt._name));
+    assert(destReg);
+    const auto evt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoEvent]));
+    assert(evt._type == "event");
+
+    const auto& destStatePtr(_sm.state(toSt._name));
+    assert(destStatePtr != nullptr); // unless someone made a typo
+    for (const auto& [k, destReg] : destStatePtr->_regions) {
+        _out << "send_event(" << idx(region(destReg._id))
+            << ", " << event(evt._name)
+            << ", " << idxCrtState
+            << ", " << idx(state(toSt._name))
+            << "); \n";
+    }
 }
 
 std::string Visitor::token(const std::string& tok) const
@@ -306,14 +370,65 @@ void Visitor::visit_transition(
     const upml::sm::state&      s,
     const upml::sm::transition& t) const
 {
+    const auto evt(scoped_name::create(t._event));
+    const auto toSt(scoped_name::create(t._toState));
+    const auto idxCrtState(idx(state(s._id)));
+
+    _out << indent12 << "\\* " << t;
+    _out << indent12 << "await (evtRecv.evId == " << event(evt._name); 
+         visit_guard(idxCrtState, t);
+    _out << "); \n" << indent12;
+         visit_effect(idxCrtState, t);
+    if (idx(state(toSt._name)) == idxCrtState) {
+        visit_postconditions(s);
+        _out << indent12<< "newState = " << idx(state(toSt._name)) << "; ";
+        _out << indent12 << "goto " << name("body", s._id) << ';';
+    } else {
+        visit_exit_activities(s);
+        visit_postconditions(s);
+        _out << indent12 << "newState = " << idx(state(toSt._name)) << "; ";
+        _out << indent12 << "goto " << name("entry", toSt._name) << ';';
+    }
+    _out << "\n";
 }
 
 void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) const
 {
+    const int myIdx(_states.find(s._id)->second);
+    const auto idxCrtState(idx(state(s._id)));
+
+    if ( ! s._transitions.empty()) {
+        _out << indent4 << "\\* transitions " << idxCrtState << "[ "
+             << indent4 << "either {\n";
+        for (const auto& [k, t] : s._transitions) {
+           visit_transition(s, t);
+           _out << indent4 << "} or {"; //TODO skip if last one
+        }
+        visit_timeout(s);
+        _out << indent4 << "};"
+             << indent4 << "\\*]transitions " << idxCrtState << "\n"
+             ;
+    }
+
+    visit_postconditions(s);
 }
 
 void Visitor::visit_entry_activities(const upml::sm::state& s) const
 {
+    const int myIdx(_states.find(s._id)->second);
+    const auto idxCrtState(idx(state(s._id)));
+
+    if ( ! s._activities.empty()) {
+        for (const auto& a : s._activities) {
+            if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
+                if (a._activity == "entry") {
+                    _out << indent4 << "\\* " << a;
+                    _out << indent4;
+                    visit_activity(idxCrtState, a);
+                }
+            }
+        }
+    }
 }
 
 void Visitor::visit_invariants(const upml::sm::region&  r) const
@@ -325,6 +440,22 @@ void Visitor::visit_invariants(const upml::sm::region&  r) const
 
 void Visitor::visit_invariants(const upml::sm::state&  s) const
 {
+    if ( ! s._activities.empty()) {
+        for (const auto& a : s._activities) {
+            if (a._activity == "invariant") {
+                _out << indent4 << "\\* " << a;
+                _out << indent4 << "assert(";
+                for (const auto& tok: a._args) {
+                    _out << token(tok);
+                }
+                _out << ");\n";
+            }
+        }
+    }
+
+    for (const auto& [k, r] : s._regions) {
+        visit_invariants(r);
+    }
 }
 
 void Visitor::visit_preconditions(const upml::sm::region&  r) const
@@ -353,6 +484,18 @@ void Visitor::visit_postconditions(const upml::sm::region&  r) const
 
 void Visitor::visit_postconditions(const upml::sm::state&  s) const
 {
+    if ( ! s._activities.empty()) {
+        for (const auto& a : s._activities) {
+            if (a._activity == "postcondition") {
+                _out << indent8 << "\\* " << a;
+                _out << "        assert(";
+                for (const auto& tok: a._args) {
+                    _out << token(tok);
+                }
+                _out << ");\n";
+            }
+        }
+    }
 }
 
 void Visitor::visit_timeout(const upml::sm::state& s) const
@@ -361,10 +504,41 @@ void Visitor::visit_timeout(const upml::sm::state& s) const
 
 void Visitor::visit_initial_entry_activities(const upml::sm::state& s) const
 {
+    const int myIdx(_states.find(s._id)->second);
+    const auto idxCrtState(idx(state(s._id)));
+
+    if ( ! s._initial) {
+        return;
+    }
+
+    if ( ! s._activities.empty()) {
+        for (const auto& a : s._activities) {
+            if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
+                if (a._activity == "entry") {
+                    _out << indent4 << "\\* " << a;
+                    _out << "    ";
+                    visit_activity(idxCrtState, a);
+                }
+            }
+        }
+    }
 }
 
 void Visitor::visit_exit_activities(const upml::sm::state& s) const
 {
+    const int myIdx(_states.find(s._id)->second);
+    const auto idxCrtState(idx(state(s._id)));
+
+    if ( ! s._activities.empty()) {
+        for (const auto& a : s._activities) {
+            if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
+                if (a._activity == "exit") {
+                    _out << indent4 << "\\* " << a;
+                    visit_activity(idxCrtState, a);
+                }
+            }
+        }
+    }
 }
 
 void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) const
@@ -393,7 +567,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
          << "\n    newState = initialState; "
          << "\n    noChannel = FALSE; "
          << "\n{"
-         << "\nProcBody:"
+         << "\nproc_body: skip;" // skip because we cannot have two consecutive labels
          ;
 
     visit_preconditions(r);
