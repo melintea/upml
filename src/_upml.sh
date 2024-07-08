@@ -20,5 +20,5 @@ make || exit 1
 ./upml \
     --in "$pumlfile" \
     --backend tla \
-    --out "tlafile" \
+    --out "$tlafile" \
     2>&1  || exit 1
