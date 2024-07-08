@@ -575,7 +575,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
          << "\n    newState = initialState; "
          << "\n    noChannel = FALSE; "
          << "\n{"
-         << "\nproc_body: skip;" // skip because we cannot have two consecutive labels
+         << "\nproc_body_" << idx(rname) << ": skip;" // skip because we cannot have two consecutive labels
          ;
 
     visit_preconditions(r);
