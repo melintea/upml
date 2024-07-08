@@ -170,7 +170,7 @@ class Visitor
 public: 
 
     Visitor(upml::sm::state_machine& sm,
-            std::ostream&             out);
+            std::ostream&            out);
     Visitor()                          = delete;
     ~Visitor()                         = default;
     Visitor(const Visitor&)            = delete;
@@ -210,7 +210,7 @@ public:
 }; // Visitor
 
 Visitor::Visitor(upml::sm::state_machine& sm,
-                 std::ostream&             out)
+                 std::ostream&            out)
     : _sm(sm)
     , _out(out)
 {
@@ -538,7 +538,6 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
     }
 }
 
-// TODO: states can be goto labels
 void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) const
 {
     RegionData regionData;

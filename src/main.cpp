@@ -10,6 +10,7 @@
 
 #include "plantuml_parser.hpp"
 #include "promela_generator.hpp"
+#include "pluscal_generator.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -86,8 +87,8 @@ int main(int argc, char* argv[])
         ret = ret & upml::promela_generator(outfs.is_open() ? outfs : std::cout,
                                             sm);
     } else if (backend == "tla") {
-        std::cerr << "WIP: " << backend << '\n';
-        ret = EXIT_FAILURE;
+        ret = ret & upml::pluscal_generator(outfs.is_open() ? outfs : std::cout,
+                                            sm);
     } else if (backend == "none") {
         ; // 
     } else {
