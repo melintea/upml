@@ -375,18 +375,18 @@ void Visitor::visit_transition(
     const auto idxCrtState(idx(state(s._id)));
 
     _out << indent12 << "\\* " << t;
-    _out << indent12 << "await (evtRecv.evId == " << event(evt._name); 
+    _out << indent12 << "await (evtRecv.evId = " << event(evt._name); 
          visit_guard(idxCrtState, t);
     _out << ");" << indent12;
          visit_effect(idxCrtState, t);
     if (idx(state(toSt._name)) == idxCrtState) {
         visit_postconditions(s);
-        _out << indent12<< "newState = " << idx(state(toSt._name)) << "; ";
+        _out << indent12<< "newState := " << idx(state(toSt._name)) << "; ";
         _out << indent12 << "goto " << name("body", s._id) << ';';
     } else {
         visit_exit_activities(s);
         visit_postconditions(s);
-        _out << indent12 << "newState = " << idx(state(toSt._name)) << "; ";
+        _out << indent12 << "newState := " << idx(state(toSt._name)) << "; ";
         _out << indent12 << "goto " << name("entry", toSt._name) << ';';
     }
     _out << "\n";
