@@ -206,7 +206,7 @@ public:
     void visit_activity(
         const upml::tla::id_t&    idxCrtState,
         const upml::sm::activity& a) const;
-    // Turn a plantuml token in a guars/post/pre/condition/invariant into valid Promela.
+    // Turn a plantuml token in a guars/post/pre/condition/invariant into valid PlusCal.
     std::string token(const std::string& tok) const;
 }; // Visitor
 
@@ -242,6 +242,12 @@ void Visitor::visit_activity(
 
 std::string Visitor::token(const std::string& tok) const
 {
+    static const std::map<std::string, std::string> tlaTokens{
+        {"&&", "/\\"},
+        {"||", "\\/"},
+        {"!",  "~"}
+    };
+
     const auto ttok(scoped_name::create(tok));
     if (ttok._type == "currentState") {
         const auto& destStatePtr(_sm.state(ttok._name));
@@ -253,7 +259,9 @@ std::string Visitor::token(const std::string& tok) const
         assert(false);
     }
     else {
-        return ttok.to_string();
+        const auto umlTok(ttok.to_string());
+        const auto it(tlaTokens.find(umlTok));
+        return it != tlaTokens.end() ? it->second : umlTok;
     }
 
     assert(false);
@@ -264,12 +272,34 @@ void Visitor::visit_guard(
     const upml::tla::id_t&      idxCrtState,
     const upml::sm::transition& t) const
 {
+    if (t._guard.empty()) {
+        return;
+    }
+
+    _out << " /\\ ";
+    for (const auto& tok: t._guard) {
+        _out << token(tok);
+    }
 }
 
 void Visitor::visit_effect(
     const upml::tla::id_t&      idxCrtState,
     const upml::sm::transition& t) const
 {
+    if (t._effect.empty()) {
+        return;
+    }
+
+    upml::sm::activity a = {
+        ._id       = upml::sm::tag(upml::sm::activity::_tag, t._line),
+        ._state    = idxCrtState,
+        ._activity = t._effect[0],
+        ._args     = upml::sm::activity::args(t._effect.begin(), t._effect.end())
+    };
+    // TODO: UML transition semanic: exit old state, generate effect, enter new state
+    // unless new state == old state
+    //_out << "currentState = idx_unknown; "; 
+    visit_activity( idxCrtState, a);
 }
 
 void Visitor::visit_transition(
@@ -303,6 +333,18 @@ void Visitor::visit_preconditions(const upml::sm::region&  r) const
 
 void Visitor::visit_preconditions(const upml::sm::state&  s) const
 {
+    if ( ! s._activities.empty()) {
+        for (const auto& a : s._activities) {
+            if (a._activity == "precondition") {
+                _out << indent8 << "\\* " << a;
+                _out << "        assert(";
+                for (const auto& tok: a._args) {
+                    _out << token(tok);
+                }
+                _out << ");\n";
+            }
+        }
+    }
 }
 
 void Visitor::visit_postconditions(const upml::sm::region&  r) const
@@ -332,8 +374,8 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     regionData._regionIdx = _regions.find(r._id)->second; // TODO: this is always 1 - wrong
     const id_t rname(name("region", r._id));
 
-    regionData._initialState = "idx_unknown";
-    regionData._finalState   = "idx_unknown";
+    regionData._initialState = "idx_Unknown";
+    regionData._finalState   = "idx_Unknown";
     for (const auto& [k, s] : r._substates) {
         if (s->_initial) {
             regionData._initialState = idx(state(k));
@@ -344,7 +386,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     }
 
     _out << "\n\nfair+ process (" << rname << " \\in {" << idx(rname) << "}) \\* " << ownerTag
-         << "\n    evtRecv = idx_unknown; "
+         << "\n    evtRecv = idx_Unknown; "
          << "\n    initialState = " << regionData._initialState << "; "
          << "\n    finalState = " << regionData._finalState << "; "
          << "\n    currentState = initialState; "
@@ -401,7 +443,7 @@ void Visitor::visit() const
          << "\n\nEXTENDS TLC, Integers, Sequences\n"
          ;
 
-    _out << "\nidx_unknown = -1\n";
+    _out << "\nidx_Unknown = -1\n";
     for (const auto& [k, s] : _states) {
         _out << "\n" << idx(state(k)) << " = " << s;
     }
@@ -431,17 +473,12 @@ void Visitor::visit() const
 
 macro send_event(evt, from, to) {
     print <<"P:", from, "o->", evt, " > P:", to>>;
-    assert(from >= idx_proc_Min /\ from <= idx_proc_Max);
-    assert(to >= idx_proc_Min /\ to <= idx_proc_Max);
-    assert(evt >= idx_event_Min /\ evt <= idx_event_Max);
     channels[to] := Append(@, evt);
 }
 macro recv_event(evt, to) {
-    assert(to >= idx_proc_Min /\ to <= idx_proc_Max);
     await Len(channels[to]) > 0;
     evt := Head(channels[to]);
     print <<"P:", to, "<-i", evt>>;
-    assert(evt >= idx_event_Min /\ evt <= idx_event_Max);
     channels[to] := Tail(@);
 }
 
