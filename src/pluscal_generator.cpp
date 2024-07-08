@@ -351,6 +351,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
          << "\n    newState = initialState; "
          << "\n    noChannel = FALSE; "
          << "\n{"
+         << "\nProcBody:"
          ;
 
     visit_preconditions(r);
