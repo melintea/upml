@@ -159,6 +159,7 @@ class Visitor
     map_t  _events;
     map_t  _states;
     map_t  _regions;
+    mutable int              _labelIdx{0}; // Index for send/recv events labels
 
     struct RegionData
     {
@@ -256,10 +257,10 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     if (s._final) {
         _out << indent0 << elabel; // TODO: skip completely the channel read 
     }
-    _out    << indent8 << "recv_event(evtRecv, self); "
+    _out    << indent8 << upml::sm::tag('R', ++_labelIdx) << ":recv_event(evtRecv, self, currentState); "
             << indent4 << "} else {"
-            << indent8 << "evtRecv.evId := " << event("NullEvent") << ";"
-            << indent4 << "}"
+            << indent8 << "evtRecv.evId := " << idx(event("NullEvent")) << ";"
+            << indent4 << "};"
             << "\n\n"
             ;
 
@@ -295,11 +296,12 @@ void Visitor::visit_activity(
     const auto& destStatePtr(_sm.state(toSt._name));
     assert(destStatePtr != nullptr); // unless someone made a typo
     for (const auto& [k, destReg] : destStatePtr->_regions) {
-        _out << "send_event(" << idx(region(destReg._id))
-            << ", " << event(evt._name)
-            << ", " << idxCrtState
-            << ", " << idx(state(toSt._name))
-            << "); \n";
+        _out << upml::sm::tag('S', ++_labelIdx)
+             << ":send_event(" << idx(region(destReg._id))
+             << ", " << idx(event(evt._name))
+             << ", " << idxCrtState
+             << ", " << idx(state(toSt._name))
+             << "); \n";
     }
 }
 
@@ -375,7 +377,7 @@ void Visitor::visit_transition(
     const auto idxCrtState(idx(state(s._id)));
 
     _out << indent12 << "\\* " << t;
-    _out << indent12 << "await (evtRecv.evId = " << event(evt._name); 
+    _out << indent12 << "await (evtRecv.evId = " << idx(event(evt._name)); 
          visit_guard(idxCrtState, t);
     _out << ");" << indent12;
          visit_effect(idxCrtState, t);
@@ -399,6 +401,7 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
 
     if ( ! s._transitions.empty()) {
         _out << indent4 << "\\* transitions " << idxCrtState << "[ "
+             << indent4 << upml::sm::tag('T', ++_labelIdx) << ':'
              << indent4 << "either {";
         auto it = s._transitions.begin();
         do {
@@ -564,6 +567,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     }
 
     _out << "\n\nfair+ process (" << rname << " \\in {" << idx(rname) << "}) \\* " << ownerTag
+         << "\nvariables"
          << "\n    evtRecv = idx_Unknown; "
          << "\n    initialState = " << regionData._initialState << "; "
          << "\n    finalState = " << regionData._finalState << "; "
@@ -621,19 +625,19 @@ void Visitor::visit() const
          << "\n\nEXTENDS TLC, Integers, Sequences\n"
          ;
 
-    _out << "\nidx_Unknown = -1\n";
+    _out << "\nidx_Unknown == -1\n";
     for (const auto& [k, s] : _states) {
-        _out << "\n" << idx(state(k)) << " = " << s;
+        _out << "\n" << idx(state(k)) << " == " << s;
     }
 
     _out << "\n";
     for (const auto& [k, r] : _regions) {
-        _out << "\n" << idx(region(k)) << " = " << r;
+        _out << "\n" << idx(region(k)) << " == " << r;
     }
 
     _out << "\n";
     for (const auto& [k, e] : _events) {
-        _out << "\n" << idx(event(k)) << " = " << e;
+        _out << "\n" << idx(event(k)) << " == " << e;
     }
 
     _out << "\n\n(**********************************************************************"
@@ -649,15 +653,15 @@ void Visitor::visit() const
 
     _out << R"--(
 
-macro send_event(evt, from, to) {
-    print <<"P:", from, "o->", evt, " > P:", to>>;
-    channels[to] := Append(@, evt);
+macro send_event(channel, evtId, fromState, toState) {
+    print <<"P:", fromState, "o->", evtId, channel, " > P:", toState>>;
+    channels[channel] := Append(@, evtId);
 }
-macro recv_event(evt, to) {
-    await Len(channels[to]) > 0;
-    evt := Head(channels[to]);
-    print <<"P:", to, "<-i", evt>>;
-    channels[to] := Tail(@);
+macro recv_event(evtId, channel, inState) {
+    await Len(channels[channel]) > 0;
+    evtId := Head(channels[channel]);
+    print <<"P:", channel, inState, "<-i", evtId>>;
+    channels[channel] := Tail(@);
 }
 
     )--";
@@ -668,6 +672,7 @@ macro recv_event(evt, to) {
 
     _out << "\n\n} \\* algorithm lamp"
          << "\n\n**********************************************************************)\n\n"
+            "\n\n=======================================================================\n"
          ;
 
 } // Visitor::visit
