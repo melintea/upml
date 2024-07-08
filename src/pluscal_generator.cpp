@@ -207,7 +207,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
 {
     RegionData regionData;
     regionData._id        = r._id;
-    regionData._regionIdx = _regions.find(r._id)->second;
+    regionData._regionIdx = _regions.find(r._id)->second; // TODO: this is always 1 - wrong
     const id_t rname(name("region", r._id));
 
     regionData._initialState = "idx_unknown";
@@ -221,7 +221,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
         }
     }
 
-    _out << "\n\nfair+ process (" << rname << " \\in {" << regionData._regionIdx << "}) \\* " << ownerTag
+    _out << "\n\nfair+ process (" << rname << " \\in {" << idx(rname) << "}) \\* " << ownerTag
          << "\n{"
          ;
 
