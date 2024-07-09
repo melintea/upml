@@ -2,6 +2,8 @@
 - [Status](#status)
 - [Usage](#usage)
   - [Cheat sheet](#cheat-sheet)
+  - [A lamp switch](#a-lamp-switch)
+  - [SIP stuff](#sip-stuff)
 - [Varia](#varia)
 
 ## Install
@@ -59,6 +61,18 @@ SYMMETRY
 TYPE
 TYPE_CONSTRAINT
 VIEW
+```
+
+### A lamp switch
+
+```
+./upml --in ../plantuml/switch/switch.plantuml --out ../plantuml/switch/switch.tla --backend tla
+```
+
+### SIP stuff
+
+```
+./upml --in ../plantuml/sip/sip.plantuml --out ../plantuml/sip/sip.tla --backend tla
 ```
 
 ## Varia

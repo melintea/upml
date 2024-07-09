@@ -94,7 +94,7 @@ state Human {
 
 
 ```
-./upml --in ../plantuml/switch/switch.plantuml --out ../plantuml/switch/switch.promela 
+./upml --in ../plantuml/switch/switch.plantuml --out ../plantuml/switch/switch.promela --backend spin
 
 # or
 cat ../plantuml/switch/switch.plantuml | ./umpl > ../plantuml/switch/switch.promela
