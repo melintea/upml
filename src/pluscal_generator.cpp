@@ -10,6 +10,8 @@
 
 #include "pluscal_generator.hpp"
 
+#include <boost/algorithm/string/trim.hpp>
+
 #include <algorithm>
 #include <chrono>
 #include <map>
@@ -321,12 +323,14 @@ std::string Visitor::token(const std::string& tok) const
         assert(destStatePtr != nullptr);
         assert(destStatePtr->_regions.size() == 1); // TODO: syntax error if multiple regions
         for (const auto& [k, destReg] : destStatePtr->_regions) {
-            return region(destReg._id) + ":" + ttok._type + ' ';
+            //TODO:PlusCal cannot poke a var in another process: return region(destReg._id) + ":" + ttok._type + ' ';
+            return ttok._type + ' ';
         }
         assert(false);
     }
     else {
-        const auto umlTok(ttok.to_string());
+        auto umlTok(ttok.to_string());
+        boost::algorithm::trim(umlTok);
         const auto it(tlaTokens.find(umlTok));
         return it != tlaTokens.end() ? it->second : umlTok;
     }
