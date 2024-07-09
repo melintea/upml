@@ -402,7 +402,7 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
     if ( ! s._transitions.empty()) {
         _out << indent4 << "\\* transitions " << idxCrtState << "[ "
              << indent4 << upml::sm::tag('T', ++_labelIdx) << ':'
-             << indent4 << "either {";
+             << indent4 << (s._transitions.size() > 1 ? "" : "\\* ") << "either {";
         auto it = s._transitions.begin();
         do {
            visit_transition(s, it->second);
@@ -412,7 +412,7 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
            }
         } while (it != s._transitions.end());
         visit_timeout(s);
-        _out << indent4 << "}; \\* either"
+        _out << indent4 << (s._transitions.size() > 1 ? "" : "\\* ") << "}; \\* either"
              << indent4 << "\\*]transitions " << idxCrtState << "\n"
              ;
     }
@@ -451,7 +451,7 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
         for (const auto& a : s._activities) {
             if (a._activity == "invariant") {
                 _out << indent4 << "\\* " << a;
-                _out << indent4 << "assert(";
+                _out << indent4 << "\\* assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -475,7 +475,7 @@ void Visitor::visit_preconditions(const upml::sm::state&  s) const
         for (const auto& a : s._activities) {
             if (a._activity == "precondition") {
                 _out << indent8 << "\\* " << a;
-                _out << "        assert(";
+                _out << "        \\* assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -495,7 +495,7 @@ void Visitor::visit_postconditions(const upml::sm::state&  s) const
         for (const auto& a : s._activities) {
             if (a._activity == "postcondition") {
                 _out << indent8 << "\\* " << a;
-                _out << "        assert(";
+                _out << "        \\* assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
