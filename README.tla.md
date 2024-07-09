@@ -1,4 +1,5 @@
 - [Install](#install)
+- [Status](#status)
 - [Usage](#usage)
   - [Cheat sheet](#cheat-sheet)
 - [Varia](#varia)
@@ -15,6 +16,17 @@
 - fetch the command line [wrappers](https://github.com/pmer/tla-bin)
 
 Alternative toolbox: [Apalache](https://apalache.informal.systems/)
+
+## Status
+
+Use the Promela model.
+
+As of now:
+- can translate model to pluscal which can translate to TLA+
+- the generated model is not useable
+  - closing the system: needs a way to stop infinite runs
+  - closing the system: needs a way to coordinate between processes
+  - but more important: the checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model)
 
 ## Usage
 
