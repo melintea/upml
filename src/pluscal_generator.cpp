@@ -253,13 +253,13 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     if (s._config.count("progressTag")) {
         _out << "\n" << plabel;
     }
-    _out << indent4 << "if ( noChannel = TRUE ) {";
+    _out << indent4 << "if ( noChannel = FALSE ) {";
     if (s._final) {
         _out << indent0 << elabel; // TODO: skip completely the channel read 
     }
     _out    << indent8 << upml::sm::tag('R', ++_labelIdx) << ":recv_event(evtRecv, self, currentState); "
             << indent4 << "} else {"
-            << indent8 << "evtRecv.evId := " << idx(event("NullEvent")) << ";"
+            << indent8 << "evtRecv := " << idx(event("NullEvent")) << ";"
             << indent4 << "};"
             << "\n\n"
             ;
@@ -377,7 +377,7 @@ void Visitor::visit_transition(
     const auto idxCrtState(idx(state(s._id)));
 
     _out << indent12 << "\\* " << t;
-    _out << indent12 << "await (evtRecv.evId = " << idx(event(evt._name)); 
+    _out << indent12 << "await (evtRecv = " << idx(event(evt._name)); 
          visit_guard(idxCrtState, t);
     _out << ");" << indent12;
          visit_effect(idxCrtState, t);
