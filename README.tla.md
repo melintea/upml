@@ -21,7 +21,17 @@ Alternative toolbox: [Apalache](https://apalache.informal.systems/)
 
 ## Status
 
-Use the Promela model if you can. The basic toolbox checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model). The model needs to be completed with an appropriate (liveness?) check.
+Use the Promela model if you can. 
+
+The basic toolbox checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model). I guess the model needs to be completed with an appropriate check along the lines (WIP):
+```
+transitionLabels = { idx_t1, idx_t2,... };
+visitedTransitions = [t \in transitionLabels |-> FALSE];
+...set the flag on transition...
+...
+InvariantT == all visitedTransitions are TRUE
+
+```
 
 ## Usage
 
