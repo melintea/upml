@@ -21,7 +21,7 @@ Alternative toolbox: [Apalache](https://apalache.informal.systems/)
 
 ## Status
 
-Use the Promela model if you can. The basic checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model). The model needs to be completed with an appropriate (liveness?) check.
+Use the Promela model if you can. The basic toolbox checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model). The model needs to be completed with an appropriate (liveness?) check.
 
 ## Usage
 
@@ -68,10 +68,21 @@ Then run upml and load the result in the toolbox.
 
 ### SIP stuff
 
-Close the system as described in the Promela page, run upml, then use the toolbox.
+Close the system as described in the Promela page, run upml:
 
 ```
 ./upml --in ../plantuml/sip/sip.plantuml --out ../plantuml/sip/sip.tla --backend tla
+```
+
+Then use the toolbox with e.g. Temporal Formula: Spec and a Deadlock check:
+```
+...
+End of statistics.
+Progress(75) at 2024-07-10 11:48:04: 21,637 states generated (345,731 s/min), 6,568 distinct states found (104,948 ds/min), 0 states left on queue.
+21637 states generated, 6568 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 75.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 4 and the 95th percentile is 2).
+Finished in 3767ms at (2024-07-10 11:48:04)
 ```
 
 ## Varia
