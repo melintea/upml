@@ -29,7 +29,7 @@ transitionLabels = { idx_t1, idx_t2,... };
 visitedTransitions = [t \in transitionLabels |-> FALSE];
 ...set the flag on transition...
 ...
-InvariantT == all visitedTransitions are TRUE
+InvariantAllTransitionsTaken == <>(\A t in visitedTransitions : pc[t] = TRUE)
 
 ```
 
