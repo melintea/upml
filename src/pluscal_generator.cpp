@@ -237,7 +237,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
 
     _out << indent0 << "\n\\* state " << idxCrtState << "[\n";
     _out << indent0 << ilabel 
-         << indent4 << "currentState := newState;";
+         << indent4 << "currentState[self] := newState;";
     if (  s._config.count("noInboundEvents") 
        || s._transitions.empty()
     ) {
@@ -259,7 +259,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     if (s._final) {
         _out << indent0 << elabel; // TODO: skip completely the channel read 
     }
-    _out    << indent8 << upml::sm::tag('R', ++_labelIdx) << ":recv_event(evtRecv, self, currentState); "
+    _out    << indent8 << upml::sm::tag('L', ++_labelIdx) << ":recv_event(evtRecv, self, currentState[self]); "
             << indent4 << "} else {"
             << indent8 << "evtRecv := " << idx(event("NullEvent")) << ";"
             << indent4 << "};"
@@ -298,7 +298,7 @@ void Visitor::visit_activity(
     const auto& destStatePtr(_sm.state(toSt._name));
     assert(destStatePtr != nullptr); // unless someone made a typo
     for (const auto& [k, destReg] : destStatePtr->_regions) {
-        _out << upml::sm::tag('S', ++_labelIdx)
+        _out << upml::sm::tag('L', ++_labelIdx)
              << ":send_event(" << idx(region(destReg._id))
              << ", " << idx(event(evt._name))
              << ", " << idxCrtState
@@ -314,7 +314,7 @@ std::string Visitor::token(const std::string& tok) const
         {"||", "\\/"},
         {"!",  "~"},
         {"==", "="},
-        {"!=", "~="}
+        {"!=", "/="}
     };
 
     const auto ttok(scoped_name::create(tok));
@@ -323,8 +323,7 @@ std::string Visitor::token(const std::string& tok) const
         assert(destStatePtr != nullptr);
         assert(destStatePtr->_regions.size() == 1); // TODO: syntax error if multiple regions
         for (const auto& [k, destReg] : destStatePtr->_regions) {
-            //TODO:PlusCal cannot poke a var in another process: return region(destReg._id) + ":" + ttok._type + ' ';
-            return ttok._type + ' ';
+            return "currentState[" + idx(region(destReg._id)) + "] ";
         }
         assert(false);
     }
@@ -369,7 +368,7 @@ void Visitor::visit_effect(
     };
     // TODO: UML transition semanic: exit old state, generate effect, enter new state
     // unless new state == old state
-    //_out << "currentState = idx_unknown; "; 
+    //_out << "currentState[self] = idx_unknown; "; 
     visit_activity( idxCrtState, a);
 }
 
@@ -406,7 +405,7 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
 
     if ( ! s._transitions.empty()) {
         _out << indent4 << "\\* transitions " << idxCrtState << "[ "
-             << indent4 << upml::sm::tag('T', ++_labelIdx) << ':'
+             << indent4 << upml::sm::tag('L', ++_labelIdx) << ':'
              << indent4 << (s._transitions.size() > 1 ? "" : "\\* ") << "either {";
         auto it = s._transitions.begin();
         do {
@@ -456,7 +455,7 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
         for (const auto& a : s._activities) {
             if (a._activity == "invariant") {
                 _out << indent4 << "\\* " << a;
-                _out << indent4 << "\\* assert(";
+                _out << indent4 << upml::sm::tag('L', ++_labelIdx) << ": assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -480,7 +479,7 @@ void Visitor::visit_preconditions(const upml::sm::state&  s) const
         for (const auto& a : s._activities) {
             if (a._activity == "precondition") {
                 _out << indent8 << "\\* " << a;
-                _out << "        \\* assert(";
+                _out << indent8 << upml::sm::tag('L', ++_labelIdx) << ": assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -500,7 +499,7 @@ void Visitor::visit_postconditions(const upml::sm::state&  s) const
         for (const auto& a : s._activities) {
             if (a._activity == "postcondition") {
                 _out << indent8 << "\\* " << a;
-                _out << "        \\* assert(";
+                _out << indent8 << upml::sm::tag('L', ++_labelIdx) << ": assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -576,11 +575,10 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
          << "\n    evtRecv = idx_Unknown; "
          << "\n    initialState = " << regionData._initialState << "; "
          << "\n    finalState = " << regionData._finalState << "; "
-         << "\n    currentState = initialState; "
          << "\n    newState = initialState; "
          << "\n    noChannel = FALSE; "
          << "\n{"
-         << "\nproc_body_" << idx(rname) << ": skip;" // skip because we cannot have two consecutive labels
+         << "\nproc_body_" << idx(rname) << ": currentState[self] := initialState;" 
          ;
 
     visit_preconditions(r);
@@ -649,12 +647,14 @@ void Visitor::visit() const
          << "\n\n--algorithm " << _sm._id << " {\n\nvariables\n"
          ;
     
-    std::string chans(std::accumulate(std::next(_regions.begin()), _regions.end(),
-                                      std::string("<<>>"),
-                                      [](std::string all, const auto& /*reg*/){
-                                          return std::move(all + ", <<>>");
+    std::string procs(std::accumulate(std::next(_regions.begin()), _regions.end(),
+                                      idx(region(_regions.begin()->first)),
+                                      [](std::string all, const auto& r){
+                                          return std::move(all + ", " + idx(region(r.first)));
                                       }));
-    _out << indent4 <<" channels = << " << chans << " >>;\n";
+    _out << indent4 <<"procs = { " << procs << " };";
+    _out << indent4 <<"channels = [p \\in procs |-> <<>>];";
+    _out << indent4 <<"currentState = [p \\in procs |-> idx_Unknown];";
 
     _out << R"--(
 

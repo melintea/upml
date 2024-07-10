@@ -21,14 +21,7 @@ Alternative toolbox: [Apalache](https://apalache.informal.systems/)
 
 ## Status
 
-Use the Promela model.
-
-As of now:
-- can translate model to pluscal which can translate to TLA+
-- the generated model is not useable
-  - closing the system: needs a way to stop infinite runs
-  - closing the system: needs a way to coordinate between processes
-  - but more important: the checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model)
+Use the Promela model if you can. The basic checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model). The model needs to be completed with an appropriate (liveness?) check.
 
 ## Usage
 
@@ -65,11 +58,17 @@ VIEW
 
 ### A lamp switch
 
+Close the system as described in the Promela page. Note: this will generate an infinite run (for now)
+
+Then run upml and load the result in the toolbox.
+
 ```
 ./upml --in ../plantuml/switch/switch.plantuml --out ../plantuml/switch/switch.tla --backend tla
 ```
 
 ### SIP stuff
+
+Close the system as described in the Promela page, run upml, then use the toolbox.
 
 ```
 ./upml --in ../plantuml/sip/sip.plantuml --out ../plantuml/sip/sip.tla --backend tla
