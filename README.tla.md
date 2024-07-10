@@ -29,11 +29,15 @@ transitionLabels = { idx_t1, idx_t2,... };
 visitedTransitions = [t \in transitionLabels |-> FALSE];
 ...set the flag on transition...
 ...
-InvariantAllTransitionsTaken == <>(\A t in visitedTransitions : pc[t] = TRUE)
+AllTransitionsVisited == <>(\A t \in visitedTransitions : visitedTransitions[t] = TRUE)
 
 ```
 
 ## Usage
+
+Add ```MaxEventsReached```, ```AllTransitionsVisited```, ```UmlInvariants``` to the model: ![image](images/tla1.png).
+
+These would fall under ```PROPERTY``` in the config file for the model.
 
 ### Cheat sheet
 
