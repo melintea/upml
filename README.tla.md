@@ -21,17 +21,17 @@ Alternative toolbox: [Apalache](https://apalache.informal.systems/)
 
 ## Status
 
-(Use the Promela model if you can) 
+A couple of hacks:
 
-- The basic toolbox checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model). I had to add an ```AllTransitionsVisited``` temporal property. This comes for free with Promela and now I wonder what other checks have to be coded...
+- The basic toolbox checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model). I had to add an ```AllTransitionsVisited``` temporal property. This check comes for free with Promela and now I wonder what other checks have to be coded...
 - I had to add an ```MaxEventsReached``` temporal property to limit infinite runs. This also comes (almost) for free with Promela. 
-  Adjust ```maxUmlEvents``` as needed and note it is a negative. I could have used a CONSTANT here.
+Adjust ```maxUmlEvents``` as needed and note it is a negative. I could have used a CONSTANT here but - ideally - all the artifacts are contained in the model file.
 
 ## Usage
 
 Add ```MaxEventsReached```, ```AllTransitionsVisited```, ```UmlInvariants``` to the model: ![image](images/tla1.png).
 
-These would fall under ```PROPERTY``` in the config file for the model.
+These would be under ```PROPERTY``` in the config file for the model.
 
 ### Cheat sheet
 
@@ -44,7 +44,7 @@ java -cp tla2tools.jar pcal.trans -help     # The PlusCal-to-TLA⁺ translator
 java -cp tla2tools.jar tla2tex.TLA -help    # The TLA⁺-to-LaTeX translator
 ```
 
-Configuration file settings (to the best of my knowledge):
+Configuration file settings (to the best of my current knowledge):
 ```
 ACTION_CONSTRAINT
 ACTION_CONSTRAINTS
@@ -66,7 +66,7 @@ VIEW
 
 ### A lamp switch
 
-Close the system as described in the Promela page. Note: this will generate an infinite run (for now)
+Close the system as described in the [Promela](README.spin.md) page. Note: this will generate an infinite run (for now).
 
 Then run upml and load the result in the toolbox:
 
@@ -78,7 +78,7 @@ Adjust ```maxUmlEvents``` to something like ```-5```; ```MaxEventsReached``` wil
 
 ### SIP stuff
 
-Close the system as described in the Promela page, run upml:
+Close the system as described in the [Promela](README.spin.md) page, run upml:
 
 ```
 ./upml --in ../plantuml/sip/sip.plantuml --out ../plantuml/sip/sip.tla --backend tla
