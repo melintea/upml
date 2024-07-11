@@ -1,4 +1,4 @@
-# upml - from plantuml to promela and TLA+/PlusCal
+# upml - formal verification of UML state machines with Promela and TLA+/PlusCal
 
 A tool to convert an UML state machine (a subset of the whole spec) to:
 - a [promela model](README.spin.md) for [spin](https://github.com/nimble-code/Spin) checking. 
