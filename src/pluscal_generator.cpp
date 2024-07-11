@@ -200,6 +200,8 @@ public:
     void visit_transition(
         const upml::sm::state&      s,
         const upml::sm::transition& t) const;
+    // collect transition labels into a comma-separated string
+    std::string visit_transition_labels() const;
     void visit_effect(
         const upml::tla::id_t&      idxCrtState,
         const upml::sm::transition& t) const;
@@ -424,6 +426,24 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
     visit_postconditions(s);
 }
 
+std::string Visitor::visit_transition_labels() const
+{
+    std::vector<id_t> ids;
+    ids.reserve(20);
+
+    //FIXME
+
+    if (ids.empty()) {
+        return {};
+    }
+    std::string labels(std::accumulate(std::next(ids.begin()), ids.end(),
+                                       std::string('"' + *ids.begin() + '"'),
+                                       [](std::string all, const auto& l){
+                                           return std::move(all + '"' + l + '"');
+                                       }));
+    return labels;
+}
+
 void Visitor::visit_entry_activities(const upml::sm::state& s) const
 {
     const int myIdx(_states.find(s._id)->second);
@@ -454,12 +474,12 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "invariant") {
-                _out << indent4 << "\\* " << a;
-                _out << indent4 << upml::sm::tag('L', ++_labelIdx) << ": assert(";
+                _out << indent8 << "\\* " << a;
+                _out << indent8 << "/\\ [](";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
-                _out << ");\n";
+                _out << ")\n";
             }
         }
     }
@@ -655,6 +675,29 @@ void Visitor::visit() const
     _out << indent4 <<"procs = { " << procs << " };";
     _out << indent4 <<"channels = [p \\in procs |-> <<>>];";
     _out << indent4 <<"currentState = [p \\in procs |-> idx_Unknown];";
+    _out << indent4 <<"stateTransitions = { " << visit_transition_labels() << " };";
+    _out << indent4 <<"visitedTransitions = [t \\in stateTransitions |-> FALSE];";
+    _out << indent4 <<"maxEvents = -20;  \\* limit the number of UML events in the run";
+
+    _out << R"--(
+
+\* Add to the Properties box of the model
+define {
+    \* Limit the number of UML events to maxEvents; when reached this will show as a model run error
+    MaxEventsReached == 
+        /\ [](maxEvents < 0)
+    \* Flag dead transitions as errors
+    AllTransitionsVisited == 
+        /\ <>(\A t \in visitedTransitions : visitedTransitions[t] = TRUE)
+    \* As extracted from the plantuml spec:
+    UmlInvariants == 
+        /\ [](TRUE) \* ensure not empty
+    )--";
+    for (const auto& [k, r] : _sm._regions) {
+        visit_invariants(r);
+    }
+    _out << "}; \n";
+
 
     _out << R"--(
 
