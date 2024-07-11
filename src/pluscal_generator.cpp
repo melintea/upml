@@ -156,12 +156,13 @@ id_t idx(const upml::sm::id_t& s)
 
 class Visitor
 {
-    upml::sm::state_machine& _sm;
-    std::ostream&            _out;
+    upml::sm::state_machine&  _sm;
+    std::ostream&             _out;
     map_t  _events;
     map_t  _states;
     map_t  _regions;
-    mutable int              _labelIdx{0}; // Index for send/recv events labels
+    std::vector<std::string>  _transitionLabels; // quoted-string labels
+    mutable int               _labelIdx{0}; // Index for send/recv events labels
 
     struct RegionData
     {
@@ -185,11 +186,11 @@ public:
     void visit() const;
     void visit_region(const upml::sm::region& r, const id_t& ownerTag) const;
     void visit_invariants(const upml::sm::region&  r) const;
+    void visit_invariants(const upml::sm::state& s) const;
     void visit_preconditions(const upml::sm::region&  r) const;
     void visit_postconditions(const upml::sm::region&  r) const;
     void visit_state(const upml::sm::state& s, const RegionData& rd) const;
     void visit_state_regions(const upml::sm::state& s) const;
-    void visit_invariants(const upml::sm::state& s) const;
     void visit_preconditions(const upml::sm::state& s) const;
     void visit_postconditions(const upml::sm::state& s) const;
     void visit_exit_activities(const upml::sm::state& s) const;
@@ -200,8 +201,9 @@ public:
     void visit_transition(
         const upml::sm::state&      s,
         const upml::sm::transition& t) const;
-    // collect transition labels into a comma-separated string
-    std::string visit_transition_labels() const;
+    // collect transition labels into _transitionLabels
+    void visit_transition_labels(const upml::sm::region&  r);
+    void visit_transition_labels(const upml::sm::state& s);
     void visit_effect(
         const upml::tla::id_t&      idxCrtState,
         const upml::sm::transition& t) const;
@@ -225,6 +227,10 @@ Visitor::Visitor(upml::sm::state_machine& sm,
 
     _regions = names("", sm.regions(true));
     _states  = names("", sm.states(true));
+
+    for (const auto& [kr, r] : _sm._regions) {
+        visit_transition_labels(r);
+    }
 }
 
 void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
@@ -387,6 +393,8 @@ void Visitor::visit_transition(
          visit_guard(idxCrtState, t);
     _out << ");" << indent12;
          visit_effect(idxCrtState, t);
+    _out << indent12 << "visitedTransitions[idx_transition_" << t._id << "] := TRUE;";
+
     if (idx(state(toSt._name)) == idxCrtState) {
         visit_postconditions(s);
         _out << indent12<< "newState := " << idx(state(toSt._name)) << "; ";
@@ -426,22 +434,22 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
     visit_postconditions(s);
 }
 
-std::string Visitor::visit_transition_labels() const
+
+void Visitor::visit_transition_labels(const upml::sm::region&  r) 
 {
-    std::vector<id_t> ids;
-    ids.reserve(20);
-
-    //FIXME
-
-    if (ids.empty()) {
-        return {};
+    for (const auto& [ks, s] : r._substates) {
+        visit_transition_labels(*s);
+        for (const auto& [kr2, r2] : s->_regions) {
+            visit_transition_labels(r2);
+        }
     }
-    std::string labels(std::accumulate(std::next(ids.begin()), ids.end(),
-                                       std::string('"' + *ids.begin() + '"'),
-                                       [](std::string all, const auto& l){
-                                           return std::move(all + '"' + l + '"');
-                                       }));
-    return labels;
+}
+
+void Visitor::visit_transition_labels(const upml::sm::state& s) 
+{
+    for (const auto& [kt, s] : s._transitions) {
+        _transitionLabels.push_back(kt);
+    }
 }
 
 void Visitor::visit_entry_activities(const upml::sm::state& s) const
@@ -663,6 +671,12 @@ void Visitor::visit() const
         _out << "\n" << idx(event(k)) << " == " << e;
     }
 
+    _out << "\n";
+    int ti{0};
+    for (const auto& tl : _transitionLabels) {
+        _out << "\nidx_transition_" << tl << " == " << ++ti; // TODO: use a plain "label" instead of idx-es
+    }
+
     _out << "\n\n(**********************************************************************"
          << "\n\n--algorithm " << _sm._id << " {\n\nvariables\n"
          ;
@@ -675,20 +689,28 @@ void Visitor::visit() const
     _out << indent4 <<"procs = { " << procs << " };";
     _out << indent4 <<"channels = [p \\in procs |-> <<>>];";
     _out << indent4 <<"currentState = [p \\in procs |-> idx_Unknown];";
-    _out << indent4 <<"stateTransitions = { " << visit_transition_labels() << " };";
+
+    assert( ! _transitionLabels.empty());
+    std::string tls(std::accumulate(std::next(_transitionLabels.begin()), _transitionLabels.end(),
+                                    std::string("idx_transition_" + *_transitionLabels.begin()),
+                                    [](std::string all, const auto& l){
+                                        return std::move(all + ", idx_transition_" + l);
+                                    }));
+    _out << indent4 <<"stateTransitions = { " << tls << " };";
     _out << indent4 <<"visitedTransitions = [t \\in stateTransitions |-> FALSE];";
-    _out << indent4 <<"maxEvents = -20;  \\* limit the number of UML events in the run";
+
+    _out << indent4 <<"maxUmlEvents = -20;  \\* limit the number of UML events in the run";
 
     _out << R"--(
 
 \* Add to the Properties box of the model
 define {
-    \* Limit the number of UML events to maxEvents; when reached this will show as a model run error
+    \* Limit the number of UML events to maxUmlEvents; if reached this will show as a model run error
     MaxEventsReached == 
-        /\ [](maxEvents < 0)
+        /\ [](maxUmlEvents < 0)
     \* Flag dead transitions as errors
     AllTransitionsVisited == 
-        /\ <>(\A t \in visitedTransitions : visitedTransitions[t] = TRUE)
+        /\ <>(\A t \in DOMAIN visitedTransitions : visitedTransitions[t] = TRUE)
     \* As extracted from the plantuml spec:
     UmlInvariants == 
         /\ [](TRUE) \* ensure not empty
@@ -704,6 +726,7 @@ define {
 macro send_event(channel, evtId, fromState, toState) {
     print <<"P:", fromState, "o->", evtId, channel, " > P:", toState>>;
     channels[channel] := Append(@, evtId);
+    maxUmlEvents := maxUmlEvents + 1;
 }
 macro recv_event(evtId, channel, inState) {
     await Len(channels[channel]) > 0;
