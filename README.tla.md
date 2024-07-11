@@ -23,7 +23,7 @@ Alternative toolbox: [Apalache](https://apalache.informal.systems/)
 
 A couple of hacks:
 
-- The basic toolbox checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model). I had to add an ```AllTransitionsVisited``` temporal property. This check comes for free with Promela and now I wonder what other checks have to be coded...
+- The basic toolbox checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model). I had to add an ```AllTransitionsVisited``` temporal property. This unreacheable code check comes for free with Promela and now I wonder what other checks have to be coded...
 - I had to add an ```MaxEventsReached``` temporal property to limit infinite runs. This also comes (almost) for free with Promela. 
 Adjust ```maxUmlEvents``` as needed and note it is a negative. I could have used a CONSTANT here but - ideally - all the artifacts are contained in the model file.
 
