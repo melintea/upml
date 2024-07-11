@@ -33,12 +33,13 @@ Additions:
 - state actions: ```entry```, ```exit```
   - ```send``` event from state:
   - example: ```AInitiated: entry: send event:INVITE to state:Bob ;```
-- preconditions: ```SubLaunch: precondition: ((x==y) && (z!=1 || z!=2)) ;```
-- postconditions: ```SubLaunch: postcondition: ((x==y) && (z!=1 || z!=2)) ;```
-- invariants: ```SubLaunch: invariant: ((x==y) && (z!=1 || z!=2)) ;```
+- preconditions: ```state: precondition: expression ; ```
+    - example: ```BInitiated: precondition: (currentState:Bob != state:AIdle);```
+- postconditions: ```state: postcondition: expression ;```
+- invariants: ```state: invariant: expression ;```
 - configuration:
   - ```config: noInboundEvents```: this state receives no events
-  - ```progressTag```: mark state as permitted in an infinite execution cycle for starvation/non-progress loops checks
+  - ```config: progressTag```: mark state as permitted in an infinite execution cycle for starvation/non-progress loops checks
 - ```NullEvent```: reserved event name to force transitions statements to be executable without an external event
 - timeout: ```WIP```
 
