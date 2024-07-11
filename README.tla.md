@@ -21,17 +21,11 @@ Alternative toolbox: [Apalache](https://apalache.informal.systems/)
 
 ## Status
 
-Use the Promela model if you can. 
+(Use the Promela model if you can) 
 
-The basic toolbox checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model). I guess the model needs to be completed with an appropriate check along the lines (WIP):
-```
-transitionLabels = { idx_t1, idx_t2,... };
-visitedTransitions = [t \in transitionLabels |-> FALSE];
-...set the flag on transition...
-...
-AllTransitionsVisited == <>(\A t \in visitedTransitions : visitedTransitions[t] = TRUE)
-
-```
+- The basic toolbox checks do not detect a transition that is never taken (and this could be a genuine logic error of the UML machine we are trying to model). I had to add an ```AllTransitionsVisited``` temporal property. This comes for free with Promela and now I wonder what other checks have to be coded...
+- I had to add an ```MaxEventsReached``` temporal property to limit infinite runs. This also comes (almost) for free with Promela. 
+  Adjust ```maxUmlEvents``` as needed and note it is a negative. I could have used a CONSTANT here.
 
 ## Usage
 
@@ -74,11 +68,13 @@ VIEW
 
 Close the system as described in the Promela page. Note: this will generate an infinite run (for now)
 
-Then run upml and load the result in the toolbox.
+Then run upml and load the result in the toolbox:
 
 ```
 ./upml --in ../plantuml/switch/switch.plantuml --out ../plantuml/switch/switch.tla --backend tla
 ```
+
+Adjust ```maxUmlEvents``` to something like ```-5```; ```MaxEventsReached``` will fire.
 
 ### SIP stuff
 
@@ -87,17 +83,7 @@ Close the system as described in the Promela page, run upml:
 ```
 ./upml --in ../plantuml/sip/sip.plantuml --out ../plantuml/sip/sip.tla --backend tla
 ```
-
-Then use the toolbox with e.g. Temporal Formula: Spec and a Deadlock check:
-```
-...
-End of statistics.
-Progress(75) at 2024-07-10 11:48:04: 21,637 states generated (345,731 s/min), 6,568 distinct states found (104,948 ds/min), 0 states left on queue.
-21637 states generated, 6568 distinct states found, 0 states left on queue.
-The depth of the complete state graph search is 75.
-The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 4 and the 95th percentile is 2).
-Finished in 3767ms at (2024-07-10 11:48:04)
-```
+Then use the toolbox with e.g. Temporal Formula: Spec and a Deadlock check.
 
 ## Varia
 
