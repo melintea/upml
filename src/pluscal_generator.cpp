@@ -674,7 +674,9 @@ void Visitor::visit() const
     _out << "\n";
     int ti{0};
     for (const auto& tl : _transitionLabels) {
-        _out << "\nidx_transition_" << tl << " == " << ++ti; // TODO: use a plain "label" instead of idx-es
+        // TODO: use a plain "label" instead of idx-es
+        // TODO: use labels on transitions and adjust fairness: lbl:+ ... Then dispose of AllTransitionsVisited
+        _out << "\nidx_transition_" << tl << " == " << ++ti; 
     }
 
     _out << "\n\n(**********************************************************************"
