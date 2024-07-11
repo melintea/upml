@@ -161,7 +161,7 @@ class Visitor
     map_t  _events;
     map_t  _states;
     map_t  _regions;
-    std::vector<std::string>  _transitionLabels; // quoted-string labels
+    std::vector<std::string>  _transitionLabels; 
     mutable int               _labelIdx{0}; // Index for send/recv events labels
 
     struct RegionData
