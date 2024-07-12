@@ -393,7 +393,7 @@ void Visitor::visit_transition(
          visit_guard(idxCrtState, t);
     _out << ");" << indent12;
          visit_effect(idxCrtState, t);
-    _out << indent12 << "visitedTransitions[idx_transition_" << t._id << "] := TRUE;";
+    _out << indent12 << "visitedTransitions[\"" << t._id << "\"] := TRUE;";
 
     if (idx(state(toSt._name)) == idxCrtState) {
         visit_postconditions(s);
@@ -671,14 +671,6 @@ void Visitor::visit() const
         _out << "\n" << idx(event(k)) << " == " << e;
     }
 
-    _out << "\n";
-    int ti{0};
-    for (const auto& tl : _transitionLabels) {
-        // TODO: use a plain "label" instead of idx-es
-        // TODO: use labels on transitions and adjust fairness: lbl:+ ... Then dispose of AllTransitionsVisited
-        _out << "\nidx_transition_" << tl << " == " << ++ti; 
-    }
-
     _out << "\n\n(**********************************************************************"
          << "\n\n--algorithm " << _sm._id << " {\n\nvariables\n"
          ;
@@ -694,9 +686,9 @@ void Visitor::visit() const
 
     assert( ! _transitionLabels.empty());
     std::string tls(std::accumulate(std::next(_transitionLabels.begin()), _transitionLabels.end(),
-                                    std::string("idx_transition_" + *_transitionLabels.begin()),
+                                    std::string('"' + *_transitionLabels.begin() + '"'),
                                     [](std::string all, const auto& l){
-                                        return std::move(all + ", idx_transition_" + l);
+                                        return std::move(all + ", \"" + l + '"');
                                     }));
     _out << indent4 <<"stateTransitions = { " << tls << " };";
     _out << indent4 <<"visitedTransitions = [t \\in stateTransitions |-> FALSE];";
