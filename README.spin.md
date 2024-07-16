@@ -1,5 +1,6 @@
 - [Install spin](#install-spin)
 - [Timeline editor](#timeline-editor)
+- [Differences with PlusCal](#differences-with-pluscal)
 - [Usage](#usage)
   - [Cheat Sheet](#cheat-sheet)
   - [A lamp switch](#a-lamp-switch)
@@ -34,6 +35,12 @@ Alternative GUI: jSpin:
 ## Timeline editor
 
 Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
+
+## Differences with PlusCal
+
+- atomicity
+- dead model code
+- process termination
 
 ## Usage
 
