@@ -80,6 +80,10 @@ gcc -DNP -o pan pan.c
 ./pan -l
 
 ```
+```
+# reformat the model:
+cat file | spin -pp | ...
+```
 
 ### A lamp switch
 
