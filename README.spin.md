@@ -1,7 +1,7 @@
 - [Install spin](#install-spin)
 - [Timeline editor](#timeline-editor)
 - [Differences with PlusCal](#differences-with-pluscal)
-- [Usage](#usage)
+- [Internals](#internals)
   - [Cheat Sheet](#cheat-sheet)
   - [A lamp switch](#a-lamp-switch)
     - [Simulation](#simulation)
@@ -48,16 +48,15 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
   PlusCal has no support for end-in-the-middle diagnostic labels or such.
 - process creation: PlusCal cannot dynamically create processes from within your model
 
-## Usage
+## Internals
 
-Notes:
-- there is at least one region in the state machine.
-- each region executes in its own (promela) process.
-- a composite state executes in its own region - it has at
+- There is at least one region in the state machine.
+- Each region executes in its own (promela) process.
+- A composite state executes in its own region - it has at
   least one region.
-- a simple state executes in the composite state/region 
+- A simple state executes in the composite state/region 
   that owns it. 
-- events are asynchronous messages. Event names are unique per 
+- Events are asynchronous messages. Event names are unique per 
   plantuml file.
 
 ### Cheat Sheet
