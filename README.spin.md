@@ -1,14 +1,14 @@
 - [Install spin](#install-spin)
 - [Timeline editor](#timeline-editor)
 - [Differences with PlusCal](#differences-with-pluscal)
-- [Internals](#internals)
-  - [Cheat Sheet](#cheat-sheet)
-  - [A lamp switch](#a-lamp-switch)
-    - [Simulation](#simulation)
+- [Model](#model)
+- [Cheat Sheet](#cheat-sheet)
+- [A lamp switch](#a-lamp-switch)
+  - [Simulation](#simulation)
     - [Verification](#verification)
-  - [SIP stuff](#sip-stuff)
-    - [Simulation](#simulation-1)
-    - [Verification](#verification-1)
+- [SIP stuff](#sip-stuff)
+  - [Simulation](#simulation-1)
+  - [Verification](#verification-1)
 - [Various links](#various-links)
 
 
@@ -48,7 +48,7 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
   PlusCal has no support for end-in-the-middle diagnostic labels or such.
 - process creation: PlusCal cannot dynamically create processes from within your model
 
-## Internals
+## Model
 
 - There is at least one region in the state machine.
 - Each region executes in its own (promela) process.
@@ -59,7 +59,7 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
 - Events are asynchronous messages. Event names are unique per 
   plantuml file.
 
-### Cheat Sheet
+## Cheat Sheet
 
 (just use xspin/ispin.tcl)
 
@@ -84,12 +84,12 @@ gcc -DNP -o pan pan.c
 cat file | spin -pp | ...
 ```
 
-### A lamp switch
+## A lamp switch
 
 A double (lamp & wall) switch lamp [switch.plantuml](plantuml/switch/switch.plantuml) model:
 ![image](plantuml/switch/switch0.png)
 
-#### Simulation
+### Simulation
 
 Left as above, only interactive simulation is possible. A "human" must be added to randomly 
 flip the switches - the state machine needs the "environment" in which it operates for
@@ -149,12 +149,12 @@ depth-limit (-u200 steps) reached
 Mark states as ```progressTag``` e.g. ```On: config: progressTag;``` for non-progress checks.
 Use xspin/ispin.tcl.
 
-### SIP stuff
+## SIP stuff
 
 A non-RFC3261-conformant-and-simplified [sip0.plantuml](plantuml/sip/sip0.plantuml) abominable SM:
 ![image](plantuml/sip/sip0.png)
 
-#### Simulation
+### Simulation
 
 Close the system with a "buggy" event generator. This generator can generate 
 a) multiple events (e.g. Dial to Alice) as the spin machine moves through its 
@@ -231,7 +231,7 @@ q\p   0   1   2   3   4
 
 ```
 
-#### Verification
+### Verification
 
 (The plantuml file contains a few useless precondition, postcondition & invariant statements for demo and testing)
 

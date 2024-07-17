@@ -2,9 +2,9 @@
 - [Status](#status)
 - [Model](#model)
 - [Usage](#usage)
-  - [Cheat sheet](#cheat-sheet)
-  - [A lamp switch](#a-lamp-switch)
-  - [SIP stuff](#sip-stuff)
+- [Cheat sheet](#cheat-sheet)
+- [A lamp switch](#a-lamp-switch)
+- [SIP stuff](#sip-stuff)
 - [Varia](#varia)
 
 ## Install
@@ -38,7 +38,7 @@ Add ```MaxEventsReached```, ```AllTransitionsVisited```, ```UmlInvariants``` to 
 
 These would be under ```PROPERTY``` in the config file for the model.
 
-### Cheat sheet
+## Cheat sheet
 
 Command line (or use the tla-bin wrapper scripts above):
 ```
@@ -69,7 +69,7 @@ TYPE_CONSTRAINT
 VIEW
 ```
 
-### A lamp switch
+## A lamp switch
 
 Close the system as described in the [Promela](README.spin.md) page. Note: this will generate an infinite run (for now).
 
@@ -81,7 +81,7 @@ Then run upml and load the result in the toolbox:
 
 Adjust ```maxUmlEvents``` to something like ```-5```; ```MaxEventsReached``` will fire.
 
-### SIP stuff
+## SIP stuff
 
 Close the system as described in the [Promela](README.spin.md) page, run upml:
 
