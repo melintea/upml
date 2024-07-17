@@ -46,6 +46,7 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
 - process termination: a process that did not end or did not end in an ```end``` label at the end of the verification 
   will be flagged as an error with Promela.
   PlusCal has no support for end-in-the-middle diagnostic labels or such.
+- process creation: PlusCal cannot dynamically create processes from within your model
 
 ## Usage
 
