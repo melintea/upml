@@ -38,14 +38,14 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
 
 ## Differences with PlusCal
 
-- atomicity: Promela is fine grained; atomicity is at statement level and coarse gained atomicity is achieved with 
+- atomicity: Promela is fine grained; atomicity is at statement level and coarser gained atomicity is achieved with 
   dedicated statement grouping: ```atomic```, ```d_step```. 
   PlusCal is coarse grained: atomicity is in between labels; much harder to diagnose race conditions in the model.
 - dead model code: Promela will warn about code that was not reached during verification as this could be a model flaw. 
   PlusCal needs to be told which code is essential.
 - process termination: a process that did not end or did not end in an ```end``` label at the end of the verification 
   will be flagged as an error with Promela.
-  PlusCal has no support for end-in-the-middle diagnostic slabels or such.
+  PlusCal has no support for end-in-the-middle diagnostic labels or such.
 
 ## Usage
 
