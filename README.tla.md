@@ -30,7 +30,7 @@ Adjust ```maxUmlEvents``` as needed and note it is a negative. I could have used
 
 ## Model
 
-By and large the same as the Promela one.
+By and large the same as the [Promela](README.spin.md) one.
 
 ## Usage
 

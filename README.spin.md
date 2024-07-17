@@ -5,7 +5,7 @@
 - [Cheat Sheet](#cheat-sheet)
 - [A lamp switch](#a-lamp-switch)
   - [Simulation](#simulation)
-    - [Verification](#verification)
+  - [Verification](#verification)
 - [SIP stuff](#sip-stuff)
   - [Simulation](#simulation-1)
   - [Verification](#verification-1)
@@ -144,7 +144,7 @@ q\p   0   1   2   3
 depth-limit (-u200 steps) reached
 ```
 
-#### Verification
+### Verification
 
 Mark states as ```progressTag``` e.g. ```On: config: progressTag;``` for non-progress checks.
 Use xspin/ispin.tcl.
