@@ -47,6 +47,8 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
   will be flagged as an error with Promela.
   PlusCal has no support for end-in-the-middle diagnostic labels or such.
 - process creation: PlusCal cannot dynamically create processes from within your model
+- you can verify multiple temporal formulas at once with TLC but only one at a time with spin
+- writing temporal formulas in TLA+ is straight; you need to ask spin for an useable translation of an LTL formula
 
 ## Model
 
