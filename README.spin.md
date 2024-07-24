@@ -29,7 +29,7 @@ make # result: Src/spin
 #xspin is under optional_gui/ispin.tcl
 ```
 Alternative GUI: jSpin:
-- [code](https://github.com/motib/jspin)
+- [code](https://github.com/motib/jspin). See also spinSpider.
 - [install guide](https://gist.github.com/kocsenc/10130261)
 
 ## Timeline editor
@@ -69,7 +69,8 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
 # simulation
 # -i  interactive
 spin pmlfile
-
+```
+```
 #verification
 
 # safety: assertions, non-reacheable code, race conditions
@@ -84,7 +85,8 @@ gcc -o pan pan.c
 # non-progress cycles
 cc -DNP -o pan pan.c
 ./pan -l
-
+```
+```
 # error replay
 # -p statements
 # -g globals
@@ -92,6 +94,7 @@ cc -DNP -o pan pan.c
 # -s sent
 # -r received
 spin -t pmlfile
+pan -t pmlfile
 ```
 ```
 # reformat the model:
