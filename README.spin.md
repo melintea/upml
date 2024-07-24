@@ -46,9 +46,10 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
 - process termination: a process that did not end or did not end in an ```end``` label at the end of the verification 
   will be flagged as an error with Promela.
   PlusCal has no support for end-in-the-middle diagnostic labels or such.
-- process creation: PlusCal cannot dynamically create processes from within your model
-- you can verify multiple temporal formulas at once with TLC but only one at a time with spin
-- writing temporal formulas in TLA+ is straight; you need to ask spin for an useable translation of an LTL formula
+- process creation: PlusCal cannot dynamically create processes from within your model.
+- you can verify multiple temporal formulas at once with TLC but only one at a time with spin; although you can
+  consider aggregating multiple LTL formulas into one until it becomes impossible to read it.
+- writing temporal formulas in TLA+ is straight; you need to ask spin for an useable translation of an LTL formula.
 
 As an comparative example, here is the Dekker algorithm implemented in:
 - [Promela](https://spinroot.com/spin/Man/Manual.html)
