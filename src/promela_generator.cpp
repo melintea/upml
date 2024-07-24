@@ -672,7 +672,9 @@ inline send_event(channel, evt, fs, ts)
         _out << "        run " << region(k) << "(); \n";
     }
     _out <<     "        run invariants(); \n";
-    _out << "    }\n}\n\n/*UPML end*/\n\n";
+    _out <<     "    }\n";
+    _out <<     "    //(_nr_pr == 1); \n";
+    _out <<     "}\n\n/*UPML end*/\n\n";
 }
 
 } // spin

@@ -66,6 +66,12 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
 (just use xspin/ispin.tcl)
 
 ```
+# simulation
+# -i  interactive
+spin pmlfile
+
+#verification
+
 # safety: assertions, non-reacheable code, race conditions
 spin -a pmlfile
 gcc -DSAFETY -o pan pan.c
@@ -76,10 +82,16 @@ gcc -o pan pan.c
 ./pan -a
 
 # non-progress cycles
-
-gcc -DNP -o pan pan.c
+cc -DNP -o pan pan.c
 ./pan -l
 
+# error replay
+# -p statements
+# -g globals
+# -l locals
+# -s sent
+# -r received
+spin -t pmlfile
 ```
 ```
 # reformat the model:
@@ -93,9 +105,10 @@ A double (lamp & wall) switch lamp [switch.plantuml](plantuml/switch/switch.plan
 
 ### Simulation
 
-Left as above, only interactive simulation is possible. A "human" must be added to randomly 
-flip the switches - the state machine needs the "environment" in which it operates for
-simulation and verification; verification needs a fully-specified/closed system.
+Left as above, only interactive simulation is possible, if ever. 
+A "human" must be added to randomly flip the switches - the state machine needs 
+the "environment" in which it operates for simulation and verification; verification 
+needs a fully-specified/closed system.
 
 Then wrap the switch spec into its own ```Switch``` composite state:
 
