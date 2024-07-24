@@ -94,5 +94,5 @@ Then use the toolbox with e.g. Temporal Formula: Spec and a Deadlock check.
 
 - [Lamport](https://lamport.azurewebsites.net/tla/standalone-tools.html?back-link=tools.html)
 - [All kinds of resources](https://learntla.com/reference/other-resources.html)
-- [presentation & links](https://www.moritz.systems/blog/an-introduction-to-formal-verification/)
+- [Presentation & links](https://www.moritz.systems/blog/an-introduction-to-formal-verification/)
 
