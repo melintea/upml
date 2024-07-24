@@ -51,5 +51,5 @@ Depends on boost (spirit, program_options, filesystem).
 
 - ```vUML```. I could not get my hands on it.
 - [Translating UML State Machine Diagram into Promela](https://www.iaeng.org/publication/IMECS2017/IMECS2017_pp512-516.pdf)
-- [an exhausting list of FSL](https://buttondown.email/hillelwayne/archive/formal-specification-languages/)
+- [An exhausting list of FSL](https://buttondown.email/hillelwayne/archive/formal-specification-languages/)
 - [SysML](https://sysml.org/)
