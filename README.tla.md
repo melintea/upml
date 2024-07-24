@@ -30,7 +30,7 @@ Adjust ```maxUmlEvents``` as needed and note it is a negative. I could have used
 
 ## Model
 
-By and large the same as the [Promela](README.spin.md) one.
+By and large the same as the [Promela](README.spin.md#model) one.
 
 ## Usage
 
@@ -71,7 +71,7 @@ VIEW
 
 ## A lamp switch
 
-Close the system as described in the [Promela](README.spin.md) page. Note: this will generate an infinite run (for now).
+Close the system as described in the [Promela](README.spin.md#a-lamp-switch) page. Note: this will generate an infinite run (for now).
 
 Then run upml and load the result in the toolbox:
 
@@ -83,7 +83,7 @@ Adjust ```maxUmlEvents``` to something like ```-5```; ```MaxEventsReached``` wil
 
 ## SIP stuff
 
-Close the system as described in the [Promela](README.spin.md) page, run upml:
+Close the system as described in the [Promela](README.spin.md#sip-stuff) page, run upml:
 
 ```
 ./upml --in ../plantuml/sip/sip.plantuml --out ../plantuml/sip/sip.tla --backend tla
