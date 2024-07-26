@@ -68,7 +68,9 @@ As an comparative example, here is the Dekker algorithm implemented in:
 
 ## Cheat Sheet
 
-(just use xspin/ispin.tcl)
+(just use [xspin/ispin.tcl](https://raw.githubusercontent.com/nimble-code/Spin/master/optional_gui/ispin.tcl) ). 
+
+See also http://spinroot.com/spin/Man/4_SpinVerification.html
 
 ```
 # simulation
@@ -78,17 +80,21 @@ spin pmlfile
 ```
 #verification
 
-# safety: assertions, non-reacheable code, race conditions
-spin -a pmlfile
+# safety: assertions, non-reacheable code, race conditions, wrong end states, timout/deadlock + optional ltl
+spin -a -f "![]ltl" > safety.ltl
+spin -a -N safety.ltl pmlfile
 gcc -DSAFETY -o pan pan.c
 ./pan
 
-# acceptance cycles
-gcc -o pan pan.c
-./pan -a
+# acceptance (undesirable) cycles; -f / -DNFAIR: weak fairness
+# "The accept label in this model formalizes the requirement that the second i
+# state cannot persist forever, and cannot be revisited infinitely often either."
+spin -a -f "!<>ltl" pmlfile
+gcc -DNFAIR=numproc -o pan pan.c
+./pan -a -f
 
-# non-progress cycles
-cc -DNP -o pan pan.c
+# non-progress cycles/starvation
+gcc -DNP -o pan pan.c
 ./pan -l
 ```
 ```
