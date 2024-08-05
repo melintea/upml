@@ -598,7 +598,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
         }
     }
 
-    _out << "\n\nfair+ process (" << rname << " \\in {" << idx(rname) << "}) \\* " << ownerTag
+    _out << "\n\n(* fair+ *) process (" << rname << " \\in {" << idx(rname) << "}) \\* " << ownerTag
          << "\nvariables"
          << "\n    evtRecv = idx_Unknown; "
          << "\n    initialState = " << regionData._initialState << "; "
