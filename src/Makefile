@@ -17,7 +17,8 @@ upml: *.cpp *.h* Makefile
 	
 test: upml
 	./upml  --backend none --in ../plantuml/t0.plantuml
-	./upml --add-monitor=false --in ../plantuml/sip/sip.plantuml
+	./upml  --backend none --in ../plantuml/sip/sip.plantuml
+	./upml  --backend none --in ../plantuml/switch/switch.plantuml
 	@echo "*** Pass ***"
 
 lint:
