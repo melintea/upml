@@ -17,8 +17,11 @@
 
 static std::string indent0 ("\n");
 static std::string indent4 ("\n    ");
+static std::string xndent4 (  "    ");
 static std::string indent8 ("\n        ");
+static std::string xndent8 (  "        ");
 static std::string indent12("\n            ");
+static std::string xndent12(  "            ");
 
 namespace upml {
 
@@ -366,20 +369,20 @@ void Visitor::visit_transition(
     const auto toSt(scoped_name::create(t._toState));
     const auto idxCrtState(idx(state(s._id)));
 
-    _out << indent12 << "//" << t;
-    _out << indent12 << ":: (evtRecv.evId == " << event(evt._name); 
+    _out << indent8 << "//" << t;
+    _out << xndent8 << ":: (evtRecv.evId == " << event(evt._name); 
          visit_guard(idxCrtState, t);
     _out << ") -> ";
          visit_effect(idxCrtState, t);
     if (idx(state(toSt._name)) == idxCrtState) {
         visit_postconditions(s);
-        _out << indent12<< "newState = " << idx(state(toSt._name)) << "; ";
-        _out << indent12 << "goto " << name("body", s._id) << ';';
+        _out << indent8<< "newState = " << idx(state(toSt._name)) << "; ";
+        _out << indent8 << "goto " << name("body", s._id) << ';';
     } else {
         visit_exit_activities(s);
         visit_postconditions(s);
-        _out << indent12 << "newState = " << idx(state(toSt._name)) << "; ";
-        _out << indent12 << "goto " << name("entry", toSt._name) << ';';
+        _out << indent8 << "newState = " << idx(state(toSt._name)) << "; ";
+        _out << indent8 << "goto " << name("entry", toSt._name) << ';';
     }
     _out << "\n";
 }
@@ -436,7 +439,7 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
         for (const auto& a : s._activities) {
             if (a._activity == "invariant") {
                 _out << indent4 << "//" << a;
-                _out << indent4 << ":: (";
+                _out << xndent4 << ":: (";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -657,7 +660,7 @@ inline send_event(channel, evt, fs, ts)
          << indent0 << "end_invariants:"
          << indent0 << "progress_invariants:"
          << indent4 << "do"
-         << indent4 << ":: ! (1 != 2) -> assert(false); // ensure at least one statement"
+         << indent4 << ":: ! (1 != 2) -> assert(false); // ensure at least one statement\n"
          ;
     // Per the doc, remoterefs proc[0]@label or proc[x]:var are valid 
     // only in a never claim but this is accepted with spin 6.5.2

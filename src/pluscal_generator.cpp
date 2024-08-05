@@ -20,8 +20,11 @@
 
 static std::string indent0 ("\n");
 static std::string indent4 ("\n    ");
+static std::string xndent4 (  "    ");
 static std::string indent8 ("\n        ");
+static std::string xndent8 (  "        ");
 static std::string indent12("\n            ");
+static std::string xndent12(  "            ");
 
 namespace upml {
 
@@ -251,6 +254,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     ) {
         _out << indent4 << "noChannel := TRUE;";
     }
+    _out << indent0;
 
     visit_preconditions(s);
     //visit_initial_entry_activities(s);
@@ -388,22 +392,23 @@ void Visitor::visit_transition(
     const auto toSt(scoped_name::create(t._toState));
     const auto idxCrtState(idx(state(s._id)));
 
-    _out << indent12 << "\\* " << t;
-    _out << indent12 << "await (evtRecv = " << idx(event(evt._name)); 
+    _out << '\n';
+    _out << indent8 << "\\* " << t;
+    _out << xndent8 << "await (evtRecv = " << idx(event(evt._name)); 
          visit_guard(idxCrtState, t);
-    _out << ");" << indent12;
+    _out << ");" ;
          visit_effect(idxCrtState, t);
-    _out << indent12 << "visitedTransitions[\"" << t._id << "\"] := TRUE;";
+    _out << indent8 << "visitedTransitions[\"" << t._id << "\"] := TRUE;\n";
 
     if (idx(state(toSt._name)) == idxCrtState) {
         visit_postconditions(s);
-        _out << indent12<< "newState := " << idx(state(toSt._name)) << "; ";
-        _out << indent12 << "goto " << name("body", s._id) << ';';
+        _out << indent8<< "newState := " << idx(state(toSt._name)) << "; ";
+        _out << indent8 << "goto " << name("body", s._id) << ';';
     } else {
         visit_exit_activities(s);
         visit_postconditions(s);
-        _out << indent12 << "newState := " << idx(state(toSt._name)) << "; ";
-        _out << indent12 << "goto " << name("entry", toSt._name) << ';';
+        _out << indent8 << "newState := " << idx(state(toSt._name)) << "; ";
+        _out << indent8 << "goto " << name("entry", toSt._name) << ';';
     }
     _out << "\n";
 }
@@ -462,7 +467,7 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
             if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
                 if (a._activity == "entry") {
                     _out << indent4 << "\\* " << a;
-                    _out << indent4;
+                    _out << xndent4;
                     visit_activity(idxCrtState, a);
                 }
             }
@@ -483,7 +488,7 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
         for (const auto& a : s._activities) {
             if (a._activity == "invariant") {
                 _out << indent8 << "\\* " << a;
-                _out << indent8 << "/\\ [](";
+                _out << xndent8 << "/\\ [](";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -506,8 +511,8 @@ void Visitor::visit_preconditions(const upml::sm::state&  s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "precondition") {
-                _out << indent8 << "\\* " << a;
-                _out << indent8 << upml::sm::tag('L', ++_labelIdx) << ": assert(";
+                _out << indent4 << "\\* " << a;
+                _out << xndent4 << upml::sm::tag('L', ++_labelIdx) << ": assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -555,7 +560,7 @@ void Visitor::visit_initial_entry_activities(const upml::sm::state& s) const
             if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
                 if (a._activity == "entry") {
                     _out << indent4 << "\\* " << a;
-                    _out << "    ";
+                    _out << xndent4;
                     visit_activity(idxCrtState, a);
                 }
             }
@@ -573,6 +578,7 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
             if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
                 if (a._activity == "exit") {
                     _out << indent4 << "\\* " << a;
+                    _out << xndent4;
                     visit_activity(idxCrtState, a);
                 }
             }
@@ -598,7 +604,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
         }
     }
 
-    _out << "\n\n(* fair+ *) process (" << rname << " \\in {" << idx(rname) << "}) \\* " << ownerTag
+    _out << "\n\nfair+ process (" << rname << " \\in {" << idx(rname) << "}) \\* " << ownerTag
          << "\nvariables"
          << "\n    evtRecv = idx_Unknown; "
          << "\n    initialState = " << regionData._initialState << "; "

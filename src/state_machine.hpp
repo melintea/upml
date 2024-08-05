@@ -150,8 +150,6 @@ using activities_t = std::vector<activity>;
  https://www.omg.org/spec/UML/2.5.1/About-UML
  https://sparxsystems.com/resources/tutorials/uml2/state-diagram.html
  TODO
-   initial/final states
-   onentry/ onexit
    history states
  
 */
@@ -438,7 +436,7 @@ inline indent& transition::trace(indent& id, std::ostream& os) const
         << '(' << static_cast<location>(*this) << ") "
         << _fromState << " --> " << _toState << " " 
         << _event << '[' << _guard << "]/" << _effect
-        << " (" << _id << ")\n" // TODO: fix transitions printing
+        << " (" << _id << ")\n"
         ;
     --id;
     return id;
