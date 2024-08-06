@@ -242,6 +242,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     ) {
         _out << indent4 << "noChannel = true;";
     }
+    _out << indent0;
 
     visit_preconditions(s);
     //visit_initial_entry_activities(s);
@@ -299,7 +300,7 @@ void Visitor::visit_activity(
     const auto& destStatePtr(_sm.state(toSt._name));
     assert(destStatePtr != nullptr); // unless someone made a typo
     for (const auto& [k, destReg] : destStatePtr->_regions) {
-        _out << " send_event(" << idx(region(destReg._id))
+        _out << "send_event(" << idx(region(destReg._id))
             << ", " << event(evt._name)
             << ", " << idxCrtState
             << ", " << idx(state(toSt._name))
@@ -376,13 +377,13 @@ void Visitor::visit_transition(
          visit_effect(idxCrtState, t);
     if (idx(state(toSt._name)) == idxCrtState) {
         visit_postconditions(s);
-        _out << indent8<< "newState = " << idx(state(toSt._name)) << "; ";
-        _out << indent8 << "goto " << name("body", s._id) << ';';
+        _out << indent12 << "newState = " << idx(state(toSt._name)) << "; ";
+        _out << indent12 << "goto " << name("body", s._id) << ';';
     } else {
         visit_exit_activities(s);
         visit_postconditions(s);
-        _out << indent8 << "newState = " << idx(state(toSt._name)) << "; ";
-        _out << indent8 << "goto " << name("entry", toSt._name) << ';';
+        _out << indent12 << "newState = " << idx(state(toSt._name)) << "; ";
+        _out << indent12 << "goto " << name("entry", toSt._name) << ';';
     }
     _out << "\n";
 }
@@ -418,7 +419,7 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
                 if (a._activity == "entry") {
                     _out << indent4 << "//" << a;
                     //_out << "    :: (newState == " << idxCrtState << ") -> ";
-                    _out << indent4;
+                    _out << xndent4;
                     visit_activity(idxCrtState, a);
                 }
             }
@@ -466,8 +467,8 @@ void Visitor::visit_preconditions(const upml::sm::state&  s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "precondition") {
-                _out << indent8 << "//" << a;
-                _out << "        assert(";
+                _out << indent4 << "//" << a;
+                _out << xndent4 << "assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -486,8 +487,8 @@ void Visitor::visit_postconditions(const upml::sm::state&  s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "postcondition") {
-                _out << indent8 << "//" << a;
-                _out << "        assert(";
+                _out << indent4 << "//" << a;
+                _out << xndent4 << "assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -515,7 +516,7 @@ void Visitor::visit_initial_entry_activities(const upml::sm::state& s) const
             if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
                 if (a._activity == "entry") {
                     _out << indent4 << "//" << a;
-                    _out << "    ";
+                    _out << xndent4;
                     visit_activity(idxCrtState, a);
                 }
             }
@@ -533,7 +534,7 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
             if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
                 if (a._activity == "exit") {
                     _out << indent4 << "//" << a;
-                    _out << indent4 << ":: (crtState == " << idxCrtState << ") -> ";
+                    _out << xndent4 << ":: (crtState == " << idxCrtState << ") -> ";
                     visit_activity(idxCrtState, a);
                 }
             }
