@@ -439,7 +439,7 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
         for (const auto& a : s._activities) {
             if (a._activity == "invariant") {
                 _out << indent4 << "//" << a;
-                _out << xndent4 << ":: atomic { (";
+                _out << xndent4 << ":: atomic { !(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
