@@ -42,11 +42,11 @@ These would be under ```PROPERTY``` in the config file for the model.
 
 Command line (or use the tla-bin wrapper scripts above):
 ```
-java -cp tla2tools.jar tla2sany.SANY -help  # The TLA⁺ parser
-java -cp tla2tools.jar tlc2.TLC -help       # The TLA⁺ finite model checker
-java -cp tla2tools.jar tlc2.REPL            # Enter the TLA⁺ REPL
-java -cp tla2tools.jar pcal.trans -help     # The PlusCal-to-TLA⁺ translator
-java -cp tla2tools.jar tla2tex.TLA -help    # The TLA⁺-to-LaTeX translator
+java -cp tla2tools.jar tla2sany.SANY -help  # The TLA parser
+java -cp tla2tools.jar tlc2.TLC -help       # The TLA finite model checker
+java -cp tla2tools.jar tlc2.REPL            # Enter the TLA REPL
+java -cp tla2tools.jar pcal.trans -help     # The PlusCal-to-TLA translator
+java -cp tla2tools.jar tla2tex.TLA -help    # The TLA-to-LaTeX translator
 ```
 
 Configuration file settings (to the best of my current knowledge):
