@@ -50,6 +50,8 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
 - you can verify multiple temporal formulas at once with TLC but only one at a time with spin; although you can
   consider aggregating multiple LTL formulas into one until it becomes impossible to read it.
 - no ```timeout``` equivalent in TLA+ to get out of a deadlock.
+- PlusCal has weak & strong fairness builtin. 
+  Spin has only weak fairness builtin; strong fairness has to be defined via LTL/never claims.
 
 As an comparative example, here is the Dekker algorithm implemented in:
 - [Promela](https://spinroot.com/spin/Man/Manual.html)
