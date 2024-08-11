@@ -51,7 +51,7 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
   consider aggregating multiple LTL formulas into one until it becomes impossible to read it.
 - no ```timeout``` equivalent in TLA+ to get out of a deadlock.
 - fairness: PlusCal has weak & strong fairness builtin. 
-  Spin has only weak fairness builtin; strong fairness has to be defined via LTL/never claims.
+  Spin has only weak fairness builtin; strong fairness has to be (defined)[https://spinroot.com/fluxbb/viewtopic.php?id=671] via LTL/never claims.
 
 As an comparative example, here is the Dekker algorithm implemented in:
 - [Promela](https://spinroot.com/spin/Man/Manual.html)
