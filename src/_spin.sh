@@ -13,6 +13,7 @@ function spinit()
 {
     echo "==== spin $*"
     ${exespin} $*
+    echo "==== exit code: $?"
 }
 
 if [ -f "${xexespin}" ]; then
