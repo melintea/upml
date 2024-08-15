@@ -91,13 +91,15 @@ gcc -DSAFETY -o pan pan.c
 # acceptance (undesirable) cycles; -f / -DNFAIR: weak fairness
 # "The accept label in this model formalizes the requirement that the second i
 # state cannot persist forever, and cannot be revisited infinitely often either."
+# -f optional weak fairness constraint
 spin -a -f "!<>ltl" pmlfile
 gcc -DNFAIR=numproc -o pan pan.c
 ./pan -a -f
 
 # non-progress cycles/starvation
+# -f optional weak fairness constraint
 gcc -DNP -o pan pan.c
-./pan -l
+./pan -l -f
 ```
 ```
 # error replay
