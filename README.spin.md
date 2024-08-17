@@ -116,6 +116,11 @@ pan -t pmlfile
 cat file | spin -pp | ...
 ```
 
+```
+@ slicing / model analysis
+spin -A
+```
+
 ## A lamp switch
 
 A double (lamp & wall) switch lamp [switch.plantuml](plantuml/switch/switch.plantuml) model:
