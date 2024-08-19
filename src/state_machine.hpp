@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <map>  // unordered not supported by boost::spirit/phoenix?
