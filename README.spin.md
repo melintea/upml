@@ -278,3 +278,4 @@ Use xspin/ispin.tcl.
 ## Various links
 - [Spin & Promela](https://spinroot.com)
 - [Tau](https://data.caltech.edu/records/8exsc-7h074)
+- [Total Store Ordering (TSO) and the Partial Store Ordering (PSO) memory models](https://github.com/plasklab/mmlib) & [usage](https://brilliantsugar.github.io/posts/how-i-learned-to-stop-worrying-and-love-juggling-c++-atomics/)
