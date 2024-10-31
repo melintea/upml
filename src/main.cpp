@@ -62,6 +62,11 @@ int main(int argc, char* argv[])
 
     bool ret =  upml::plantuml_parser(infs.is_open() ? infs : std::cin,
                                       sm);
+    if ( ! ret) 
+    {
+        std::cerr << "plantuml parsing failed\n";
+        ::exit(EXIT_FAILURE);
+    }
     sm._id = smTag; //TODO: fold it in the constructor, ensure not overriden by m1
 
     std::ofstream  outfs;

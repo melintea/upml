@@ -212,7 +212,7 @@ struct ast_base_visitor : public boost::static_visitor<>
         if (t._event.empty())
         {
             t._event = sm::tag(sm::event::_tag, t._line);
-            std::cerr << "transition with unnamed event at line " 
+            std::cerr << "Warning: transition with unnamed event at line " 
                       << t._line << ": " << t._event << "\n";
         }
 

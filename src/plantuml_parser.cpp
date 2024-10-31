@@ -94,10 +94,11 @@ struct on_error_handler
     template<typename T1, typename T2, typename T3, typename T4>
     qi::error_handler_result operator()(T1 b, T2 e, T3 where, const T4& what) const 
     {
+        auto dist(std::distance(b, where));
         std::cerr 
-            << "Error: expecting " << what << " in line " << bs::get_line(where) << ": \n"
+            << "Error: expecting " << what << " in line " << bs::get_line(where) << ":" << dist << ": \n"
             //<< std::string(b,e) << "\n"
-            //<< std::setw(std::distance(b, where)) << '^' << "---- here\n"
+            //<< std::setw(dist) << '^' << "---- here\n"
             ;
         return qi::fail;
     }
@@ -170,7 +171,8 @@ struct plantuml_grammar final
                 ;
 
         start = 
-            qi::lit("@startuml")
+            eps // error trigger point
+            >  qi::lit("@startuml")
             >> regions 
             >> qi::lit("@enduml")
             ;
@@ -246,19 +248,22 @@ bool plantuml_parser(
                      skip, //bs::ascii::space,
                      ast);
     //std::cout << std::boolalpha << match << '\n';
-    /*
+    
     if ( ! match || crtIt != endIt)
     {
         std::cerr << "Parsing stopped at line " 
-                  << bs::get_line(crtIt) << ':' << bs::get_column(firstIt, crtIt) << '\n' 
-                  << '\'' << std::string{crtIt, endIt} << "'\n";
+                  << bs::get_line(crtIt) << ':' << bs::get_column(firstIt, crtIt) 
+                  << " pos " << std::distance(firstIt, crtIt) << '\n' 
+                  //<< '\'' << std::string{crtIt, endIt} << "'\n"
+                  ;
+        return false;
     }
-    */
-
+    /*
     if ( ! match )
     {
         return false;
     }
+    */
 
     upml::ast_visitor prn(sm);
     boost::apply_visitor(prn, ast);
