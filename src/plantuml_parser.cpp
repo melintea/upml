@@ -143,19 +143,19 @@ struct plantuml_grammar final
         //        ;
 
         state = qi::lit("state") 
-                    >> -qi::omit[qstring]             // long name
+                    >  -qi::omit[qstring]             // long name
                     >> -qi::omit[qi::string("as")]
                     >> rstring
-                    >> -qi::omit[*(qi::char_ - '{')] // optional color
+                    >> -qi::omit[*(qi::char_ - '{')]  // optional color
                     >> qi::lit("{")
                     >> regions 
                     >> qi::lit("}")
               ;
         //            _state    :     _activity   :      args
-        activity %= rstring >> ':' >> rstring >> ':' >> *(tokstring) >> ';';
+        activity %= rstring >> ':' >> rstring >> ':' > *(tokstring) > ';';
 
         //                _state:           config:                     _setting
-        config_setting %= rstring >> ':' >> qi::lit("config") >> ':' >> rstring >> ';';
+        config_setting %= rstring >> ':' >> qi::lit("config") > ':' >> rstring > ';';
 
         //            _fromState  -->               _toState            _event               _guard                        _effect
         //transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> *(rstring) > ']') >> -('/' >> *(rstring));
@@ -163,7 +163,7 @@ struct plantuml_grammar final
 
         // There is one known limitation though, when you try to use a struct that has a single element that is also a container compilation fails unless you add qi::eps >> ... to your rule
         // https://stackoverflow.com/questions/78241220/boostspirit-error-no-type-named-value-type-in-struct-xxx
-        region %= eps >> +(config_setting | activity | transition | state)
+        region %= eps > +(config_setting | activity | transition | state)
                ;
 
         regions %= region/*default region*/ 
