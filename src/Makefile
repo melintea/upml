@@ -19,7 +19,7 @@ test: upml
 	./upml  --backend none --in ../plantuml/t0.plantuml
 	./upml  --backend none --in ../plantuml/sip/sip.plantuml
 	./upml  --backend none --in ../plantuml/switch/switch.plantuml
-	@echo "*** Pass ***"
+	@echo "\e[42m*** Pass ***\e[0m"
 
 lint:
 	clang-tidy promela_generator.cpp -- $(FLAGS) 
