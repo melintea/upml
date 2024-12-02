@@ -21,6 +21,12 @@
 
 namespace bpo = boost::program_options;
 
+// machine configuration options
+void configure_sm(upml::sm::state_machine& sm, const bpo::variables_map& vm)
+{
+    //sm._config._allRandom = vm["random"].as<bool>();
+}
+
 // cat ../plantuml/t0.plantuml | ./upml
 int main(int argc, char* argv[])
 {

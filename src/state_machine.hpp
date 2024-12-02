@@ -227,8 +227,15 @@ struct state_machine : public location
     
     static constexpr const char _tag = 'm';
 
+    // Configuration options driving code generation for spin & TLA
+    struct config
+    {
+        bool  _allRandom {false};   // Any state can randomly receive any message
+    }; //config
+
     id_t       _id;
     regions_t  _regions;
+    config     _config;
 
     // all events across all regions and states
     names_t events() const;
