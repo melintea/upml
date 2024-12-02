@@ -400,6 +400,7 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
            visit_transition(s, t);
         }
         visit_timeout(s);
+        //TODO: resend unhandled events to the hierarchical parent state
         _out << indent4 << "fi"
              << indent4 << "/*]transitions " << idxCrtState << "*/\n"
              ;
