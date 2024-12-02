@@ -24,7 +24,7 @@ namespace bpo = boost::program_options;
 // cat ../plantuml/t0.plantuml | ./upml
 int main(int argc, char* argv[])
 {
-    bpo::options_description po("Plantuml state machine to promela");
+    bpo::options_description po("Plantuml state machine to spin/Promela or TLA+/PlusCal");
     bpo::variables_map       vm;
 
     po.add_options()
