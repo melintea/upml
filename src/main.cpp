@@ -65,6 +65,7 @@ int main(int argc, char* argv[])
     }
 
     upml::sm::state_machine sm;
+    configure_sm(sm, vm);
 
     bool ret =  upml::plantuml_parser(infs.is_open() ? infs : std::cin,
                                       sm);
