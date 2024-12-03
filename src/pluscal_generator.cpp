@@ -727,6 +727,7 @@ define {
     for (const auto& [k, r] : _sm._regions) {
         visit_invariants(r);
     }
+    //TODO: ltl support
     _out << "}; \n";
 
 
