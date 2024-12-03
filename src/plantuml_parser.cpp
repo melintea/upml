@@ -152,7 +152,7 @@ struct plantuml_grammar final
                     >> qi::lit("}")
               ;
         //            _state    :     _activity   :      args
-        activity %= rstring >> ':' >> rstring >> ':' > *(tokstring) > ';';
+        activity %= rstring >> ':' >> rstring >> ':' >> *(tokstring) > ';';
 
         //                _state:           config:                     _setting
         config_setting %= rstring >> ':' >> qi::lit("config") > ':' >> rstring > ';';
@@ -170,12 +170,11 @@ struct plantuml_grammar final
                 >> *((qi::lit("--") | qi::lit("||")) >> region)
                 ;
 
-        start = 
-            eps // error trigger point
-            >  qi::lit("@startuml")
-            >> regions 
-            >> qi::lit("@enduml")
-            ;
+        start =  eps // error trigger point
+              >  qi::lit("@startuml")
+              >> regions 
+              >> qi::lit("@enduml")
+              ;
 
         on_success(activity,       locate(_val, _1, _3));
         on_success(transition,     locate(_val, _1, _3));
