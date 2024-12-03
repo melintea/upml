@@ -688,6 +688,12 @@ inline send_event(channel, evt, fs, ts)
     _out <<     "        run invariants(); \n";
     _out <<     "    }\n";
     _out <<     "    //(_nr_pr == 1); \n";
+
+    //TODO: ltl support
+    _out <<     "\n// ltl claims: run with spin -ltl xyz or spin -noclaim \n";
+    _out <<     "// ltl xyz {[]!(region_x@label && region_y@label)} \n";
+    _out <<     "// ltl wxt {[]!(region_w@label && region_t@label)} \n\n";
+
     _out <<     "}\n\n/*UPML end*/\n\n";
 }
 
