@@ -465,6 +465,10 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
 
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
+            if ( ! a._args.size() ) {
+                std::cerr << "Warning: activity with no args:\n"<< a << "\n";
+                continue;
+            }
             if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
                 if (a._activity == "entry") {
                     _out << indent4 << "\\* " << a;
@@ -576,6 +580,10 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
 
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
+            if ( ! a._args.size() ) {
+                std::cerr << "Warning: activity with no args:\n"<< a << "\n";
+                continue;
+            }
             if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
                 if (a._activity == "exit") {
                     _out << indent4 << "\\* " << a;

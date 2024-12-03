@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 #
 # Usage: _upml.sh file.plantuml
@@ -16,6 +17,7 @@ make || exit 1
     --backend spin \
     --out "$spinfile" \
     2>&1  || exit 1
+meld "$spinfile" &
 
 ./upml \
     --in "$pumlfile" \

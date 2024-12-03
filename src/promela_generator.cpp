@@ -260,7 +260,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     if (s._final) {
         _out << indent0 << elabel << ':'; // TODO: skip completely the channel read 
     }
-    _out    << indent8 << "_channels[myIdx]?evtRecv; "
+    _out    << indent8 << "myChan?evtRecv; "
             << indent8 << "printf(\"MSC: > %d " << region(rd._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, currentState); "
             << indent4 << ":: else"
             << indent8 << "evtRecv.evId = " << event("NullEvent") << ";"
@@ -416,6 +416,10 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
 
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
+            if ( ! a._args.size() ) {
+                std::cerr << "Warning: activity with no args:\n"<< a << "\n";
+                continue;
+            }
             if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
                 if (a._activity == "entry") {
                     _out << indent4 << "//" << a;
@@ -532,6 +536,10 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
 
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
+            if ( ! a._args.size() ) {
+                std::cerr << "Warning: activity with no args:\n"<< a << "\n";
+                continue;
+            }
             if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
                 if (a._activity == "exit") {
                     _out << indent4 << "//" << a;
@@ -564,6 +572,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     _out << "\n\nproctype " << rname << "() // " << ownerTag
          << "\n{"
          << "\n    local short myIdx = " << idx(region(r._id)) << ";"
+         << "\n    local chan myChan = _channels[myIdx]; xr myChan; "
          << "\n    local event evtRecv; "
          << "\n    local short initialState = " << regionData._initialState << "; "
          << "\n    local short finalState = " << regionData._finalState << "; "
