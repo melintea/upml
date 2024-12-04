@@ -1,0 +1,40 @@
+// https://spinroot.com/spin/Man/Manual.html
+
+#define true	1
+#define false	0
+#define Aturn	false
+#define Bturn	true
+
+bool x, y, t;
+byte ghost;
+
+proctype A()
+{	x = true;
+	t = Bturn;
+	(y == false || t == Aturn);
+	/* critical section */
+	ghost++;
+	assert(ghost == 1);
+cspa:	ghost--;
+	x = false
+}
+
+proctype B()
+{	y = true;
+	t = Aturn;
+	(x == false || t == Bturn);
+	/* critical section */
+	ghost++;
+	assert(ghost == 1);
+cspb:	ghost--;
+	y = false
+}
+
+proctype invariants() {
+    end: atomic { (!(ghost == 0 || ghost == 1)) -> assert(false); }
+    //skip;
+}
+
+init{	atomic {run A(); run B(); run invariants();} }
+
+ltl criticalSection {[]!(A@cspa && B@cspb)}

@@ -56,6 +56,7 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
 As an comparative example, here is the Dekker algorithm implemented in:
 - [Promela](https://spinroot.com/spin/Man/Manual.html)
 - [PlusCal](https://github.com/duerrfk/skp/blob/master/criticalsection5dekker/criticalsection5dekker.tla)
+- [Intro] (https://accu.org/journals/overload/32/183/melinte/)
 
 ## Model
 
@@ -67,6 +68,7 @@ As an comparative example, here is the Dekker algorithm implemented in:
   that owns it. 
 - Events are asynchronous messages. Event names are unique per 
   plantuml file.
+- State names are unique per plantuml file.
 
 ## Cheat Sheet
 
