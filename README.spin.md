@@ -56,7 +56,7 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
 As an comparative example, here is the Dekker algorithm implemented in:
 - [Promela](https://spinroot.com/spin/Man/Manual.html)
 - [PlusCal](https://github.com/duerrfk/skp/blob/master/criticalsection5dekker/criticalsection5dekker.tla)
-- [Intro] (https://accu.org/journals/overload/32/183/melinte/)
+- [Intro](https://accu.org/journals/overload/32/183/melinte/)
 
 ## Model
 
