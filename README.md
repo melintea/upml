@@ -1,6 +1,6 @@
 # upml - formal verification of UML state machines with Promela and TLA+/PlusCal
 
-A tool to convert an UML state machine (a subset of the whole spec) to:
+A tool to convert (a subset of the whole [spec](https://www.omg.org/spec/UML/2.5.1/PDF) of) an UML state machine/statechart to:
 - a [Promela model](README.spin.md) for [spin](https://github.com/nimble-code/Spin) checking. 
 - a [TLA model](README.tla.md)
 
