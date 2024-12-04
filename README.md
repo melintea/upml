@@ -4,7 +4,7 @@ A tool to convert (a subset of the whole [spec](https://www.omg.org/spec/UML/2.5
 - a [Promela model](README.spin.md) for [spin](https://github.com/nimble-code/Spin) checking. 
 - a [TLA model](README.tla.md)
 
-The state machine is described in an plantuml file (again, a subset of what plantuml offers).
+The state machine is described in an plantuml file (again, a subset of what plantuml offers) with some additions.
 
 ## Status
 
@@ -41,7 +41,7 @@ Additions:
   - ```config: noInboundEvents```: this state receives no events
   - ```config: progressTag```: mark state as permitted in an infinite execution cycle for starvation/non-progress loops checks
 - ```NullEvent```: reserved event name to force transitions statements to be executable without an external event
-- timeout: ```WIP```
+- timeout: ```WIP``` (not to be confused with the Promela ```timeout``` condition)
 
 ## Build
 
