@@ -43,7 +43,7 @@ Additions:
 - invariants: ```state: invariant: expression ;```
 - configuration:
   - ```config: noInboundEvents```: this state receives no events
-  - ```config: progressTag```: mark state as permitted in an infinite execution cycle for starvation/non-progress loops checks
+  - ```config: progressTag```: mark state as normal in an infinite execution cycle for starvation/non-progress loops verifications
 - ```NullEvent```: reserved event name to force transitions statements to be executable without an external event
 - timeout: ```WIP``` (not to be confused with the Promela ```timeout``` condition)
 
