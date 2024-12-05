@@ -3,7 +3,8 @@
 note top of SuperSuper
   Two levels HSM semantics:
   - instantiation: SuperSuper_entry(); Super1_entry(); S11_entry();
-  - T1: g() ->   S11_exit(); Super1_exit(); ->   t1(); ->  Super2_entry(); d(); S21_entry();
+  - canonical T1: g() ->   S11_exit(); Super1_exit(); ->   t1(); ->  Super2_entry(); d(); S21_entry();
+  - accepted  T1: g() ->   t1(); ->  S11_exit(); Super1_exit(); ->   Super2_entry(); d(); S21_entry();
 end note
 
 state SuperSuper {
