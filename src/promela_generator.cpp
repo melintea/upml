@@ -361,7 +361,7 @@ void Visitor::visit_effect(
     // - generate effect/execute action associated with transition
     // - enter new state
     // unless new state == old state:
-    // - self transition (exit & enter again) not supported; implemented as internal
+    // - self-transitions (exit & enter again) not supported; implemented as internal
     //_out << "currentState = idx_unknown; "; 
     visit_activity( idxCrtState, a);
 }
