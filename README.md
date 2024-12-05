@@ -8,7 +8,9 @@ The state machine is described in an plantuml file (again, a subset of what plan
 
 ## Status
 
-@see [the plantuml state diagram](https://plantuml.com/state-diagram):
+Finite state machines (FSM) should be fully supported. Hierarchical state machines (HSM) are only partially supported: only one hierachical level.
+
+Plantuml: @see [the plantuml state diagram](https://plantuml.com/state-diagram):
 
 - unsupported: history
 - unsupported: fork, join
