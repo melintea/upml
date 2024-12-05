@@ -8,7 +8,9 @@ The state machine is described in an plantuml file (again, a subset of what plan
 
 ## Status
 
-Finite state machines (FSM) should be fully supported. Hierarchical state machines (HSM) are only partially supported: only one hierachical level.
+Finite state machines (FSM) should be fully supported. Hierarchical state machines (HSM) are only partially supported currently: only one hierachical level.
+
+Self=transitions (exit state & enter again) are not supported and are implemented as internal transitions.
 
 Plantuml: @see [the plantuml state diagram](https://plantuml.com/state-diagram):
 
