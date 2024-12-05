@@ -1,0 +1,36 @@
+@startuml
+
+note top of SuperSuper
+  Two levels HSM semantics:
+  - instantiation: SuperSuper_entry(); Super1_entry(); S11_entry();
+  - T1: g() ->   S11_exit(); Super1_exit(); ->   t1(); ->  Super2_entry(); d(); S21_entry();
+end note
+
+state SuperSuper {
+
+  state Super1 {
+      [*] --> S11
+      Super1: entry: Super1_entry();
+      Super1: exit:  Super1_exit();
+      
+      S11: entry: S11_entry();
+      S11: exit:  S11_exit();
+  }
+  
+  state Super2 {
+      [*] --> S21: /d();
+      Super2: entry: Super2_entry();
+      Super2: exit:  Super2_exit();
+      
+      S21: entry: S21_entry();
+      S21: exit:  S21_exit();
+  }
+  
+  [*] --> Super1
+  
+  Super1 --> Super2 : T1: [g()]/t1();
+  
+}
+
+@enduml
+
