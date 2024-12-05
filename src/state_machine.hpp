@@ -13,6 +13,8 @@
 
 #pragma once
 
+#include "indent.hpp"
+
 #include <algorithm>
 #include <cassert>
 #include <iostream>
@@ -50,34 +52,7 @@ inline std::ostream& operator<<(std::ostream& os, const location& l)
     return os;
 }
 
-// Trace helper
-struct indent
-{
-    std::string _indent;
-
-    indent() : _indent{"    "} {}
-    indent(std::string s) : _indent{std::move(s)} {}
-
-    ~indent()                        = default;
-    indent(const indent&)            = default;
-    indent& operator=(const indent&) = default;
-    indent(indent&&)                 = default;
-    indent& operator=(indent&&)      = default;
-
-    indent& operator++()     { _indent += "    "; return *this;}
-    indent  operator++(int)          = delete;
-    indent& operator--()     { _indent.resize(_indent.size() -4); return *this;}
-    indent  operator--(int)          = delete;
-
-    friend std::ostream& operator<<(std::ostream& os, const indent& i);
-};
-
-inline std::ostream& operator<<(std::ostream& os, const indent& i)
-{
-    os << i._indent;
-    return os;
-}
-
+//using indent = upml::indent;
 
 // helper
 template <typename T> struct hasher
