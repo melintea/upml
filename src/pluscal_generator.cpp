@@ -699,12 +699,16 @@ void Visitor::visit() const
     _out << indent4 <<"channels = [p \\in procs |-> <<>>];";
     _out << indent4 <<"currentState = [p \\in procs |-> idx_Unknown];";
 
-    assert( ! _transitionLabels.empty());
-    std::string tls(std::accumulate(std::next(_transitionLabels.begin()), _transitionLabels.end(),
-                                    std::string('"' + *_transitionLabels.begin() + '"'),
-                                    [](std::string all, const auto& l){
-                                        return std::move(all + ", \"" + l + '"');
-                                    }));
+    std::string tls;
+    if (_transitionLabels.empty()) {
+        std::cerr << "Warning: no transitions\n";
+    } else {
+        tls = std::move(std::accumulate(std::next(_transitionLabels.begin()), _transitionLabels.end(),
+                                        std::string('"' + *_transitionLabels.begin() + '"'),
+                                        [](std::string all, const auto& l){
+                                            return std::move(all + ", \"" + l + '"');
+                                        }));
+    }
     _out << indent4 <<"stateTransitions = { " << tls << " };";
     _out << indent4 <<"visitedTransitions = [t \\in stateTransitions |-> FALSE];";
 

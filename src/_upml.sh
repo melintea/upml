@@ -24,3 +24,5 @@ meld "$spinfile" &
     --backend tla \
     --out "$tlafile" \
     2>&1  || exit 1
+meld "$tlafile" &
+
