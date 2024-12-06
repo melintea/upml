@@ -414,14 +414,13 @@ inline std::ostream& operator<<(std::ostream& os, const transition::guard& as)
 
 inline indent& transition::trace(indent& id, std::ostream& os) const
 {
-    ++id;
+    indent_level il(id);
     os  << id 
         << '(' << static_cast<location>(*this) << ") "
         << _fromState << " --> " << _toState << " " 
         << _event << '[' << _guard << "]/" << _effect
         << " (" << _id << ")\n"
         ;
-    --id;
     return id;
 }
 
@@ -434,7 +433,7 @@ inline std::ostream& operator<<(std::ostream& os, const transition& t)
 
 inline indent& activity::trace(indent& id, std::ostream& os) const
 {
-    ++id;
+    indent_level il(id);
     os  << id 
         << '(' << static_cast<location>(*this) << ") "
         << _state << ":" << _activity << ": "
@@ -442,7 +441,6 @@ inline indent& activity::trace(indent& id, std::ostream& os) const
     std::ranges::copy(_args, std::ostream_iterator<args::value_type>(os, ","));
     os  << " (" << _id << ")\n"
         ;
-    --id;
     return id;
 }
 
@@ -461,7 +459,7 @@ inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, t
 
 inline indent& region::trace(indent& id, std::ostream& os) const
 {
-    ++id;
+    indent_level il(id);
     os << id << '(' << static_cast<location>(*this) << ")\n";
     os << id << "-- " << _id << " {\n";
     for (const auto& [k, v] : _substates)
@@ -469,7 +467,6 @@ inline indent& region::trace(indent& id, std::ostream& os) const
         v->trace(id, os);
     }
     os << id << "}\n";
-    --id;
     return id;
 }
 
@@ -489,7 +486,7 @@ inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, r
 
 inline indent& state::trace(indent& id, std::ostream& os) const
 {
-    ++id;
+    indent_level il(id);
     os << id << '(' << static_cast<location>(*this) << ")\n";
     os << id << "state " << _id 
        << " final:" << _final << ";initial:" << _initial 
@@ -508,17 +505,15 @@ inline indent& state::trace(indent& id, std::ostream& os) const
     }
     if (_config.size())
     {
-        ++id;
+        indent_level il2(id);
         os << id;
         for (const auto& cf : _config)
         {
             os << cf << ',';
         }
         os << '\n';
-        --id;
     }
     os << id << "}\n";
-    --id;
     return id;
 }
 
@@ -548,7 +543,7 @@ inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, s
 
 inline indent& state_machine::trace(indent& id, std::ostream& os) const
 {
-    ++id;
+    indent_level il(id);
     os << id << '(' << static_cast<location>(*this) << ")\n";
     os << id << "machine " << _id << " {\n";
     for (const auto& [k, v] : _regions)
@@ -556,7 +551,6 @@ inline indent& state_machine::trace(indent& id, std::ostream& os) const
         v.trace(id, os);
     }
     os << id << "} " << _id << '\n';
-    --id;
     return id;
 }
 

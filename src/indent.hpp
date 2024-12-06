@@ -48,22 +48,22 @@ inline std::ostream& operator<<(std::ostream& os, const indent& i)
     return os;
 }
 
-struct indent_scope
+struct indent_level
 {
     indent& _indent;
 
-    indent_scope(indent& i) : _indent{i} { ++_indent; }
-    ~indent_scope() { --_indent; }
+    indent_level(indent& i) : _indent{i} { ++_indent; }
+    ~indent_level() { --_indent; }
 
-    indent_scope(const indent_scope&)            = delete;
-    indent_scope& operator=(const indent_scope&) = delete;
-    indent_scope(indent_scope&&)                 = delete;
-    indent_scope& operator=(indent_scope&&)      = delete;
+    indent_level(const indent_level&)            = delete;
+    indent_level& operator=(const indent_level&) = delete;
+    indent_level(indent_level&&)                 = delete;
+    indent_level& operator=(indent_level&&)      = delete;
 
-    friend std::ostream& operator<<(std::ostream& os, const indent_scope& i);
+    friend std::ostream& operator<<(std::ostream& os, const indent_level& i);
 };
 
-inline std::ostream& operator<<(std::ostream& os, const indent_scope& i)
+inline std::ostream& operator<<(std::ostream& os, const indent_level& i)
 {
     os << i._indent;
     return os;
