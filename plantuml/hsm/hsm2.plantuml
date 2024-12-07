@@ -19,7 +19,7 @@ state SuperSuper {
   }
   
   state Super2 {
-      [*] --> S21: /d();
+      [*] --> S21: /d(); 
       Super2: entry: Super2_entry();
       Super2: exit:  Super2_exit();
       
@@ -28,10 +28,13 @@ state SuperSuper {
   }
   
   [*] --> Super1
+  SuperSuper: entry: SuperSuper();
   
-  Super1 --> Super2 : T1: [g()]/t1();
+  Super1 --> Super2 : T1 [g()]/t1(); 
   
 }
+
+[*] --> SuperSuper
 
 @enduml
 

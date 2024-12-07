@@ -157,7 +157,7 @@ struct plantuml_grammar final
         //                _state:           config:                     _setting
         config_setting %= rstring >> ':' >> qi::lit("config") > ':' >> rstring > ';';
 
-        //            _fromState  -->               _toState            _event               _guard                        _effect
+        //            _fromState  -->               _toState      :     _event         [     _guard          ]         /   _effect
         //transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> *(rstring) > ']') >> -('/' >> *(rstring));
         transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> +(tokstring) > ']') >> -('/' >> +(tokstring) > ';');
 
