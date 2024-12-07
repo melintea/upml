@@ -213,7 +213,7 @@ public:
     void visit_guard(
         const upml::tla::id_t&      idxCrtState,
         const upml::sm::transition& t) const;
-    void visit_activity(
+    void visit_send_activity(
         const upml::tla::id_t&    idxCrtState,
         const upml::sm::activity& a) const;
     // Turn a plantuml token in a guard/post/pre/condition/invariant into valid PlusCal.
@@ -295,7 +295,7 @@ void Visitor::visit_state_regions(const upml::sm::state& s) const
     }
 }
 
-void Visitor::visit_activity(
+void Visitor::visit_send_activity(
     const upml::tla::id_t&    idxCrtState,
     const upml::sm::activity& a) const
 {
@@ -381,7 +381,7 @@ void Visitor::visit_effect(
     // TODO: UML transition semanic: exit old state, generate effect, enter new state
     // unless new state == old state
     //_out << "currentState[self] = idx_unknown; "; 
-    visit_activity( idxCrtState, a);
+    visit_send_activity( idxCrtState, a);
 }
 
 void Visitor::visit_transition(
@@ -473,7 +473,7 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
                 if (a._activity == "entry") {
                     _out << indent4 << "\\* " << a;
                     _out << xndent4;
-                    visit_activity(idxCrtState, a);
+                    visit_send_activity(idxCrtState, a);
                 }
             }
         }
@@ -566,7 +566,7 @@ void Visitor::visit_initial_entry_activities(const upml::sm::state& s) const
                 if (a._activity == "entry") {
                     _out << indent4 << "\\* " << a;
                     _out << xndent4;
-                    visit_activity(idxCrtState, a);
+                    visit_send_activity(idxCrtState, a);
                 }
             }
         }
@@ -588,7 +588,7 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
                 if (a._activity == "exit") {
                     _out << indent4 << "\\* " << a;
                     _out << xndent4;
-                    visit_activity(idxCrtState, a);
+                    visit_send_activity(idxCrtState, a);
                 }
             }
         }
