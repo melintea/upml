@@ -157,9 +157,9 @@ struct plantuml_grammar final
         //                _state:           config:                     _setting
         config_setting %= rstring >> ':' >> qi::lit("config") > ':' >> rstring > ';';
 
-        //            _fromState  -->               _toState      :     _event         [     _guard          ]         /   _effect
+        //            _fromState  -->               _toState      :       _event          [     _guard          ]         /   _effect
         //transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> *(rstring) > ']') >> -('/' >> *(rstring));
-        transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> +(tokstring) > ']') >> -('/' >> +(tokstring) > ';');
+        transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> *(rstring)) >> -('[' >> +(tokstring) > ']') >> -('/' >> +(tokstring) > ';');
 
         // There is one known limitation though, when you try to use a struct that has a single element that is also a container compilation fails unless you add qi::eps >> ... to your rule
         // https://stackoverflow.com/questions/78241220/boostspirit-error-no-type-named-value-type-in-struct-xxx
