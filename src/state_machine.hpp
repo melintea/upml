@@ -102,10 +102,10 @@ struct activity : public location
 {
     static constexpr const char _tag = 'a';
     enum _argOrder{
-        aoActivity = 0,  // send
-        aoEvent    = 1,  // ACK
-        aoIgnore   = 2,  // to
-        aoState    = 3,  // Bob
+        aoActivity = 0,  // send, trace
+        aoEvent    = 1,  // ACK (for send)
+        aoIgnore   = 2,  // to  (for send)
+        aoState    = 3,  // Bob (for send)
     };
     using args = std::vector<std::string>;
 

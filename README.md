@@ -31,9 +31,10 @@ Additions:
 - comments: ```//```, non-nested ```/**/```. Plantuml will choke on these: if you can, use ```note``` instead.
 - transition: ```state --> state : event [guard]/effect ;```
   - note the ending ```;```
-  - currently the effect can only be a ```send``` action.
+  - currently the effect can only be a ```send``` or a ```trace``` action.
   - ```guard``` is an expression e.g. ```((x==y) && (z!=1 || z!=2))```
   - example: ```Deploy -1down-> Operation : BYE [((x==y) && (z!=1 || z!=2))] / send event:ACK to state:Bob ; ```
+  - example: ```  Super1 --> Super2 : T1 [g()]/trace t1 foo bar baz; ``` (note the lack of quotes)
 - state actions: ```entry```, ```exit```
   - ```send``` event from state:
   - example: ```AInitiated: entry: send event:INVITE to state:Bob ;```

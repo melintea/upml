@@ -205,7 +205,13 @@ public:
     void visit_guard(
         const upml::spin::id_t&     idxCrtState,
         const upml::sm::transition& t) const;
+    void visit_activity(
+        const upml::spin::id_t&   idxCrtState,
+        const upml::sm::activity& a) const;
     void visit_send_activity(
+        const upml::spin::id_t&   idxCrtState,
+        const upml::sm::activity& a) const;
+    void visit_trace_activity(
         const upml::spin::id_t&   idxCrtState,
         const upml::sm::activity& a) const;
     // Turn a plantuml token in a guard/post/pre/condition/invariant into valid Promela.
@@ -283,6 +289,30 @@ void Visitor::visit_state_regions(const upml::sm::state& s) const
     for (const auto& [k, r] : s._regions) {
         visit_region(r, s._id);
     }
+}
+
+void Visitor::visit_activity(
+    const upml::spin::id_t&   idxCrtState,
+    const upml::sm::activity& a) const
+{
+    if ("send" == a._args[upml::sm::activity::_argOrder::aoActivity]) {
+        return visit_send_activity(idxCrtState, a);
+    } else if ("trace" == a._args[upml::sm::activity::_argOrder::aoActivity]) {
+        return visit_trace_activity(idxCrtState, a);
+    } else {
+        std::cerr << "Unsuported: " << a << std::endl; 
+    }
+}
+
+void Visitor::visit_trace_activity(
+    const upml::spin::id_t&   idxCrtState,
+    const upml::sm::activity& a) const
+{
+    _out << "printf(\"";
+    std::ranges::copy(a._args.begin()+1, 
+                      a._args.end(),
+                      std::ostream_iterator<upml::sm::activity::args::value_type>(_out, " "));
+    _out << "\\n\"); \n";
 }
 
 void Visitor::visit_send_activity(
@@ -363,7 +393,7 @@ void Visitor::visit_effect(
     // unless new state == old state:
     // - self-transitions (exit & enter again) not supported; implemented as internal
     //_out << "currentState = idx_unknown; "; 
-    visit_send_activity( idxCrtState, a);
+    visit_activity( idxCrtState, a);
 }
 
 void Visitor::visit_transition(
@@ -424,13 +454,11 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
                 std::cerr << "Warning: activity with no args:\n"<< a << "\n";
                 continue;
             }
-            if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
-                if (a._activity == "entry") {
-                    _out << indent4 << "//" << a;
-                    //_out << "    :: (newState == " << idxCrtState << ") -> ";
-                    _out << xndent4;
-                    visit_send_activity(idxCrtState, a);
-                }
+            if (a._activity == "entry") {
+                _out << indent4 << "//" << a;
+                //_out << "    :: (newState == " << idxCrtState << ") -> ";
+                _out << xndent4;
+                visit_activity(idxCrtState, a);
             }
         }
     }
@@ -522,12 +550,10 @@ void Visitor::visit_initial_entry_activities(const upml::sm::state& s) const
 
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
-            if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
-                if (a._activity == "entry") {
-                    _out << indent4 << "//" << a;
-                    _out << xndent4;
-                    visit_send_activity(idxCrtState, a);
-                }
+            if (a._activity == "entry") {
+                _out << indent4 << "//" << a;
+                _out << xndent4;
+                visit_activity(idxCrtState, a);
             }
         }
     }
@@ -544,12 +570,10 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
                 std::cerr << "Warning: activity with no args:\n"<< a << "\n";
                 continue;
             }
-            if (a._args[upml::sm::activity::_argOrder::aoActivity] == "send") {
-                if (a._activity == "exit") {
-                    _out << indent4 << "//" << a;
-                    _out << xndent4 << ":: (crtState == " << idxCrtState << ") -> ";
-                    visit_send_activity(idxCrtState, a);
-                }
+            if (a._activity == "exit") {
+                _out << indent4 << "//" << a;
+                _out << xndent4 << ":: (crtState == " << idxCrtState << ") -> ";
+                visit_activity(idxCrtState, a);
             }
         }
     }
