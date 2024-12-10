@@ -19,6 +19,7 @@ test: upml
 	./upml  --backend none --in ../plantuml/t0.plantuml
 	./upml  --backend none --in ../plantuml/sip/sip.plantuml
 	./upml  --backend none --in ../plantuml/switch/switch.plantuml
+	./upml  --backend none --in ../plantuml/hsm/hsm2.plantuml
 	@echo "\e[42m*** Pass ***\e[0m"
 
 lint:
