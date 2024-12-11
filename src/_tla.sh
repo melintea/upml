@@ -6,7 +6,7 @@
 
 #meld ../tla/switch.toolbox/Model_1/switch.tla ../plantuml/switch/switch.ref.tla &
 
-tlahome=${HOME}/tla/toolbox}
+tlahome=${HOME}/tla/toolbox
 tlatoolbox=${tlahome}/toolbox
 
 ${tlatoolbox} $* &
