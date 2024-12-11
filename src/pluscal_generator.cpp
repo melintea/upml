@@ -761,7 +761,6 @@ define {
     for (const auto& [k, r] : _sm._regions) {
         visit_invariants(r);
     }
-    visit_ltl(); //TODO
     _out << "}; \n";
 
 
@@ -786,7 +785,12 @@ macro recv_event(evtId, channel, inState) {
     }
 
     _out << "\n\n} \\* algorithm " << _sm._id
-         << "\n\n**********************************************************************)\n\n"
+         << "\n\n**********************************************************************)\n\n";
+    
+    visit_ltl(); //TODO
+
+    _out << // \* Weakly fair scheduling
+            // (* PlusCal options (wf) *) 
             "\n\n=======================================================================\n"
          ;
 
