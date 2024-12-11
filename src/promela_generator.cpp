@@ -214,6 +214,7 @@ public:
     void visit_trace_activity(
         const upml::spin::id_t&   idxCrtState,
         const upml::sm::activity& a) const;
+    void visit_ltl() const;
     // Turn a plantuml token in a guard/post/pre/condition/invariant into valid Promela.
     std::string token(const std::string& tok) const;
 }; // Visitor
@@ -645,6 +646,21 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     }
 }
 
+void Visitor::visit_ltl() const
+{
+/*
+//TODO: ltl support
+// ltl claims: run with spin -ltl xyz or spin -noclaim 
+// ltl xyz {[]!(region_x@label && region_y:var == val)} 
+// ClosedSystemEnvironment:currentState == CallEnded && Alice:currentState == ATerminated && Bob:currentState == BTerminated
+ltl endStates {[]<>(region_r4:currentState == idx_state_CallEnded && region_r42:currentState == idx_state_Bterminated && region_r20:currentState == idx_state_Aterminated)} //good
+//ltl endStates {[]<>(region_r4:currentState == idx_state_Aterminated)} // bogus
+*/
+    _out <<     "\n// ltl claims: run with spin -ltl xyz or spin -noclaim \n";
+    _out <<     "// ltl xyz {[]!(region_x@label && region_y@label)} \n";
+    _out <<     "// ltl wxt {[]!(region_w@label && region_t@label)} \n\n";
+}
+
 void Visitor::visit() const
 {
     const auto now(std::chrono::system_clock::now());
@@ -717,12 +733,11 @@ inline send_event(channel, evt, fs, ts)
     _out <<     "    }\n";
     _out <<     "    //(_nr_pr == 1); \n";
 
-    //TODO: ltl support
-    _out <<     "\n// ltl claims: run with spin -ltl xyz or spin -noclaim \n";
-    _out <<     "// ltl xyz {[]!(region_x@label && region_y@label)} \n";
-    _out <<     "// ltl wxt {[]!(region_w@label && region_t@label)} \n\n";
+    _out <<     "}\n\n";
 
-    _out <<     "}\n\n/*UPML end*/\n\n";
+    visit_ltl();
+
+    _out <<     "/*UPML end*/\n\n";
 }
 
 } // spin

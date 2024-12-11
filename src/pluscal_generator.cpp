@@ -222,6 +222,7 @@ public:
     void visit_trace_activity(
         const upml::tla::id_t&    idxCrtState,
         const upml::sm::activity& a) const;
+    void visit_ltl() const;
     // Turn a plantuml token in a guard/post/pre/condition/invariant into valid PlusCal.
     std::string token(const std::string& tok) const;
 }; // Visitor
@@ -683,6 +684,11 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     }
 }
 
+void Visitor::visit_ltl() const
+{
+    //TODO: ltl support
+}
+
 void Visitor::visit() const
 {
     const auto now(std::chrono::system_clock::now());
@@ -755,7 +761,7 @@ define {
     for (const auto& [k, r] : _sm._regions) {
         visit_invariants(r);
     }
-    //TODO: ltl support
+    visit_ltl(); //TODO
     _out << "}; \n";
 
 
