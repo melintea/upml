@@ -134,9 +134,15 @@ struct plantuml_grammar final
                  ;
         // [guard] expression                          ':' for scoped ids e.g. event:xxx
         tokstring  %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_.:") ] ]
-                   |  qi::string("(")  |  qi::string(")")
-                   |  qi::string("==") |  qi::string("!=")
-                   |  qi::string("&&") |  qi::string("||")
+                   |  qi::string("(")   |  qi::string(")")
+                   |  qi::string("==")  |  qi::string("!=")
+                   |  qi::string("&&")  |  qi::string("||")
+                   // LTL Promela syntax 
+                   |  qi::string("{")   |  qi::string("}")
+                   |  qi::string("!") 
+                   |  qi::string("[]")  |  qi::string("<>")
+                   |  qi::string("\\/") |  qi::string("/\\")
+                   |  qi::string("->")  |  qi::string("<->")
                    ;
 
         //discard = qi::lit("state") >> qstring >> qi::string("as") >> *(qi::char_ - '{')
@@ -208,7 +214,7 @@ struct plantuml_grammar final
     qi::rule<ITER, std::string()> arrow;
     qi::rule<ITER, std::string()> qstring;   // "in quotes"
     qi::rule<ITER, std::string()> rstring;   // name string
-    qi::rule<ITER, std::string()> tokstring; // found in exptression
+    qi::rule<ITER, std::string()> tokstring; // found in expression
     qi::rule<ITER, ast_activity(), SKIPPER>        activity;
     qi::rule<ITER, ast_transition(), SKIPPER>      transition;
     qi::rule<ITER, ast_config_setting(), SKIPPER>  config_setting;
