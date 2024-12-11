@@ -132,7 +132,7 @@ struct plantuml_grammar final
         rstring  %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_.") ] ]
                  |  qi::string("[*]")
                  ;
-        // [guard] expression                          ':' for scoped ids e.g. event:xxx
+        // [guard] & LTL expression                    ':' for scoped ids e.g. event:xxx
         tokstring  %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_.:") ] ]
                    |  qi::string("(")   |  qi::string(")")
                    |  qi::string("==")  |  qi::string("!=")

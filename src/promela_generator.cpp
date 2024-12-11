@@ -653,12 +653,12 @@ void Visitor::visit_ltl() const
 // ltl claims: run with spin -ltl xyz or spin -noclaim 
 // ltl xyz {[]!(region_x@label && region_y:var == val)} 
 // ClosedSystemEnvironment:currentState == CallEnded && Alice:currentState == ATerminated && Bob:currentState == BTerminated
-ltl endStates {[]<>(region_r4:currentState == idx_state_CallEnded && region_r42:currentState == idx_state_Bterminated && region_r20:currentState == idx_state_Aterminated)} //good
-//ltl endStates {[]<>(region_r4:currentState == idx_state_Aterminated)} // bogus
+ltl ltlFinalStates {[]<>(region_r4:currentState == idx_state_CallEnded && region_r42:currentState == idx_state_Bterminated && region_r20:currentState == idx_state_Aterminated)} //good
+//ltl ltlFinalStates {[]<>(region_r4:currentState == idx_state_Aterminated)} // bogus
 */
-    _out <<     "\n// ltl claims: run with spin -ltl xyz or spin -noclaim \n";
-    _out <<     "// ltl xyz {[]!(region_x@label && region_y@label)} \n";
-    _out <<     "// ltl wxt {[]!(region_w@label && region_t@label)} \n\n";
+    _out << "\n// ltl claims: run with spin -ltl xyz or spin -noclaim \n";
+    _out << "// ltl xyz {[]!(region_x@label && region_y@label)} \n";
+    _out << "// ltl wxt {[]!(region_w@label && region_t@label)} \n\n";
 }
 
 void Visitor::visit() const

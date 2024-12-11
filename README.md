@@ -10,7 +10,7 @@ The state machine is described in an plantuml file (again, a subset of what plan
 
 Finite state machines (FSM) should be fully supported. Hierarchical state machines (HSM) are only partially supported currently: only one hierachical level.
 
-Self-transitions (exit state & enter again) are not supported and are implemented as internal transitions.
+Self-transitions (exit state & enter it again) are not supported and are implemented as internal transitions.
 
 Plantuml: @see [the plantuml state diagram](https://plantuml.com/state-diagram):
 
@@ -58,3 +58,5 @@ Depends on boost (spirit, program_options, filesystem).
 - [Translating UML State Machine Diagram into Promela](https://www.iaeng.org/publication/IMECS2017/IMECS2017_pp512-516.pdf)
 - [An exhausting list of FSL](https://buttondown.email/hillelwayne/archive/formal-specification-languages/)
 - [SysML](https://sysml.org/)
+- [qhsmtst/qtools](https://www.state-machine.com/qtools/qutest_qhsm.html)
+
