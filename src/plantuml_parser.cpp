@@ -143,6 +143,7 @@ struct plantuml_grammar final
                    |  qi::string("[]")  |  qi::string("<>")
                    |  qi::string("\\/") |  qi::string("/\\")
                    |  qi::string("->")  |  qi::string("<->")
+                   |  qi::string("@") 
                    ;
 
         //discard = qi::lit("state") >> qstring >> qi::string("as") >> *(qi::char_ - '{')
@@ -157,6 +158,7 @@ struct plantuml_grammar final
                     >> regions 
                     >> qi::lit("}")
               ;
+        // entry,exit, pre/postcondition,invariant, ltl
         //            _state    :     _activity   :      args
         activity %= rstring >> ':' >> rstring >> ':' >> *(tokstring) > ';';
 

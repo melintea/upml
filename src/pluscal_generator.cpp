@@ -223,6 +223,7 @@ public:
         const upml::tla::id_t&    idxCrtState,
         const upml::sm::activity& a) const;
     void visit_ltl() const;
+    void visit_ltl(const upml::sm::state& s) const;
     // Turn a plantuml token in a guard/post/pre/condition/invariant into valid PlusCal.
     std::string token(const std::string& tok) const;
 }; // Visitor
@@ -684,9 +685,56 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     }
 }
 
+void Visitor::visit_ltl(const upml::sm::state& s) const
+{
+    if (s._activities.empty()) {
+        return;
+    }
+    for (const auto& a : s._activities) {
+        if ( ! a._args.size() ) {
+            continue;
+        }
+        if (a._activity != "ltl") {
+            continue;
+        }
+
+        _out << "\\* " << a;
+        if (a._args.size() < 3) {
+            _out << "\\* not enough arguments \n";
+            continue;
+        }
+
+        _out << *a._args.begin() << " == ";
+        for (auto itTok = ++a._args.begin(); 
+             itTok != a._args.end();
+             ++itTok) {
+            auto item(token(*itTok));
+            if (item == "{" || item == "}") {
+                continue;
+            }
+            _out << item << ' ';
+        }
+        _out << "\n ";
+    }
+}
+
 void Visitor::visit_ltl() const
 {
-    //TODO: ltl support
+    // LTLs are model-wide but plantuml forces ltl inside a state as an activity.
+    // Any state would do but for now assume only the closed environment/top ones have ltl clauses
+    for (const auto& [k, r] : _sm._regions) {
+        //std::cerr << r << '\n';
+        for (const auto& [k, s] : r._substates) {
+            //std::cerr << s << '\n';
+            for (const auto& [k, r2] : s->_regions) {
+                //std::cerr << r2 << '\n';
+                for (const auto& [k, s2] : r2._substates) {
+                    visit_ltl(*s2);
+                }
+            }
+        }
+    }
+    _out << "\n\n";
 }
 
 void Visitor::visit() const
@@ -789,8 +837,8 @@ macro recv_event(evtId, channel, inState) {
     
     visit_ltl(); //TODO
 
-    _out << // \* Weakly fair scheduling
-            // (* PlusCal options (wf) *) 
+    _out << "\\* Weakly fair scheduling \n"
+            "(* PlusCal options (wf) *) \n"
             "\n\n=======================================================================\n"
          ;
 

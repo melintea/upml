@@ -39,11 +39,11 @@ spinfile="${pumlfile%.*}.promela"
     2>&1  || exit 1
 
 exespin=${HOME}/work/Spin/Src/spin
-rm pan.*
+rm pan.* _spin_nvr.tmp
 ${exespin} -a "$spinfile" || exit 1
 if [[ ! -f pan.c ]]; then
     exit 1
 fi
-rm pan.*
+rm pan.* _spin_nvr.tmp
 
 echo "---ok: $1"

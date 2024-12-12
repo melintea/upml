@@ -215,7 +215,8 @@ public:
         const upml::spin::id_t&   idxCrtState,
         const upml::sm::activity& a) const;
     void visit_ltl() const;
-    // Turn a plantuml token in a guard/post/pre/condition/invariant into valid Promela.
+    void visit_ltl(const upml::sm::state& s) const;
+    // Turn a plantuml token in a guard/post/pre/condition/invariant/ltl into valid Promela.
     std::string token(const std::string& tok) const;
 }; // Visitor
 
@@ -646,19 +647,47 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     }
 }
 
+void Visitor::visit_ltl(const upml::sm::state& s) const
+{
+    if (s._activities.empty()) {
+        return;
+    }
+    for (const auto& a : s._activities) {
+        if ( ! a._args.size() ) {
+            continue;
+        }
+        if (a._activity != "ltl") {
+            continue;
+        }
+
+        _out << "// " << a;
+        _out << "ltl ";
+        for (const auto& tok: a._args) {
+            auto item(token(tok));
+            _out << item << ' ';
+        }
+        _out << ";\n ";
+    }
+}
+
 void Visitor::visit_ltl() const
 {
-/*
-//TODO: ltl support
-// ltl claims: run with spin -ltl xyz or spin -noclaim 
-// ltl xyz {[]!(region_x@label && region_y:var == val)} 
-// ClosedSystemEnvironment:currentState == CallEnded && Alice:currentState == ATerminated && Bob:currentState == BTerminated
-ltl ltlFinalStates {[]<>(region_r4:currentState == idx_state_CallEnded && region_r42:currentState == idx_state_Bterminated && region_r20:currentState == idx_state_Aterminated)} //good
-//ltl ltlFinalStates {[]<>(region_r4:currentState == idx_state_Aterminated)} // bogus
-*/
+    // LTLs are model-wide but plantuml forces ltl inside a state as an activity.
+    // Any state would do but for now assume only the closed environment/top ones have ltl clauses
     _out << "\n// ltl claims: run with spin -ltl xyz or spin -noclaim \n";
-    _out << "// ltl xyz {[]!(region_x@label && region_y@label)} \n";
-    _out << "// ltl wxt {[]!(region_w@label && region_t@label)} \n\n";
+    for (const auto& [k, r] : _sm._regions) {
+        //std::cerr << r << '\n';
+        for (const auto& [k, s] : r._substates) {
+            //std::cerr << s << '\n';
+            for (const auto& [k, r2] : s->_regions) {
+                //std::cerr << r2 << '\n';
+                for (const auto& [k, s2] : r2._substates) {
+                    visit_ltl(*s2);
+                }
+            }
+        }
+    }
+    _out << "\n\n";
 }
 
 void Visitor::visit() const

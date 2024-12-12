@@ -13,6 +13,8 @@ AliceHangup --> CallEnded : NullEvent [currentState:Alice == state:AEstablished]
 
 CallEnded: config: noInboundEvents;
 CallEnded --> [*]
+
+ClosedSystemEnvironment: ltl: ltlFinalStates {[]<>(currentState:ClosedSystemEnvironment == state:CallEnded && currentState:Alice == state:Aterminated && currentState:Bob == state:Bterminated)};
 }
 
 
