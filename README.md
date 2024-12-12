@@ -29,6 +29,8 @@ Plantuml: @see [the plantuml state diagram](https://plantuml.com/state-diagram):
 
 Additions:
 - comments: ```//```, non-nested ```/**/```. Plantuml will choke on these: if you can, use ```note``` instead.
+- ```ltl```: these are model artifacts but due to plantuml quirks, the LTL formulas have to be scoped anywhere in a top level state. See the [Promela](README.spin.md#sip-stuff) page example:
+  - ```ClosedSystemEnvironment: ltl: ltlFinalStates {[]<>(currentState:ClosedSystemEnvironment == state:CallEnded && currentState:Alice == state:Aterminated && currentState:Bob == state:Bterminated)};```
 - transition: ```state --> state : event [guard]/effect ;```
   - note the ending ```;```
   - currently the effect can only be a ```send``` or a ```trace``` action.

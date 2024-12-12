@@ -212,7 +212,7 @@ EventGenerator --> EventGenerator : NullEvent [currentState:Alice == state:AEsta
 }
 ```
 As a result, some simulations are good and some will timeout with the SM in some weird state.  Either
-fix the issues exposed by spin in the abominable SM, either use a deterministic event generator:
+fix the issues exposed by spin in the abominable SM, either use a deterministic event generator with an LTL check:
 
 ```
 state ClosedSystemEnvironment {
@@ -228,8 +228,11 @@ AliceHangup --> CallEnded : NullEvent [currentState:Alice == state:AEstablished]
 
 CallEnded: config: noInboundEvents;
 CallEnded --> [*]
+
+ClosedSystemEnvironment: ltl: ltlFinalStates {[]<>(currentState:ClosedSystemEnvironment == state:CallEnded && currentState:Alice == state:Aterminated && currentState:Bob == state:Bterminated)};
 }
 ```
+![image](plantuml/sip/sip.png)
 
 A good run:
 

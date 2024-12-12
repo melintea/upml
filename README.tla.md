@@ -1,6 +1,7 @@
 - [Install](#install)
 - [Status](#status)
 - [Model](#model)
+- [Differences with PlusCal](#differences-with-pluscal)
 - [Usage](#usage)
 - [Cheat sheet](#cheat-sheet)
 - [A lamp switch](#a-lamp-switch)
@@ -31,6 +32,10 @@ Adjust ```maxUmlEvents``` as needed and note it is a negative. I could have used
 ## Model
 
 By and large the same as the [Promela](README.spin.md#model) one.
+
+## Differences with PlusCal
+
+See the [Promela](README.spin.md#differences-with-pluscal) page.
 
 ## Usage
 
