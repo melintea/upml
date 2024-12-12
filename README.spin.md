@@ -276,6 +276,8 @@ q\p   0   1   2   3   4
 
 ### Verification
 
+Use ```ltl``, ```precondition```, ```postcondition```, ```invariant```.
+
 (The plantuml file contains a few useless precondition, postcondition & invariant statements for demo and testing)
 
 Use xspin/ispin.tcl.
