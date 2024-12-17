@@ -12,6 +12,8 @@ Finite state machines (FSM) should be fully supported. Hierarchical state machin
 
 Self-transitions ([exit state & enter it again](doc/uml.md)) are not supported and are implemented as internal transitions.
 
+Resulting models might violate run-to-completion (RTC) semantics. This might accurately reflect usage of the real state machine implementation in a multi-threaded environment.
+
 Plantuml: @see [the plantuml state diagram](https://plantuml.com/state-diagram):
 
 - unsupported: history
