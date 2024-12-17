@@ -30,7 +30,7 @@ state SuperSuper {
   [*] --> Super1
   SuperSuper: entry: trace SuperSuper;
   
-  Super1 --> Super2 : T1 [g()]/trace t1; 
+  Super1 --> Super2 : T1 /trace t1; 
   
 }
 

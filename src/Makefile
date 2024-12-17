@@ -25,7 +25,7 @@ test: upml
 fulltest: test
 	./_test.sh  ../plantuml/sip/sip.plantuml
 	./_test.sh  ../plantuml/switch/switch.plantuml
-	#./_test.sh  ../plantuml/hsm/hsm2.plantuml
+	./_test.sh  ../plantuml/hsm/hsm2.plantuml
 	@echo "\e[42m*** Pass ***\e[0m"
 lint:
 	clang-tidy promela_generator.cpp -- $(FLAGS) 

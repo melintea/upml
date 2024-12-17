@@ -53,10 +53,9 @@ Cannot find it. It was at http://cm.bell-labs.com/cm/cs/what/timeedit/index.html
 - fairness: PlusCal has weak & strong fairness builtin. 
   Spin has only weak fairness builtin; strong fairness has to be [defined](https://spinroot.com/fluxbb/viewtopic.php?id=671) via LTL/never claims.
 
-As an comparative example, here is the Dekker algorithm implemented in:
+As an [comparative example](https://accu.org/journals/overload/32/183/melinte/), here is the Dekker algorithm implemented in:
 - [Promela](https://spinroot.com/spin/Man/Manual.html)
 - [PlusCal](https://github.com/duerrfk/skp/blob/master/criticalsection5dekker/criticalsection5dekker.tla)
-- [Intro](https://accu.org/journals/overload/32/183/melinte/)
 
 ## Model
 
@@ -229,7 +228,7 @@ AliceHangup --> CallEnded : NullEvent [currentState:Alice == state:AEstablished]
 CallEnded: config: noInboundEvents;
 CallEnded --> [*]
 
-ClosedSystemEnvironment: ltl: ltlFinalStates {[]<>(currentState:ClosedSystemEnvironment == state:CallEnded && currentState:Alice == state:Aterminated && currentState:Bob == state:Bterminated)};
+ClosedSystemEnvironment: ltl: ltlFinalStates {<>[](currentState:ClosedSystemEnvironment == state:CallEnded && currentState:Alice == state:Aterminated && currentState:Bob == state:Bterminated)};
 }
 ```
 ![image](plantuml/sip/sip.png)
