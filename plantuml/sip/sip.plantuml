@@ -3,18 +3,18 @@
 state ClosedSystemEnvironment {
 [*] --> AliceDial 
 AliceDial: config: noInboundEvents;
-AliceDial --> BobPickup : NullEvent [currentState:Alice == state:AIdle] /send event:Dial to state:Alice;
+AliceDial --> BobPickup : NullEvent [state:Alice:currentState == state:AIdle] /send event:Dial to state:Alice;
 
 BobPickup: config: noInboundEvents;
-BobPickup --> AliceHangup : NullEvent [currentState:Bob == state:BInitiated] /send event:Pickup to state:Bob;
+BobPickup --> AliceHangup : NullEvent [state:Bob:currentState == state:BInitiated] /send event:Pickup to state:Bob;
 
 AliceHangup: config: noInboundEvents;
-AliceHangup --> CallEnded : NullEvent [currentState:Alice == state:AEstablished] /send event:Hangup to state:Alice;
+AliceHangup --> CallEnded : NullEvent [state:Alice:currentState == state:AEstablished] /send event:Hangup to state:Alice;
 
 CallEnded: config: noInboundEvents;
 CallEnded --> [*]
 
-ClosedSystemEnvironment: ltl: ltlFinalStates {<>[](currentState:ClosedSystemEnvironment == state:CallEnded && currentState:Alice == state:Aterminated && currentState:Bob == state:Bterminated)};
+ClosedSystemEnvironment: ltl: ltlFinalStates {<>[](state:ClosedSystemEnvironment:currentState == state:CallEnded && state:Alice:currentState == state:Aterminated && state:Bob:currentState == state:Bterminated)};
 }
 
 
@@ -33,9 +33,9 @@ state Alice {
   Aterminated --> [*]
 
   //AInitiated: timeout: send event:Hangup to state:Alice;
-  AInitiated: precondition: (currentState:Alice != state:BIdle);
-  AInitiated: postcondition: (currentState:Alice != state:BInitiated);
-  AInitiated: invariant: (currentState:Alice != state:Bterminated);
+  AInitiated: precondition: (state:Alice:currentState != state:BIdle);
+  AInitiated: postcondition: (state:Alice:currentState != state:BInitiated);
+  AInitiated: invariant: (state:Alice:currentState != state:Bterminated);
 }
 
 //||
@@ -54,9 +54,9 @@ state Bob {
   Bterminated --> [*]
 
   //BInitiated: timeout: send event:Hangup to state:Alice;
-  BInitiated: precondition: (currentState:Bob != state:AIdle);
-  BInitiated: postcondition: (currentState:Bob != state:AInitiated);
-  BInitiated: invariant: (currentState:Bob != state:Aterminated);
+  BInitiated: precondition: (state:Bob:currentState != state:AIdle);
+  BInitiated: postcondition: (state:Bob:currentState != state:AInitiated);
+  BInitiated: invariant: (state:Bob:currentState != state:Aterminated);
   
 }
 

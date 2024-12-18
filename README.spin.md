@@ -205,9 +205,9 @@ spin machine moves through its intermediate states etc,etc:
 state ClosedSystemEnvironment {
 [*] --> EventGenerator 
 EventGenerator: config: noInboundEvents;
-EventGenerator --> EventGenerator : NullEvent [currentState:Alice == state:AIdle] /send event:Dial to state:Alice;
-EventGenerator --> EventGenerator : NullEvent [currentState:Bob == state:BInitiated] /send event:Pickup to state:Bob;
-EventGenerator --> EventGenerator : NullEvent [currentState:Alice == state:AEstablished] /send event:Hangup to state:Alice;
+EventGenerator --> EventGenerator : NullEvent [state:Alice:currentState == state:AIdle] /send event:Dial to state:Alice;
+EventGenerator --> EventGenerator : NullEvent [state:Bob:currentState == state:BInitiated] /send event:Pickup to state:Bob;
+EventGenerator --> EventGenerator : NullEvent [state:Alice:currentState == state:AEstablished] /send event:Hangup to state:Alice;
 }
 ```
 As a result, some simulations are good and some will timeout with the SM in some weird state.  Either
@@ -217,18 +217,18 @@ fix the issues exposed by spin in the abominable SM, either use a deterministic 
 state ClosedSystemEnvironment {
 [*] --> AliceDial 
 AliceDial: config: noInboundEvents;
-AliceDial --> BobPickup : NullEvent [currentState:Alice == state:AIdle] /send event:Dial to state:Alice;
+AliceDial --> BobPickup : NullEvent [state:Alice:currentState == state:AIdle] /send event:Dial to state:Alice;
 
 BobPickup: config: noInboundEvents;
-BobPickup --> AliceHangup : NullEvent [currentState:Bob == state:BInitiated] /send event:Pickup to state:Bob;
+BobPickup --> AliceHangup : NullEvent [state:Bob:currentState == state:BInitiated] /send event:Pickup to state:Bob;
 
 AliceHangup: config: noInboundEvents;
-AliceHangup --> CallEnded : NullEvent [currentState:Alice == state:AEstablished] /send event:Hangup to state:Alice;
+AliceHangup --> CallEnded : NullEvent [state:Alice:currentState == state:AEstablished] /send event:Hangup to state:Alice;
 
 CallEnded: config: noInboundEvents;
 CallEnded --> [*]
 
-ClosedSystemEnvironment: ltl: ltlFinalStates {<>[](currentState:ClosedSystemEnvironment == state:CallEnded && currentState:Alice == state:Aterminated && currentState:Bob == state:Bterminated)};
+ClosedSystemEnvironment: ltl: ltlFinalStates {<>[](state:ClosedSystemEnvironment:currentState == state:CallEnded && state:Alice:currentState == state:Aterminated && state:Bob:currentState == state:Bterminated)};
 }
 ```
 ![image](plantuml/sip/sip.png)

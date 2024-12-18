@@ -56,7 +56,7 @@ struct scoped_name
             return t;
         }
 
-        auto sep2(scopedName.find_first_of(":@")); 
+        auto sep2(scopedName.find_first_of(":@", sep1+1)); 
         if (sep2 == std::string::npos) {
             t._scope = scopedName.substr(0, sep1);
             t._name  = scopedName.substr(sep1+1, sep2-sep1-1);
@@ -102,10 +102,7 @@ id_t name(const id_t& prefix, const upml::sm::id_t& evt)
 id_t name(upml::sm::id_t& evt)
 {
     // assumption: there is only one such
-    auto sep(evt.find(':')); 
-    if (sep == std::string::npos) {
-        sep = evt.find('_');
-    }
+    auto sep(evt.find_first_of(":_")); 
 
     if (sep == std::string::npos) {
         return evt;
@@ -354,12 +351,12 @@ void Visitor::visit_send_activity(
 std::string Visitor::token(const std::string& tok) const
 {
     const auto ttok(scoped_name::create(tok));
-    if (ttok._scope == "currentState") {
+    if ( ! ttok._item.empty() && ttok._scope == "state") {
         const auto& destStatePtr(_sm.state(ttok._name));
         assert(destStatePtr != nullptr);
         assert(destStatePtr->_regions.size() == 1); // TODO: syntax error if multiple regions
         for (const auto& [k, destReg] : destStatePtr->_regions) {
-            return region(destReg._id) + ":" + ttok._scope + ' ';
+            return region(destReg._id) + ttok._itemType/*:*/ + ttok._item + ' ';
         }
         assert(false);
     }

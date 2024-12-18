@@ -32,7 +32,7 @@ Plantuml: @see [the plantuml state diagram](https://plantuml.com/state-diagram):
 Additions:
 - comments: ```//```, non-nested ```/**/```. Plantuml will choke on these: if you can, use ```note``` instead.
 - ```ltl```: these are model artifacts but due to plantuml quirks, the LTL formulas have to be scoped anywhere in a top level state. See the [Promela](README.spin.md#sip-stuff) page example:
-  - ```ClosedSystemEnvironment: ltl: ltlFinalStates {[]<>(currentState:ClosedSystemEnvironment == state:CallEnded && currentState:Alice == state:Aterminated && currentState:Bob == state:Bterminated)};```
+  - ```ClosedSystemEnvironment: ltl: ltlFinalStates {[]<>(state:ClosedSystemEnvironment:currentState == state:CallEnded && (state:Alice:currentState == state:Aterminated && (state:Bob:currentState == state:Bterminated)};```
 - transition: ```state --> state : event [guard]/effect ;```
   - note the ending ```;```
   - currently the effect can only be a ```send``` or a ```trace``` action.
@@ -43,7 +43,7 @@ Additions:
   - ```send``` event from state:
   - example: ```AInitiated: entry: send event:INVITE to state:Bob ;```
 - preconditions: ```state: precondition: expression ; ```
-    - example: ```BInitiated: precondition: (currentState:Bob != state:AIdle);```
+    - example: ```BInitiated: precondition: (state:BobcurrentState != state:AIdle);```
 - postconditions: ```state: postcondition: expression ;```
 - invariants: ```state: invariant: expression ;```
 - configuration:
