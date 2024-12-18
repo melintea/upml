@@ -137,13 +137,13 @@ struct plantuml_grammar final
                    |  qi::string("(")   |  qi::string(")")
                    |  qi::string("==")  |  qi::string("!=")
                    |  qi::string("&&")  |  qi::string("||")
+                   |  qi::string("@")  // label
                    // LTL Promela syntax 
                    |  qi::string("{")   |  qi::string("}")
                    |  qi::string("!") 
                    |  qi::string("[]")  |  qi::string("<>")
                    |  qi::string("\\/") |  qi::string("/\\")
                    |  qi::string("->")  |  qi::string("<->")
-                   |  qi::string("@") 
                    ;
 
         //discard = qi::lit("state") >> qstring >> qi::string("as") >> *(qi::char_ - '{')

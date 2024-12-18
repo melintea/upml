@@ -36,38 +36,49 @@ id_t name(upml::sm::id_t& evt);
 id_t idx(const upml::sm::id_t& s);
 
 // e.g. "event:xyz" or "event_xyz".
+//       state:X:var or state:X@label
 struct scoped_name
 {
     // TODO: use string slices
-    std::string _type;
-    std::string _name;
+    std::string _scope;           // state or event
+    std::string _name;            // of the _scope
+    char        _itemType = ' ';  // @label or :variable in _name
+    std::string _item;
 
     static scoped_name create(const std::string& scopedName)
     {
         scoped_name t;
 
-        // assumption: there is only one such
-        auto sep(scopedName.find(':')); 
-        if (sep == std::string::npos) {
-            sep = scopedName.find('_');
-        }
-
-        if (sep != std::string::npos) {
-            t._type = scopedName.substr(0, sep);
-            t._name = scopedName.substr(sep+1);
+        // assumption: there is only one or two such
+        auto sep1(scopedName.find_first_of(":_")); 
+        if (sep1 == std::string::npos) {
+            t._name = scopedName;
             return t;
         }
 
-        t._name = scopedName;
+        auto sep2(scopedName.find_first_of(":@")); 
+        if (sep2 == std::string::npos) {
+            t._scope = scopedName.substr(0, sep1);
+            t._name  = scopedName.substr(sep1+1, sep2-sep1-1);
+            return t;
+        }
+
+        t._scope     = scopedName.substr(0, sep1);
+        t._name      = scopedName.substr(sep1+1, sep2-sep1-1);
+        t._itemType  = scopedName[sep2];
+        t._item      = scopedName.substr(sep2+1);
         return t;
     } // create
 
     std::string to_string() const
     {
-        if (_type.empty()) {
+        if (_scope.empty()) {
             return _name + ' ';
+        } else if (_item.empty()) {
+            return idx(name(_scope, _name)) + ' ';
         } else {
-            return idx(name(_type, _name)) + ' ';
+            return idx(name(_scope, _name)) + ' ';
+            //return idx(name(_scope, _name)) + _itemType + _item + ' ';
         }
     }
 
@@ -77,7 +88,7 @@ struct scoped_name
         os << sn.to_string();
         return os;
     }
-};
+}; // scoped_name
 
 // TODO: fold these into Visitor?
 id_t name(const id_t& prefix, const upml::sm::id_t& evt)
@@ -323,11 +334,11 @@ void Visitor::visit_send_activity(
 {
     assert("send" == a._args[upml::sm::activity::_argOrder::aoActivity]);
     const auto toSt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoState]));
-    assert(toSt._type == "state");
+    assert(toSt._scope == "state");
     const auto* destReg(_sm.owner_region(toSt._name));
     assert(destReg);
     const auto evt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoEvent]));
-    assert(evt._type == "event");
+    assert(evt._scope == "event");
 
     const auto& destStatePtr(_sm.state(toSt._name));
     assert(destStatePtr != nullptr); // unless someone made a typo
@@ -343,12 +354,12 @@ void Visitor::visit_send_activity(
 std::string Visitor::token(const std::string& tok) const
 {
     const auto ttok(scoped_name::create(tok));
-    if (ttok._type == "currentState") {
+    if (ttok._scope == "currentState") {
         const auto& destStatePtr(_sm.state(ttok._name));
         assert(destStatePtr != nullptr);
         assert(destStatePtr->_regions.size() == 1); // TODO: syntax error if multiple regions
         for (const auto& [k, destReg] : destStatePtr->_regions) {
-            return region(destReg._id) + ":" + ttok._type + ' ';
+            return region(destReg._id) + ":" + ttok._scope + ' ';
         }
         assert(false);
     }
