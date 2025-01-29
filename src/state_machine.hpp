@@ -136,13 +136,14 @@ using activities_t = std::vector<activity>;
 */
 
 struct region : public location
+              , public std::enable_shared_from_this<region>
 {
     using states_t      = sm::states_t;
 
     static constexpr const char _tag = 'r';
 
     id_t       _id;
-    stateptr_t _ownnedByState;
+    stateptr_t _ownedByState;
     states_t   _substates;
 
     names_t events() const;
@@ -162,6 +163,7 @@ struct region : public location
 
 
 struct state : public location
+             , public std::enable_shared_from_this<state>
 {
     using ptr_t         = sm::stateptr_t;
     using states_t      = sm::states_t;
@@ -470,7 +472,7 @@ inline indent& region::trace(indent& id, std::ostream& os) const
 {
     indent_level il(id);
     os << id << '(' << static_cast<location>(*this) << ")\n";
-    os << id << "-- " << _id << " _ownnedByState:" << _ownnedByState << " {\n";
+    os << id << "-- " << _id << " _ownedByState:" << (_ownedByState ? _ownedByState->_id : "-") << " {\n";
     for (const auto& [k, v] : _substates)
     {
         v->trace(id, os);
@@ -510,7 +512,8 @@ inline indent& state::trace(indent& id, std::ostream& os) const
     os << id << '(' << static_cast<location>(*this) << ")\n";
     os << id << "state " << _id 
        << " final:" << _final << ";initial:" << _initial 
-       << ";_superState:" << _superState << ";_ownedByRegion:" << _ownedByRegion 
+       << ";_superState:" << (_superState ? _superState->_id : "-") 
+       << ";_ownedByRegion:" << (_ownedByRegion ? _ownedByRegion->_id : "-") 
        << " {\n";
     for (const auto& [k, v] : _transitions)
     {
