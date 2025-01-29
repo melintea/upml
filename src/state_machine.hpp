@@ -142,6 +142,7 @@ struct region : public location
     static constexpr const char _tag = 'r';
 
     id_t       _id;
+    stateptr_t _ownnedByState;
     states_t   _substates;
 
     names_t events() const;
@@ -170,6 +171,8 @@ struct state : public location
     static constexpr const char _tag = 's';
 
     id_t           _id;
+    ptr_t          _superState;
+    regionptr_t    _ownedByRegion;
     regions_t      _regions;
     // transitions are in the default region
     // a simple state should have no explicit regions
@@ -465,7 +468,7 @@ inline indent& region::trace(indent& id, std::ostream& os) const
 {
     indent_level il(id);
     os << id << '(' << static_cast<location>(*this) << ")\n";
-    os << id << "-- " << _id << " {\n";
+    os << id << "-- " << _id << " _ownnedByState:" << _ownnedByState << " {\n";
     for (const auto& [k, v] : _substates)
     {
         v->trace(id, os);
@@ -481,10 +484,14 @@ inline std::ostream& operator<<(std::ostream& os, const region& r)
     return os;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const regionptr_t& r)
+inline std::ostream& operator<<(std::ostream& os, const regionptr_t& rp)
 {
     indent id("");
-    r->trace(id, os);
+    if (rp) {
+        os << *rp;
+    } else {
+        os << "(NULL)";
+    }
     return os;
 }
 
@@ -501,6 +508,7 @@ inline indent& state::trace(indent& id, std::ostream& os) const
     os << id << '(' << static_cast<location>(*this) << ")\n";
     os << id << "state " << _id 
        << " final:" << _final << ";initial:" << _initial 
+       << ";_superState:" << _superState << ";_ownedByRegion:" << _ownedByRegion 
        << " {\n";
     for (const auto& [k, v] : _transitions)
     {
