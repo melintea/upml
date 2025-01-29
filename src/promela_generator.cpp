@@ -297,7 +297,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
 void Visitor::visit_state_regions(const upml::sm::state& s) const
 {
     for (const auto& [k, r] : s._regions) {
-        visit_region(r, s._id);
+        visit_region(*r, s._id);
     }
 }
 
@@ -332,15 +332,15 @@ void Visitor::visit_send_activity(
     assert("send" == a._args[upml::sm::activity::_argOrder::aoActivity]);
     const auto toSt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoState]));
     assert(toSt._scope == "state");
-    const auto* destReg(_sm.owner_region(toSt._name));
-    assert(destReg);
+    const auto destRegPtr(_sm.owner_region(toSt._name));
+    assert(destRegPtr);
     const auto evt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoEvent]));
     assert(evt._scope == "event");
 
     const auto& destStatePtr(_sm.state(toSt._name));
     assert(destStatePtr != nullptr); // unless someone made a typo
-    for (const auto& [k, destReg] : destStatePtr->_regions) {
-        _out << "send_event(" << idx(region(destReg._id))
+    for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
+        _out << "send_event(" << idx(region(destRegPtr->_id))
             << ", " << event(evt._name)
             << ", " << idxCrtState
             << ", " << idx(state(toSt._name))
@@ -355,8 +355,8 @@ std::string Visitor::token(const std::string& tok) const
         const auto& destStatePtr(_sm.state(ttok._name));
         assert(destStatePtr != nullptr);
         assert(destStatePtr->_regions.size() == 1); // TODO: syntax error if multiple regions
-        for (const auto& [k, destReg] : destStatePtr->_regions) {
-            return region(destReg._id) + ttok._itemType/*:*/ + ttok._item + ' ';
+        for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
+            return region(destRegPtr->_id) + ttok._itemType/*:*/ + ttok._item + ' ';
         }
         assert(false);
     }
@@ -501,7 +501,7 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
     }
 
     for (const auto& [k, r] : s._regions) {
-        visit_invariants(r);
+        visit_invariants(*r);
     }
 }
 
@@ -685,11 +685,11 @@ void Visitor::visit_ltl() const
     _out << "\n// ltl claims: run with spin -ltl xyz or spin -noclaim \n";
     for (const auto& [k, r] : _sm._regions) {
         //std::cerr << r << '\n';
-        for (const auto& [k, s] : r._substates) {
+        for (const auto& [k, s] : r->_substates) {
             //std::cerr << s << '\n';
             for (const auto& [k, r2] : s->_regions) {
                 //std::cerr << r2 << '\n';
-                for (const auto& [k, s2] : r2._substates) {
+                for (const auto& [k, s2] : r2->_substates) {
                     visit_ltl(*s2);
                 }
             }
@@ -743,7 +743,7 @@ inline send_event(channel, evt, fs, ts)
     )--";
 
     for (const auto& [k, r] : _sm._regions) {
-        visit_region(r, _sm._id);
+        visit_region(*r, _sm._id);
     }
 
     // Reserve the never clause for LTL, non-progress checks and such; use a proctype instead
@@ -757,7 +757,7 @@ inline send_event(channel, evt, fs, ts)
     // Per the doc, remoterefs proc[0]@label or proc[x]:var are valid 
     // only in a never claim but this is accepted with spin 6.5.2
     for (const auto& [k, r] : _sm._regions) {
-        visit_invariants(r);
+        visit_invariants(*r);
     }
     _out << indent4 << "od\n}\n\n";
 

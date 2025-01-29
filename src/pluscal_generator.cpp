@@ -248,7 +248,7 @@ Visitor::Visitor(upml::sm::state_machine& sm,
     _states  = names("", sm.states(true));
 
     for (const auto& [kr, r] : _sm._regions) {
-        visit_transition_labels(r);
+        visit_transition_labels(*r);
     }
 }
 
@@ -307,7 +307,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
 void Visitor::visit_state_regions(const upml::sm::state& s) const
 {
     for (const auto& [k, r] : s._regions) {
-        visit_region(r, s._id);
+        visit_region(*r, s._id);
     }
 }
 
@@ -342,16 +342,16 @@ void Visitor::visit_send_activity(
     assert("send" == a._args[upml::sm::activity::_argOrder::aoActivity]);
     const auto toSt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoState]));
     assert(toSt._scope == "state");
-    const auto* destReg(_sm.owner_region(toSt._name));
-    assert(destReg);
+    const auto destRegPtr(_sm.owner_region(toSt._name));
+    assert(destRegPtr);
     const auto evt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoEvent]));
     assert(evt._scope == "event");
 
     const auto& destStatePtr(_sm.state(toSt._name));
     assert(destStatePtr != nullptr); // unless someone made a typo
-    for (const auto& [k, destReg] : destStatePtr->_regions) {
+    for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
         _out << upml::sm::tag('L', ++_labelIdx)
-             << ":send_event(" << idx(region(destReg._id))
+             << ":send_event(" << idx(region(destRegPtr->_id))
              << ", " << idx(event(evt._name))
              << ", " << idxCrtState
              << ", " << idx(state(toSt._name))
@@ -375,8 +375,8 @@ std::string Visitor::token(const std::string& tok) const
         assert(destStatePtr != nullptr);
         assert(destStatePtr->_regions.size() == 1); // TODO: syntax error if multiple regions
         assert(ttok._itemType == ':'); // TODO: labels
-        for (const auto& [k, destReg] : destStatePtr->_regions) {
-            return ttok._item + "[" + idx(region(destReg._id)) + "] ";
+        for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
+            return ttok._item + "[" + idx(region(destRegPtr->_id)) + "] ";
         }
         assert(false);
     }
@@ -487,7 +487,7 @@ void Visitor::visit_transition_labels(const upml::sm::region&  r)
     for (const auto& [ks, s] : r._substates) {
         visit_transition_labels(*s);
         for (const auto& [kr2, r2] : s->_regions) {
-            visit_transition_labels(r2);
+            visit_transition_labels(*r2);
         }
     }
 }
@@ -542,7 +542,7 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
     }
 
     for (const auto& [k, r] : s._regions) {
-        visit_invariants(r);
+        visit_invariants(*r);
     }
 }
 
@@ -733,11 +733,11 @@ void Visitor::visit_ltl() const
     // Any state would do but for now assume only the closed environment/top ones have ltl clauses
     for (const auto& [k, r] : _sm._regions) {
         //std::cerr << r << '\n';
-        for (const auto& [k, s] : r._substates) {
+        for (const auto& [k, s] : r->_substates) {
             //std::cerr << s << '\n';
             for (const auto& [k, r2] : s->_regions) {
                 //std::cerr << r2 << '\n';
-                for (const auto& [k, s2] : r2._substates) {
+                for (const auto& [k, s2] : r2->_substates) {
                     visit_ltl(*s2);
                 }
             }
@@ -816,7 +816,7 @@ define {
         /\ [](TRUE) \* ensure not empty
     )--";
     for (const auto& [k, r] : _sm._regions) {
-        visit_invariants(r);
+        visit_invariants(*r);
     }
     _out << "}; \n";
 
@@ -838,7 +838,7 @@ macro recv_event(evtId, channel, inState) {
     )--";
 
     for (const auto& [k, r] : _sm._regions) {
-        visit_region(r, _sm._id);
+        visit_region(*r, _sm._id);
     }
 
     _out << "\n\n} \\* algorithm " << _sm._id

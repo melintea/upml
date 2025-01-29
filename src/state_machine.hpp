@@ -67,6 +67,11 @@ using stateptr_t = std::shared_ptr<state>; // break circular dep between regions
 using states_t   = std::map<id_t, stateptr_t>;
 //using states_t   = std::set<ptr_t, hasher<state>>;
 
+struct region;
+using regionptr_t = std::shared_ptr<region>; 
+using regions_t = std::map<id_t, regionptr_t>;
+
+
 struct event 
 {
     static constexpr const char _tag = 'e';
@@ -152,7 +157,6 @@ struct region : public location
     friend std::ostream& operator<<(std::ostream& os, const region& r);
 }; // region
 
-using regions_t = std::map<id_t, region>;
 
 
 struct state : public location
@@ -180,7 +184,7 @@ struct state : public location
     names_t regions(bool recursive) const;
 
     //  which region has @param state 
-    const region* owner_region(const id_t& state) const;
+    const regionptr_t owner_region(const id_t& state) const;
 
     bool operator==(const state& other) const { return other._id == _id; }
 
@@ -218,7 +222,7 @@ struct state_machine : public location
     names_t regions(bool recursive) const;
 
     /// which region contains @param state
-    const region* owner_region(const id_t& state) const;
+    const regionptr_t owner_region(const id_t& state) const;
 
     stateptr_t state(const id_t& state) const;
 
@@ -234,7 +238,7 @@ inline names_t state::events() const
     names_t evts;
 
     for (const auto& [k, r] : _regions) {
-        names_t revts(r.events());
+        names_t revts(r->events());
         evts.insert(revts.begin(), revts.end());
     }
     for (const auto& [k, t] : _transitions) {
@@ -263,7 +267,7 @@ inline names_t state_machine::events() const
 {
     names_t evts;
     for (const auto& [k, r] : _regions) {
-        names_t revts(r.events());
+        names_t revts(r->events());
         evts.insert(revts.begin(), revts.end());
     }
     return evts;
@@ -274,7 +278,7 @@ inline names_t state::states(bool recursive) const
     names_t evts;
 
     for (const auto& [k, r] : _regions) {
-        names_t revts(r.states(recursive));
+        names_t revts(r->states(recursive));
         evts.insert(revts.begin(), revts.end());
     }
     evts.insert(_id);
@@ -298,7 +302,7 @@ inline names_t state_machine::states(bool recursive) const
 {
     names_t evts;
     for (const auto& [k, r] : _regions) {
-        names_t revts(r.states(recursive));
+        names_t revts(r->states(recursive));
         evts.insert(revts.begin(), revts.end());
     }
     return evts;
@@ -308,9 +312,9 @@ inline names_t state::regions(bool recursive) const
 {
     names_t evts;
     for (const auto& [k, r] : _regions) {
-        names_t revts(r.regions(recursive));
+        names_t revts(r->regions(recursive));
         evts.insert(revts.begin(), revts.end());
-        evts.insert(r._id);
+        evts.insert(r->_id);
     }
     return evts;
 }
@@ -330,44 +334,44 @@ inline names_t state_machine::regions(bool recursive) const
     names_t evts;
     for (const auto& [k, r] : _regions) {
         if (recursive) {
-            names_t revts(r.regions(recursive));
+            names_t revts(r->regions(recursive));
             evts.insert(revts.begin(), revts.end());
         }
-        evts.insert(r._id);
+        evts.insert(r->_id);
     }
     return evts;
 }
 
-inline const region* state::owner_region(const id_t& state) const
+inline const regionptr_t state::owner_region(const id_t& state) const
 {
     for (const auto& [k, r] : _regions) {
-        if (r._substates.find(state) != r._substates.end()) {
-            return &r;
+        if (r->_substates.find(state) != r->_substates.end()) {
+            return r;
         }
-        for (const auto& [k, s] : r._substates) {
-            const region* pr(s->owner_region(state));
+        for (const auto& [k, s] : r->_substates) {
+            const regionptr_t pr(s->owner_region(state));
             if (pr) {
                 return pr;
             }
         }
     }
-    return nullptr;
+    return nullptr;{}
 }
 
-inline const region* state_machine::owner_region(const id_t& state) const
+inline const regionptr_t state_machine::owner_region(const id_t& state) const
 {
     for (const auto& [k, r] : _regions) {
-        if (r._substates.find(state) != r._substates.end()) {
-            return &r;
+        if (r->_substates.find(state) != r->_substates.end()) {
+            return r;
         }
-        for (const auto& [k, s] : r._substates) {
-            const region* pr(s->owner_region(state));
+        for (const auto& [k, s] : r->_substates) {
+            const regionptr_t pr(s->owner_region(state));
             if (pr) {
                 return pr;
             }
         }
     }
-    return nullptr;
+    return {};
 }
 
 inline stateptr_t region::state(const id_t& state) const
@@ -377,7 +381,7 @@ inline stateptr_t region::state(const id_t& state) const
             return s;
         }
         for (const auto& [k, r] : s->_regions) {
-            stateptr_t pS(r.state(state));
+            stateptr_t pS(r->state(state));
             if (pS) {
                 return pS;
             }
@@ -389,12 +393,12 @@ inline stateptr_t region::state(const id_t& state) const
 inline stateptr_t state_machine::state(const id_t& state) const
 {
     for (const auto& [k, r] : _regions) {
-        const auto itS(r._substates.find(state));
-        if (itS != r._substates.end()) {
+        const auto itS(r->_substates.find(state));
+        if (itS != r->_substates.end()) {
             return itS->second;
         }
         for (const auto& [k, r] : _regions) {
-            stateptr_t pS(r.state(state));
+            stateptr_t pS(r->state(state));
             if (pS) {
                 return pS;
             }
@@ -477,6 +481,13 @@ inline std::ostream& operator<<(std::ostream& os, const region& r)
     return os;
 }
 
+inline std::ostream& operator<<(std::ostream& os, const regionptr_t& r)
+{
+    indent id("");
+    r->trace(id, os);
+    return os;
+}
+
 inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, region>& pr)
 {
     os << pr.first << ":" << pr.second;
@@ -501,7 +512,7 @@ inline indent& state::trace(indent& id, std::ostream& os) const
     }
     for (const auto& [k, v] : _regions)
     {
-        v.trace(id, os);
+        v->trace(id, os);
     }
     if (_config.size())
     {
@@ -548,7 +559,7 @@ inline indent& state_machine::trace(indent& id, std::ostream& os) const
     os << id << "machine " << _id << " {\n";
     for (const auto& [k, v] : _regions)
     {
-        v.trace(id, os);
+        v->trace(id, os);
     }
     os << id << "} " << _id << '\n';
     return id;

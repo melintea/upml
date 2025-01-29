@@ -373,7 +373,7 @@ inline void ast_visitor<upml::sm::state>::operator()(ast_region& n) const
     upml::sm::region r;
     ast_node v = n;
     boost::apply_visitor(upml::ast_visitor(r, this->_depth+1), v);
-    this->_target._regions[r._id] = r;
+    this->_target._regions[r._id] = std::make_shared<upml::sm::region>(r);
 } // state
 
 inline void ast_visitor<upml::sm::region>::operator()(ast_state& n) const
@@ -487,7 +487,7 @@ inline void ast_visitor<upml::sm::state_machine>::operator()(ast_region& n) cons
     upml::sm::region r;
     ast_node v = n;
     boost::apply_visitor(upml::ast_visitor(r, this->_depth+1), v);
-    this->_target._regions[r._id] = r;
+    this->_target._regions[r._id] = std::make_shared<upml::sm::region>(r);
 } // state_machine
 
 inline void ast_visitor<upml::sm::state_machine>::operator()(ast_machine& n) const
