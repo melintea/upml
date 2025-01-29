@@ -156,6 +156,7 @@ struct region : public location
     indent& trace(indent& id, std::ostream& os) const;
 
     friend std::ostream& operator<<(std::ostream& os, const region& r);
+    friend std::ostream& operator<<(std::ostream& os, const regionptr_t& r);
 }; // region
 
 
@@ -194,6 +195,7 @@ struct state : public location
     indent& trace(indent& id, std::ostream& os) const;
 
     friend std::ostream& operator<<(std::ostream& os, const state& s);
+    friend std::ostream& operator<<(std::ostream& os, const stateptr_t& s);
 }; // state
 
 
