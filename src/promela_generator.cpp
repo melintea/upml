@@ -582,7 +582,7 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
             }
             if (a._activity == "exit") {
                 _out << indent4 << "//" << a;
-                _out << xndent4 << ":: (crtState == " << idxCrtState << ") -> ";
+                _out << xndent4 << ":: (currentState == " << idxCrtState << ") -> ";
                 visit_activity(idxCrtState, a);
             }
         }

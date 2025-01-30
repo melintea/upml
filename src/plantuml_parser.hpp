@@ -341,7 +341,7 @@ struct ast_visitor<upml::sm::region> : public ast_base_visitor<upml::sm::region>
     void operator()(ast_transition& n)       const;
     void operator()(ast_region& n)           const;
     
-    upml::sm::stateptr_t new_state()         const;
+    upml::sm::stateptr_t state(const upml::sm::id_t& sid) const;
 }; // ast_visitor<upml::sm::region>
 
 template <> 
@@ -361,7 +361,7 @@ struct ast_visitor<upml::sm::state_machine> : public ast_base_visitor<upml::sm::
 
 inline void ast_visitor<upml::sm::state>::operator()(ast_state& n) const
 {
-    AST_DEBUG(std::cout << this->tab() << "s ast_state line " << n._line << std::endl;);
+    AST_DEBUG(std::cout << this->tab() << "s ast_state line " << n._line << ": " << n._id << std::endl;);
     this->annotate_target_from(n);
 
     ast_nodes_t& nodes = n._subtree;
@@ -387,21 +387,31 @@ inline upml::sm::regionptr_t ast_visitor<upml::sm::state>::new_region() const
 } // state
 
 //-----------------------------------------------------------------------------
-inline upml::sm::stateptr_t ast_visitor<upml::sm::region>::new_state() const
+inline upml::sm::stateptr_t ast_visitor<upml::sm::region>::state(const upml::sm::id_t& sid) const
 {
+    if (this->_target._ownedByState->_id == sid) {
+        return this->_target._ownedByState;
+    }
+    
+    auto it(this->_target._substates.find(sid));
+    if (it != this->_target._substates.end()) {
+        return it->second;
+    }
+    
     auto pState(std::make_shared<upml::sm::state>());
     pState->_ownedByRegion = this->_target.shared_from_this();
     pState->_superState    = this->_target._ownedByState;
+    pState->_id = sid; 
+    this->_target._substates[sid] = pState;
     return pState;
 } // region
 
 inline void ast_visitor<upml::sm::region>::operator()(ast_state& n) const
 {
-    AST_DEBUG(std::cout << this->tab() << "r ast_state line " << n._line << std::endl;);
-    upml::sm::stateptr_t pst(new_state());
+    AST_DEBUG(std::cout << this->tab() << "r ast_state line " << n._line << ": " << n._id << std::endl;);
+    upml::sm::stateptr_t pst(state(n._id));
     ast_node v = n; // TODO: is this a deep copy?
     boost::apply_visitor(upml::ast_visitor(*pst, this->_depth+1), v);
-    this->_target._substates[pst->_id] = pst;
 } // region
 
 inline void ast_visitor<upml::sm::region>::operator()(ast_config_setting& n) const
@@ -410,14 +420,9 @@ inline void ast_visitor<upml::sm::region>::operator()(ast_config_setting& n) con
                 << "r ast_config_setting line " << n._line 
                 << ' ' << std::endl;);
 
-   
-    if (this->_target._substates.find(n._state) == this->_target._substates.end())
-    {           
-        upml::sm::stateptr_t ps(new_state());
-        ps->_id = n._state; 
-        this->_target._substates[ps->_id] = ps;
-    }
-    this->_target._substates[n._state]->_config.insert(n._setting);
+
+    auto pState(state(n._state));
+    pState->_config.insert(n._setting);
 } // config_setting
 
 inline void ast_visitor<upml::sm::region>::operator()(ast_activity& n) const
@@ -428,13 +433,8 @@ inline void ast_visitor<upml::sm::region>::operator()(ast_activity& n) const
                 << ' ' << tr._id << std::endl;);
 
    
-    if (this->_target._substates.find(n._state) == this->_target._substates.end())
-    {           
-        upml::sm::stateptr_t ps(new_state());
-        ps->_id = n._state; 
-        this->_target._substates[ps->_id] = ps;
-    }
-    this->_target._substates[n._state]->_activities.push_back(tr);
+    auto pState(state(n._state));
+    pState->_activities.push_back(tr);
 } // region
 
 inline void ast_visitor<upml::sm::region>::operator()(ast_transition& n) const
@@ -449,43 +449,23 @@ inline void ast_visitor<upml::sm::region>::operator()(ast_transition& n) const
 
     if (init)
     {
-        if (this->_target._substates.find(n._toState) == this->_target._substates.end())
-        {           
-            upml::sm::stateptr_t psto(new_state());
-            psto->_id   = n._toState;
-            this->_target._substates[psto->_id]   = psto;
-        }
-        this->_target._substates[n._toState]->_initial = true;
+        auto pState(state(n._toState));
+        pState->_initial = true;
         return;
     }
     
     if (fin)
     {
-        if (this->_target._substates.find(n._fromState) == this->_target._substates.end())
-        {           
-            upml::sm::stateptr_t psfrom(new_state());
-            psfrom->_id = n._fromState; 
-            this->_target._substates[psfrom->_id] = psfrom;
-        }
-        this->_target._substates[n._fromState]->_final = true;
+        auto pState(state(n._fromState));
+        pState->_final = true;
         return;
     }
     
-    if (this->_target._substates.find(n._fromState) == this->_target._substates.end())
-    {           
-        upml::sm::stateptr_t psfrom(new_state());
-        psfrom->_id = n._fromState; 
-        this->_target._substates[psfrom->_id] = psfrom;
-    }
-    this->_target._substates[n._fromState]->_transitions[tr._id] = tr;
+    auto pFromState(state(n._fromState));
+    pFromState->_transitions[tr._id] = tr;
     
 
-    if (this->_target._substates.find(n._toState) == this->_target._substates.end())
-    {           
-        upml::sm::stateptr_t psto(new_state());
-        psto->_id   = n._toState;
-        this->_target._substates[psto->_id]   = psto;
-    }
+    auto pToState(state(n._toState)); // force insertion if needed
 } // region
 
 inline void ast_visitor<upml::sm::region>::operator()(ast_region& n) const
