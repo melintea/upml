@@ -477,7 +477,7 @@ inline indent& region::trace(indent& id, std::ostream& os) const
     {
         v->trace(id, os);
     }
-    os << id << "}\n";
+    os << id << "} " <<_id << "\n";
     return id;
 }
 
@@ -537,7 +537,7 @@ inline indent& state::trace(indent& id, std::ostream& os) const
         }
         os << '\n';
     }
-    os << id << "}\n";
+    os << id << "} " << _id << "\n";
     return id;
 }
 
