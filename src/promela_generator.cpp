@@ -661,6 +661,7 @@ void Visitor::visit_ltl(const upml::sm::state& s) const
         return;
     }
     for (const auto& a : s._activities) {
+        //std::cerr << s._id << "activity: " << a << '\n';
         if ( ! a._args.size() ) {
             continue;
         }
@@ -684,11 +685,12 @@ void Visitor::visit_ltl() const
     // Any state would do but for now assume only the closed environment/top ones have ltl clauses
     _out << "\n// ltl claims: run with spin -ltl xyz or spin -noclaim \n";
     for (const auto& [k, r] : _sm._regions) {
-        //std::cerr << r << '\n';
+        //std::cerr << r->_id << '\n';
         for (const auto& [k, s] : r->_substates) {
-            //std::cerr << s << '\n';
+            //std::cerr << s->_id << '\n';
+            visit_ltl(*s);
             for (const auto& [k, r2] : s->_regions) {
-                //std::cerr << r2 << '\n';
+                //std::cerr << r2->_id << '\n';
                 for (const auto& [k, s2] : r2->_substates) {
                     visit_ltl(*s2);
                 }

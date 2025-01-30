@@ -734,7 +734,8 @@ void Visitor::visit_ltl() const
     for (const auto& [k, r] : _sm._regions) {
         //std::cerr << r << '\n';
         for (const auto& [k, s] : r->_substates) {
-            //std::cerr << s << '\n';
+            //std::cerr << s->_id << '\n';
+            visit_ltl(*s);
             for (const auto& [k, r2] : s->_regions) {
                 //std::cerr << r2 << '\n';
                 for (const auto& [k, s2] : r2->_substates) {
