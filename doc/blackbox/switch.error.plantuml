@@ -21,8 +21,8 @@ WallOff -[#blue]-> LightOn : WallSwitch
 LampOff -[#blue]-> LightOn : LampSwitch
 LampOff -[#blue]-> BothOff : WallSwitch
 
-LightOn -[#orangered,bold]-> LampOff : LampSwitch
-LightOn -[#orangered,bold]-> WallOff : WallSwitch
+LightOn -[#orangered,bold]-> LampOff : WallSwitch
+LightOn -[#orangered,bold]-> WallOff : LampSwitch
 
 }
 

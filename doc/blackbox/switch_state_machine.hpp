@@ -11,11 +11,12 @@
 
 #pragma once
 
-#include <iostream>
 #include <boost/msm/back/state_machine.hpp>
  
 #include <boost/msm/front/state_machine_def.hpp>
 #include <boost/msm/front/functor_row.hpp>
+
+#include <iostream>
 
 namespace {
 
@@ -57,7 +58,9 @@ namespace {
         typedef BothOff initial_state;
 
         // Transition table
-        struct transition_table:mpl::vector<
+#if 0
+	/* For switch.error.plantuml/png */
+        struct transition_table : mpl::vector<
             //          Start    Event       Next      Action       Guard
             msmf::Row < BothOff, LampSwitch, WallOff,  msmf::none,  msmf::none >
           , msmf::Row < BothOff, WallSwitch, LampOff,  msmf::none,  msmf::none >
@@ -68,6 +71,21 @@ namespace {
           , msmf::Row < LampOff, LampSwitch, LightOn,  msmf::none,  msmf::none >
           , msmf::Row < LampOff, WallSwitch, BothOff,  msmf::none,  msmf::none >
         > {};
+#endif
+#if 1
+	/* Good: for switch.plantuml/png */
+        struct transition_table : mpl::vector<
+            //          Start    Event       Next      Action       Guard
+            msmf::Row < BothOff, LampSwitch, WallOff,  msmf::none,  msmf::none >
+          , msmf::Row < BothOff, WallSwitch, LampOff,  msmf::none,  msmf::none >
+          , msmf::Row < WallOff, LampSwitch, BothOff,  msmf::none,  msmf::none >
+          , msmf::Row < WallOff, WallSwitch, LightOn,  msmf::none,  msmf::none >
+          , msmf::Row < LightOn, LampSwitch, LampOff,  msmf::none,  msmf::none >
+          , msmf::Row < LightOn, WallSwitch, WallOff,  msmf::none,  msmf::none >
+          , msmf::Row < LampOff, LampSwitch, LightOn,  msmf::none,  msmf::none >
+          , msmf::Row < LampOff, WallSwitch, BothOff,  msmf::none,  msmf::none >
+        > {};
+#endif
     };
 
     // Pick a back-end

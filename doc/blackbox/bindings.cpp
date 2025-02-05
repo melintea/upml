@@ -9,6 +9,8 @@
 #include "bindings.hpp"
 #include "switch_state_machine.hpp"
 
+#include <iostream>
+
 
 Switch g_sm;
 
@@ -29,10 +31,12 @@ bool is_light_on()
 
 void flip_wall_switch()
 {
+    std::cout << "WallSwitch\n";
     g_sm.process_event(WallSwitch());
 }
 
 void flip_lamp_switch()
 {
+    std::cout << "LampSwitch\n";
     g_sm.process_event(LampSwitch());
 }

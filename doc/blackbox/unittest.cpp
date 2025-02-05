@@ -17,7 +17,6 @@ int main()
     initialize();
     assert(is_light_on() == false);
     
-    std::cout << "> Send Event1" << std::endl;
     flip_lamp_switch();
     assert(is_light_on() == false);
 
