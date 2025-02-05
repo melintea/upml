@@ -1,0 +1,30 @@
+@startuml
+
+note as N1
+  A lamp controlled by a wall switch
+  and a lamp switch. Both must be on
+  for the lamp to be on.
+end note
+
+
+
+
+state Switch {
+
+[*] --> BothOff
+BothOff --> WallOff : LampSwitch
+BothOff --> LampOff : WallSwitch
+
+WallOff --> BothOff : LampSwitch
+WallOff --> LightOn : WallSwitch
+
+LampOff --> LightOn : LampSwitch
+LampOff --> BothOff : WallSwitch
+
+LightOn --> LampOff : WallSwitch
+LightOn --> WallOff : LampSwitch
+
+}
+
+@enduml
+
