@@ -14,20 +14,18 @@
 
 int main()
 {
-
-    Switch sm1;
-    sm1.start();
-    assert(sm1._lightOn == false);
+    initialize();
+    assert(is_light_on() == false);
     
     std::cout << "> Send Event1" << std::endl;
-    sm1.process_event(LampSwitch());
-    assert(sm1._lightOn == false);
+    flip_lamp_switch();
+    assert(is_light_on() == false);
 
-    sm1.process_event(WallSwitch());
-    assert(sm1._lightOn == true);
+    flip_wall_switch();
+    assert(is_light_on() == true);
 
-    sm1.process_event(WallSwitch());
-    assert(sm1._lightOn == false);
+    flip_wall_switch();
+    assert(is_light_on() == false);
 	
     return EXIT_SUCCESS;
 }
