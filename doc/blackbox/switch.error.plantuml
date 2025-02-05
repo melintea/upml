@@ -4,6 +4,8 @@ note as N1
   A lamp controlled by a wall switch
   and a lamp switch. Both must be on
   for the lamp to be on.
+  
+  This state machine has errors (in red).
 end note
 
 
