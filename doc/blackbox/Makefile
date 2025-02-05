@@ -16,4 +16,4 @@ tests: test
 	@echo "\e[42m*** Pass ***\e[0m"
 
 clean:
-	-rm *.o unitest pan
+	-rm *.o unittest pan
