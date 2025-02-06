@@ -17,15 +17,18 @@ Switch g_sm;
 
 void initialize()
 {
+    std::cout << "** initialize\n";
     g_sm.start();
 }
 
 void terminate()
 {
+    std::cout << "** terminate\n";
 }
 
 bool is_light_on()
 {
+    std::cout << "  on: " << g_sm._lightOn << "\n";
     return g_sm._lightOn;
 }
 
@@ -39,4 +42,9 @@ void flip_lamp_switch()
 {
     std::cout << "LampSwitch\n";
     g_sm.process_event(LampSwitch());
+}
+
+void tracex(const char* msg)
+{
+    std::cout << msg << "\n";
 }

@@ -6,38 +6,31 @@ c_decl {
 \#include "bindings.hpp"
 }
 
-bool isLigtOn = false;
+bool isLightOn = false;
 
 proctype TestEnvironment()
 {
-    bool flippedWall = false;
-    
     c_code {initialize();}
     
     if
-    :: flippedWall = false/*flip lamp*/; c_code {flip_lamp_switch();}
-    :: flippedWall = true; c_code {flip_wall_switch();}
+    :: true -> 
+       c_code {tracex("--1.1"); flip_wall_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == false);
+       c_code {tracex("--1.2"); flip_lamp_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == true);
+    :: true -> 
+       c_code {tracex("--2.1"); flip_lamp_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == false);
+       c_code {tracex("--2.2"); flip_wall_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == true);
     fi
-    c_code {now.isLigtOn = is_light_on();}; assert(isLigtOn == false);
     
+    c_code {tracex("--.2");};
     if
-    :: ( flippedWall == false ) -> c_code {flip_wall_switch();}
-    :: ( flippedWall == true )  -> c_code {flip_lamp_switch();}
+    :: true -> 
+       c_code {tracex("--3.1"); flip_lamp_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == false);
+       c_code {tracex("--3.2"); flip_wall_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == false);
+    :: true -> 
+       c_code {tracex("--4.1"); flip_wall_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == false);
+       c_code {tracex("--4.2"); flip_lamp_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == false);
     fi
-    c_code {now.isLigtOn = is_light_on();}; assert(isLigtOn == true);
-    
-    if
-    :: flippedWall = false/*flip lamp*/; c_code {flip_lamp_switch();}
-    :: flippedWall = true; c_code {flip_wall_switch();}
-    fi
-    c_code {now.isLigtOn = is_light_on();}; assert(isLigtOn == false);
-    
-    //if
-    //:: ( flippedWall == false ) -> c_code {flip_wall_switch();}
-    //:: ( flippedWall == true )  -> c_code {flip_lamp_switch();}
-    //fi
-    //c_code {now.isLigtOn = is_light_on();}; assert(isLigtOn == false);
-    
+
     c_code {terminate();} 
 } // TestEnvironment
 

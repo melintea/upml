@@ -36,13 +36,11 @@ namespace {
         // States
         struct LightOn : msmf::state<>
         {
-            // Entry action
             template <class Event,class Fsm>
             void on_entry(Event const&, Fsm& fsm) const {
                 std::cout << "LightOn::on_entry()" << std::endl;
 		fsm._lightOn = true;
             }
-            // Exit action
             template <class Event,class Fsm>
             void on_exit(Event const&, Fsm& fsm) const {
                 std::cout << "LightOn::on_exit()" << std::endl;
@@ -50,9 +48,41 @@ namespace {
             }
         };
 
-        struct BothOff : msmf::state<> {};
-        struct WallOff : msmf::state<> {};
-        struct LampOff : msmf::state<> {};
+        struct BothOff : msmf::state<> 
+	{
+            template <class Event,class Fsm>
+            void on_entry(Event const&, Fsm& fsm) const {
+                std::cout << "BothOff::on_entry()" << std::endl;
+            }
+            template <class Event,class Fsm>
+            void on_exit(Event const&, Fsm& fsm) const {
+                std::cout << "BothOff::on_exit()" << std::endl;
+            }
+	};
+	
+        struct WallOff : msmf::state<> 
+	{
+            template <class Event,class Fsm>
+            void on_entry(Event const&, Fsm& fsm) const {
+                std::cout << "WallOff::on_entry()" << std::endl;
+            }
+            template <class Event,class Fsm>
+            void on_exit(Event const&, Fsm& fsm) const {
+                std::cout << "WallOff::on_exit()" << std::endl;
+            }
+	};
+	
+        struct LampOff : msmf::state<> 
+	{
+            template <class Event,class Fsm>
+            void on_entry(Event const&, Fsm& fsm) const {
+                std::cout << "LampOff::on_entry()" << std::endl;
+            }
+            template <class Event,class Fsm>
+            void on_exit(Event const&, Fsm& fsm) const {
+                std::cout << "LampOff::on_exit()" << std::endl;
+            }
+	};
 
         // Set initial state
         typedef BothOff initial_state;
