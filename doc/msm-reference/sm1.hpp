@@ -105,14 +105,18 @@ namespace sm1 {
         
             typedef mpl::vector<CS1r1S1, CS1r2S1> initial_state;
         
+            bool gtrue(const T4&)  {return true;}
+            bool gfalse(const T4&) {return false;}
+        
             void t4(const T4&) {std::cout<<" - CS1::t4 - ";}
             void t5(const T5&) {std::cout<<" - CS1::t5 - ";}
         
             struct transition_table : mpl::vector<
                 //            Start    Event       Next        Action        Guard
-                      a_row < CS1r1S1  , T4        , CS1r1S2   , &CS1_::t4   /*, msmf::none*/ >
+                   // a_row < CS1r1S1  , T4        , CS1r1S2   , &CS1_::t4   /*, msmf::none*/ >
+                        row < CS1r1S1  , T4        , CS1r1S2   , &CS1_::t4   , &CS1_::gfalse >  // defers to CS1's T4
                 //--- region 2
-                  //, a_row < CS1r2S1  , T4        , CS1r2S2   , &CS1_::t4   /*, msmf::none*/ > // conflict -> asserts
+                  //, a_row < CS1r2S1  , T4        , CS1r2S2   , &CS1_::t4   /*, msmf::none*/ > // conflict with region 1 -> asserts
                     , a_row < CS1r2S1  , T5        , CS1r2S2   , &CS1_::t5   /*, msmf::none*/ >
             > {};
         }; // CS1_
@@ -134,7 +138,7 @@ namespace sm1 {
                   a_row < S1       , T1        , CS1       , &SM::t1      /*, msmf::none*/ >
           ,       a_row < S1       , T4        , S1        , &SM::t4      /*, msmf::none*/ >
           ,       a_row < CS1      , T2        , S2        , &SM::t2      /*, msmf::none*/ >
-          ,       a_row < CS1      , T4        , CS1       , &SM::t4      /*, msmf::none*/ > //trumped by CS1r1S1 / CS1's table
+          ,       a_row < CS1      , T4        , CS1       , &SM::t4      /*, msmf::none*/ > //if gtrue: trumped by CS1r1S1 / CS1's table, else this runs
           ,       a_row < S2       , T3        , S3        , &SM::t3      /*, msmf::none*/ >
         > {};
     }; // SM1
