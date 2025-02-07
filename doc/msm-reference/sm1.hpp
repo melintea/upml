@@ -105,6 +105,8 @@ namespace sm1 {
         
             typedef mpl::vector<CS1r1S1, CS1r2S1> initial_state;
         
+            bool gtrue1(const T4&)  {return true;}
+            bool gtrue2(const T4&)  {return true;}
             bool gtrue(const T4&)  {return true;}
             bool gfalse(const T4&) {return false;}
         
@@ -114,9 +116,9 @@ namespace sm1 {
             struct transition_table : mpl::vector<
                 //            Start    Event       Next        Action        Guard
                    // a_row < CS1r1S1  , T4        , CS1r1S2   , &CS1_::t4   /*, msmf::none*/ >
-                        row < CS1r1S1  , T4        , CS1r1S2   , &CS1_::t4   , &CS1_::gfalse >  // defers to CS1's T4
+                        row < CS1r1S1  , T4        , CS1r1S2   , &CS1_::t4   , &CS1_::gtrue1 >  // defers to CS1's T4 if guard is false
                 //--- region 2
-                  //, a_row < CS1r2S1  , T4        , CS1r2S2   , &CS1_::t4   /*, msmf::none*/ > // conflict with region 1 -> asserts
+                    ,   row < CS1r2S1  , T4        , CS1r2S2   , &CS1_::t4   , &CS1_::gfalse >  // conflicts with region 1 a_row if both guards evaluate to true -> asserts
                     , a_row < CS1r2S1  , T5        , CS1r2S2   , &CS1_::t5   /*, msmf::none*/ >
             > {};
         }; // CS1_
