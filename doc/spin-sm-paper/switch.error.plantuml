@@ -1,0 +1,32 @@
+@startuml
+
+note as N1
+  A lamp controlled by a wall switch
+  and a lamp switch. Both must be on
+  for the lamp to be on.
+  
+  This state machine has errors (in red).
+end note
+
+
+
+
+state Switch {
+
+[*] --> BothOff
+BothOff -[#blue]-> WallOff : LampSwitch
+BothOff -[#blue]-> LampOff : WallSwitch
+
+WallOff -[#blue]-> BothOff : LampSwitch
+WallOff -[#blue]-> LightOn : WallSwitch
+
+LampOff -[#blue]-> LightOn : LampSwitch
+LampOff -[#blue]-> BothOff : WallSwitch
+
+LightOn -[#orangered,bold]-> LampOff : WallSwitch
+LightOn -[#orangered,bold]-> WallOff : LampSwitch
+
+}
+
+@enduml
+

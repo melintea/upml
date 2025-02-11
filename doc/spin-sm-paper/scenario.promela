@@ -1,0 +1,47 @@
+/*
+ *
+ */
+ 
+c_decl {
+\#include "bindings.hpp"
+}
+
+bool isLightOn = false;
+
+proctype TestEnvironment()
+{
+    c_code {initialize();}
+    
+    if
+    :: true -> 
+       c_code {tracex("--1.1"); flip_wall_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == false);
+       c_code {tracex("--1.2"); flip_lamp_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == true);
+    :: true -> 
+       c_code {tracex("--2.1"); flip_lamp_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == false);
+       c_code {tracex("--2.2"); flip_wall_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == true);
+    fi
+    
+    c_code {tracex("--.2");};
+    if
+    :: true -> 
+       c_code {tracex("--3.1"); flip_lamp_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == false);
+       c_code {tracex("--3.2"); flip_wall_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == false);
+    :: true -> 
+       c_code {tracex("--4.1"); flip_wall_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == false);
+       c_code {tracex("--4.2"); flip_lamp_switch(); now.isLightOn = is_light_on();}; //assert(isLightOn == false);
+    fi
+
+    c_code {terminate();} 
+} // TestEnvironment
+
+
+init {
+    atomic {
+        run TestEnvironment(); 
+    }
+    (_nr_pr == 1); 
+}
+
+
+// ltl claims: run with spin -ltl xyz or spin -noclaim 
+

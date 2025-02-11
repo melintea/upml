@@ -1,0 +1,306 @@
+/*
+  Error free
+
+Safety
+------
+spin -a  switch.promela
+
+cc -DMEMLIM=1024 -O2 -DXUSAFE -DSAFETY -DNOCLAIM -w -o pan pan.c
+./pan -m10000 
+Pid: 1071763
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	- (not selected)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 44 byte, depth reached 44, errors: 0
+      136 states, stored
+       10 states, matched
+      146 transitions (= stored+matched)
+        1 atomic steps
+hash conflicts:         0 (resolved)
+
+Stats on memory usage (in Megabytes):
+    0.009	equivalent memory usage for states (stored*(State-vector + overhead))
+    0.282	actual memory usage for states
+  128.000	memory used for hash table (-w24)
+    0.534	memory used for DFS stack (-m10000)
+  128.730	total actual memory usage
+
+
+unreached in proctype Switch
+	switch.promela:126, state 43, "-end-"
+	(1 of 43 states)
+unreached in proctype TestEnvironment
+	(0 of 47 states)
+unreached in init
+	(0 of 4 states)
+unreached in claim ltl_0
+	_spin_nvr.tmp:3, state 5, "(!((!((!(((Switch.currentState==0)&&(isLightOn==0)))||((Switch.currentState==2)&&(isLightOn==1))))||((Switch.currentState==0)&&(isLightOn==0)))))"
+	_spin_nvr.tmp:3, state 5, "(1)"
+	_spin_nvr.tmp:8, state 10, "(!((!((!(((Switch.currentState==0)&&(isLightOn==0)))||((Switch.currentState==2)&&(isLightOn==1))))||((Switch.currentState==0)&&(isLightOn==0)))))"
+	_spin_nvr.tmp:10, state 13, "-end-"
+	(3 of 13 states)
+
+
+non-progress
+------------
+spin -a  switch.promela
+ltl ltl_0: [] (<> ((! ((! (((Switch:currentState==0)) && ((_isLightOn==0)))) || (((Switch:currentState==2)) && ((_isLightOn==1))))) || (((Switch:currentState==0)) && ((_isLightOn==0)))))
+gcc -DMEMLIM=1024 -O2 -DXUSAFE -DNP -DNOCLAIM -w -o pan pan.c
+./pan -m10000  -l
+Pid: 1071779
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	+ (:np_:)
+	assertion violations	+ (if within scope of claim)
+	non-progress cycles 	+ (fairness disabled)
+	invalid end states	- (disabled by never claim)
+
+State-vector 60 byte, depth reached 88, errors: 0
+      271 states, stored (406 visited)
+      310 states, matched
+      716 transitions (= visited+matched)
+        2 atomic steps
+hash conflicts:         0 (resolved)
+
+Stats on memory usage (in Megabytes):
+    0.023	equivalent memory usage for states (stored*(State-vector + overhead))
+    0.282	actual memory usage for states
+  128.000	memory used for hash table (-w24)
+    0.534	memory used for DFS stack (-m10000)
+  128.730	total actual memory usage
+
+
+unreached in proctype Switch
+	switch.promela:168, state 43, "-end-"
+	(1 of 43 states)
+unreached in proctype TestEnvironment
+	(0 of 47 states)
+unreached in init
+	(0 of 4 states)
+unreached in claim ltl_0
+	_spin_nvr.tmp:3, state 5, "(!((!((!(((Switch.currentState==0)&&(isLightOn==0)))||((Switch.currentState==2)&&(isLightOn==1))))||((Switch.currentState==0)&&(isLightOn==0)))))"
+	_spin_nvr.tmp:3, state 5, "(1)"
+	_spin_nvr.tmp:8, state 10, "(!((!((!(((Switch.currentState==0)&&(isLightOn==0)))||((Switch.currentState==2)&&(isLightOn==1))))||((Switch.currentState==0)&&(isLightOn==0)))))"
+	_spin_nvr.tmp:10, state 13, "-end-"
+	(3 of 13 states)
+
+acceptance
+----------
+spin -a  switch.promela
+ltl ltl_0: [] (<> ((! ((! (((Switch:currentState==0)) && ((_isLightOn==0)))) || (((Switch:currentState==2)) && ((_isLightOn==1))))) || (((Switch:currentState==0)) && ((_isLightOn==0)))))
+gcc -DMEMLIM=1024 -O2 -DXUSAFE -w -o pan pan.c
+./pan -m10000  -a
+Pid: 1071885
+
+(Spin Version 6.5.2 -- 6 December 2019)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	+ (ltl_0)
+	assertion violations	+ (if within scope of claim)
+	acceptance   cycles 	+ (fairness disabled)
+	invalid end states	- (disabled by never claim)
+
+State-vector 60 byte, depth reached 88, errors: 0
+      242 states, stored (348 visited)
+      221 states, matched
+      569 transitions (= visited+matched)
+        1 atomic steps
+hash conflicts:         0 (resolved)
+
+Stats on memory usage (in Megabytes):
+    0.020	equivalent memory usage for states (stored*(State-vector + overhead))
+    0.282	actual memory usage for states
+  128.000	memory used for hash table (-w24)
+    0.534	memory used for DFS stack (-m10000)
+  128.730	total actual memory usage
+
+
+unreached in proctype Switch
+	switch.promela:260, state 43, "-end-"
+	(1 of 43 states)
+unreached in proctype TestEnvironment
+	(0 of 47 states)
+unreached in init
+	(0 of 4 states)
+unreached in claim ltl_0
+	_spin_nvr.tmp:10, state 13, "-end-"
+	(1 of 13 states)
+*/
+
+#define idx_unknown -1
+
+#define idx_state_BothOff 0
+#define idx_state_LampOff 1
+#define idx_state_LightOn 2
+#define idx_state_WallOff 4
+
+mtype = { event_LampSwitch, event_WallSwitch, event_Dummy }
+
+typedef event {mtype evId};
+
+chan _stateMachineChannel = [1] of {event};
+bool _stateMachineReady = false;
+bool _isLightOn = false;
+
+inline send_event(evt)
+{
+    local event evtSend;
+    evtSend.evId = evt;
+    _stateMachineChannel!evtSend;
+}
+    
+
+proctype Switch()
+{
+    xr _stateMachineChannel; 
+    local event evtRecv; 
+    local short currentState = idx_unknown; 
+
+
+/* state idx_state_BothOff[*/
+
+entry_BothOff: //0
+    /* execute on entry BothOff actions */
+    _stateMachineReady = true;
+    currentState = idx_state_BothOff;
+
+body_BothOff:
+end_Switch: // invalid end state (at depth 32)
+    _stateMachineChannel?evtRecv; 
+    printf("MSC: > event %e in state %d\n", evtRecv.evId, currentState); 
+    if
+        :: (evtRecv.evId == event_LampSwitch) -> 
+	    /* execute on exit state BothOff then transition actions*/
+            goto entry_WallOff;
+
+        :: (evtRecv.evId == event_WallSwitch) -> 
+	    /* on exit BothOff */
+            goto entry_LampOff;
+	    
+	// No warning?
+        :: (evtRecv.evId == event_Dummy) -> 
+	    /* execute on exit state BothOff then transition actions*/
+            goto entry_WallOff;
+
+    fi
+
+/*]state idx_state_BothOff*/
+
+
+/* state idx_state_LampOff[*/
+
+entry_LampOff: //1
+    currentState = idx_state_LampOff;
+
+body_LampOff:
+    _stateMachineChannel?evtRecv; 
+    printf("MSC: > event %e in state %d\n", evtRecv.evId, currentState); 
+    if
+        :: (evtRecv.evId == event_LampSwitch) -> 
+            goto entry_LightOn;
+
+        :: (evtRecv.evId == event_WallSwitch) -> 
+            goto entry_BothOff;
+    fi
+
+/*]state idx_state_LampOff*/
+
+
+/* state idx_state_LightOn[*/
+
+entry_LightOn: //2
+    currentState = idx_state_LightOn;
+    _isLightOn = true;
+
+body_LightOn:
+    _stateMachineChannel?evtRecv; 
+    printf("MSC: > event %e in state %d\n", evtRecv.evId, currentState); 
+    if
+        :: (evtRecv.evId == event_LampSwitch) -> 
+            _isLightOn = false;
+            goto entry_LampOff;
+
+        :: (evtRecv.evId == event_WallSwitch) -> 
+            _isLightOn = false;
+            goto entry_WallOff;
+    fi
+
+/*]state idx_state_LightOn*/
+
+
+/* state idx_state_WallOff[*/
+
+entry_WallOff: //3
+    currentState = idx_state_WallOff;
+
+body_WallOff:
+    _stateMachineChannel?evtRecv; 
+    printf("MSC: > event %e in state %d\n", evtRecv.evId, currentState); 
+    if
+        :: (evtRecv.evId == event_LampSwitch) -> 
+            goto entry_BothOff;
+
+        :: (evtRecv.evId == event_WallSwitch) -> 
+            goto entry_LightOn;
+    fi
+
+/*]state idx_state_WallOff*/
+
+} // Switch
+
+
+proctype TestEnvironment()
+{
+    (_stateMachineReady == true);
+    assert(Switch:currentState == idx_state_BothOff);
+    
+    if
+    :: true -> 
+       send_event(event_WallSwitch); 
+       send_event(event_LampSwitch); //assert(_isLightOn == true); // error because race condition
+    :: true -> 
+       send_event(event_LampSwitch); 
+       send_event(event_WallSwitch); //assert(_isLightOn == true); // idem
+    fi
+    (_isLightOn == true);
+    assert(Switch:currentState == idx_state_LightOn);
+    
+    if
+    :: true -> 
+       send_event(event_LampSwitch);
+       send_event(event_WallSwitch);
+    :: true -> 
+       send_event(event_WallSwitch);
+       send_event(event_LampSwitch);
+    fi
+    (_isLightOn == false);
+    (Switch:currentState == idx_state_BothOff);
+} // TestEnvironment
+
+
+init {
+    atomic {
+        run Switch(); 
+        run TestEnvironment(); 
+    }
+    //(_nr_pr == 1); 
+}
+
+
+ltl { always/*[]*/ eventually/*<>*/
+    (   (Switch:currentState == idx_state_BothOff && _isLightOn == false) 
+           implies/*->*/ (Switch:currentState == idx_state_LightOn && _isLightOn == true) 
+	   implies/*->*/ (Switch:currentState == idx_state_BothOff && _isLightOn == false)
+)}
+
