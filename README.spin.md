@@ -190,7 +190,7 @@ Use xspin/ispin.tcl.
 
 ## SIP stuff
 
-A non-RFC3261-conformant-and-simplified [sip0.plantuml](plantuml/sip/sip0.plantuml) abominable SM:
+A non-RFC3261-conformant-and-simplified [sip0.plantuml](plantuml/sip/sip0.plantuml) combination of two SM representing two parties bound by (a subset of the) SIP protocol:
 ![image](plantuml/sip/sip0.png)
 
 ### Simulation
@@ -284,4 +284,5 @@ Use xspin/ispin.tcl.
 ## Various links
 - [Spin & Promela](https://spinroot.com)
 - [Tau](https://data.caltech.edu/records/8exsc-7h074)
+- [Translating UML State Machine Diagram into Promela](https://www.iaeng.org/publication/IMECS2017/IMECS2017_pp512-516.pdf)
 - [Total Store Ordering (TSO) and the Partial Store Ordering (PSO) memory models](https://github.com/plasklab/mmlib) & [usage](https://brilliantsugar.github.io/posts/how-i-learned-to-stop-worrying-and-love-juggling-c++-atomics/)

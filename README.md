@@ -59,7 +59,6 @@ Depends on boost (spirit, program_options, filesystem).
 ## Similar tools & various links
 
 - ```vUML```. I could not get my hands on it.
-- [Translating UML State Machine Diagram into Promela](https://www.iaeng.org/publication/IMECS2017/IMECS2017_pp512-516.pdf)
 - [An exhausting list of FSL](https://buttondown.email/hillelwayne/archive/formal-specification-languages/)
 - [SysML](https://sysml.org/)
 - [qhsmtst/qtools](https://www.state-machine.com/qtools/qutest_qhsm.html)
