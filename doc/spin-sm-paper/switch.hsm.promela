@@ -1,0 +1,164 @@
+/*
+*/
+
+#define idx_unknown -1
+
+#define idx_state_BothOff 0
+#define idx_state_LampOff 1
+#define idx_state_LightOn 2
+#define idx_state_WallOff 4
+
+mtype = { event_EnterState, event_ExitState, event_LampSwitch, event_WallSwitch, event_Dummy, }
+
+typedef event {mtype evId; short toState};
+
+chan  _stateMachineChannel = [3] of {event};
+short _currentState = idx_unknown;
+bool  _stateMachineReady = false;
+bool  _isLightOn = false;
+
+
+inline send_event(evt, toS)
+{
+    local event evtSend;
+    evtSend.evId      = evt;
+    evtSend.toState   = toS;
+    _stateMachineChannel!evtSend;
+}
+    
+
+proctype StateBothOff(chan superChannel)
+{
+    xr superChannel; 
+    local event evtRecv; 
+
+entry_BothOff: //0
+    /* execute on entry BothOff actions */
+    _currentState = idx_state_BothOff;
+    _stateMachineReady = true;
+
+body_BothOff:
+end_BothOff: // valid verification' end
+    superChannel?evtRecv; 
+    printf("MSC: > event %e in state %d\n", evtRecv.evId, _currentState); 
+    if
+        :: (evtRecv.evId == event_ExitState) -> 
+	    assert(evtRecv.toState == idx_state_BothOff);
+            goto exit_BothOff;
+	    
+        :: (evtRecv.evId == event_LampSwitch) -> 
+	    /* execute transition actions then on exit state BothOff; not UML-compliant*/
+	    send_event(event_EnterState, idx_state_WallOff);
+            goto exit_BothOff;
+
+        :: (evtRecv.evId == event_WallSwitch) -> 
+	    send_event(event_EnterState, idx_state_LampOff);
+            goto exit_BothOff;
+	    
+	// No warning?
+        :: (evtRecv.evId == event_Dummy) -> 
+            goto body_BothOff;
+	    
+	//:: else
+	//  send event to substates/regions for processing
+    fi
+exit_BothOff:
+    /* execute on exit BothOff actions */
+}
+
+
+proctype StateLampOff(chan superChannel)
+{
+}
+
+proctype StateLightOn(chan superChannel)
+{
+}
+
+proctype StateWallOff(chan superChannel)
+{
+}
+
+proctype Switch(chan superChannel)
+{
+    xr _stateMachineChannel; 
+    local event evtRecv; 
+    chan substateChannel = [1] of {event};
+
+entry_Switch:
+    send_event(event_EnterState, idx_state_WallOff); // initial state
+
+body_Switch:
+end_Switch: 
+    _stateMachineChannel?evtRecv; 
+    printf("MSC: > event %e in state %d\n", evtRecv.evId, _currentState); 
+    if
+        :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_BothOff) -> 
+	    run StateBothOff(substateChannel);
+	    goto body_Switch;
+
+        :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_LampOff) -> 
+	    run StateLampOff(substateChannel);
+	    goto body_Switch;
+
+        :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_LightOn) -> 
+	    run StateLightOn(substateChannel);
+	    goto body_Switch;
+
+        :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_WallOff) -> 
+	    run StateWallOff(substateChannel);
+	    goto body_Switch;
+
+	:: else
+            //send event to substates/regions for processing
+	    substateChannel!evtRecv.evId(_currentState);
+	    goto body_Switch;
+    fi
+    goto body_Switch;
+} // Switch
+
+
+proctype TestEnvironment()
+{
+    (_stateMachineReady == true);
+    assert(_currentState == idx_state_BothOff);
+    
+    if
+    :: true -> 
+       send_event(event_WallSwitch, _currentState); 
+       send_event(event_LampSwitch, _currentState); //assert(_isLightOn == true); // error because race condition
+    :: true -> 
+       send_event(event_LampSwitch, _currentState); 
+       send_event(event_WallSwitch, _currentState); //assert(_isLightOn == true); // idem
+    fi
+    (_isLightOn == true);
+    assert(_currentState == idx_state_LightOn);
+    
+    if
+    :: true -> 
+       send_event(event_LampSwitch, _currentState);
+       send_event(event_WallSwitch, _currentState);
+    :: true -> 
+       send_event(event_WallSwitch, _currentState);
+       send_event(event_LampSwitch, _currentState);
+    fi
+    (_isLightOn == false);
+    (_currentState == idx_state_BothOff);
+} // TestEnvironment
+
+
+init {
+    atomic {
+        run Switch(_stateMachineChannel); 
+        run TestEnvironment(); 
+    }
+    //(_nr_pr == 1); 
+}
+
+
+ltl { always/*[]*/ eventually/*<>*/
+    (   (_currentState == idx_state_BothOff && _isLightOn == false) 
+           implies/*->*/ (_currentState == idx_state_LightOn && _isLightOn == true) 
+	   implies/*->*/ (_currentState == idx_state_BothOff && _isLightOn == false)
+)}
+
