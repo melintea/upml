@@ -29,7 +29,6 @@ inline send_event(evt, toS)
 
 proctype StateBothOff(chan superChannel)
 {
-    xr superChannel; 
     local event evtRecv; 
 
 entry_BothOff:
@@ -69,7 +68,6 @@ exit_BothOff:
 
 proctype StateLampOff(chan superChannel)
 {
-    xr superChannel; 
     local event evtRecv; 
 
 entry_LampOff:
@@ -97,7 +95,6 @@ exit_LampOff:
 
 proctype StateLightOn(chan superChannel)
 {
-    xr superChannel; 
     local event evtRecv; 
 
 entry_LightOn: 
@@ -127,7 +124,6 @@ exit_LightOn:
 
 proctype StateWallOff(chan superChannel)
 {
-    xr superChannel; 
     local event evtRecv; 
 
 entry_WallOff:
