@@ -143,7 +143,7 @@ unreached in claim ltl_0
 #define idx_state_BothOff 0
 #define idx_state_LampOff 1
 #define idx_state_LightOn 2
-#define idx_state_WallOff 4
+#define idx_state_WallOff 3
 
 mtype = { event_LampSwitch, event_WallSwitch, event_Dummy }
 

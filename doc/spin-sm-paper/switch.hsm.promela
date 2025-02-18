@@ -6,7 +6,7 @@
 #define idx_state_BothOff 0
 #define idx_state_LampOff 1
 #define idx_state_LightOn 2
-#define idx_state_WallOff 4
+#define idx_state_WallOff 3
 
 mtype = { event_EnterState, event_ExitState, event_LampSwitch, event_WallSwitch, event_Dummy, }
 
@@ -34,13 +34,13 @@ proctype StateBothOff(chan superChannel)
 
 entry_BothOff:
     /* execute on entry BothOff actions */
-    _currentState = idx_state_BothOff;
+    _currentState = idx_state_BothOff; //0
     _stateMachineReady = true;
 
 body_BothOff:
 end_BothOff: // valid verification' end
     superChannel?evtRecv; 
-    printf("MSC: > event %e in state %d\n", evtRecv.evId, _currentState); 
+    printf("MSC: > StateBothOff event %e in state %d\n", evtRecv.evId, _currentState); 
     if
         :: (evtRecv.evId == event_ExitState) -> 
 	    assert(evtRecv.toState == idx_state_BothOff);
@@ -73,11 +73,11 @@ proctype StateLampOff(chan superChannel)
     local event evtRecv; 
 
 entry_LampOff:
-    _currentState = idx_state_LampOff;
+    _currentState = idx_state_LampOff; //1
 
 body_LampOff:
     superChannel?evtRecv; 
-    printf("MSC: > event %e in state %d\n", evtRecv.evId, _currentState); 
+    printf("MSC: > StateLampOff event %e in state %d\n", evtRecv.evId, _currentState); 
     if
         :: (evtRecv.evId == event_ExitState) -> 
 	    assert(evtRecv.toState == idx_state_LampOff);
@@ -101,12 +101,12 @@ proctype StateLightOn(chan superChannel)
     local event evtRecv; 
 
 entry_LightOn: 
-    _currentState = idx_state_LightOn;
+    _currentState = idx_state_LightOn; //2
     _isLightOn = true;
 
 body_LightOn:
     superChannel?evtRecv; 
-    printf("MSC: > event %e in state %d\n", evtRecv.evId, _currentState); 
+    printf("MSC: > StateLightOn event %e in state %d\n", evtRecv.evId, _currentState); 
     if
         :: (evtRecv.evId == event_ExitState) -> 
 	    assert(evtRecv.toState == idx_state_LightOn);
@@ -131,11 +131,11 @@ proctype StateWallOff(chan superChannel)
     local event evtRecv; 
 
 entry_WallOff:
-    _currentState = idx_state_WallOff;
+    _currentState = idx_state_WallOff; //3
 
 body_WallOff:
     superChannel?evtRecv; 
-    printf("MSC: > event %e in state %d\n", evtRecv.evId, _currentState); 
+    printf("MSC: > StateWallOff event %e in state %d\n", evtRecv.evId, _currentState); 
     if
         :: (evtRecv.evId == event_ExitState) -> 
 	    assert(evtRecv.toState == idx_state_WallOff);
@@ -165,7 +165,7 @@ entry_Switch:
 body_Switch:
 end_Switch: 
     superChannel?evtRecv; 
-    printf("MSC: > event %e in state %d\n", evtRecv.evId, _currentState); 
+    printf("MSC: > Switch event %e in state %d\n", evtRecv.evId, _currentState); 
     if
         :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_BothOff) -> 
 	    run StateBothOff(substateChannel);
