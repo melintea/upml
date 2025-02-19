@@ -42,24 +42,24 @@ end_BothOff: // valid verification' end
     printf("MSC: > StateBothOff event %e in state %d\n", evtRecv.evId, _currentState); 
     if
         :: (evtRecv.evId == event_ExitState) -> 
-	    assert(evtRecv.toState == idx_state_BothOff);
-            goto exit_BothOff;
-	    
+        assert(evtRecv.toState == idx_state_BothOff);
+        goto exit_BothOff;
+        
         :: (evtRecv.evId == event_LampSwitch) -> 
-	    /* execute transition actions then on exit state BothOff; not UML-compliant*/
-	    send_event(event_EnterState, idx_state_WallOff);
-            goto exit_BothOff;
+        /* execute transition actions then on exit state BothOff; not UML-compliant*/
+        send_event(event_EnterState, idx_state_WallOff);
+        goto exit_BothOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
-	    send_event(event_EnterState, idx_state_LampOff);
-            goto exit_BothOff;
-	    
-	// No warning?
+        send_event(event_EnterState, idx_state_LampOff);
+        goto exit_BothOff;
+        
+        // No warning?
         :: (evtRecv.evId == event_Dummy) -> 
-            goto body_BothOff;
-	    
-	//:: else
-	//  send event to substates/regions for processing
+        goto body_BothOff;
+        
+        //:: else
+        //  send event to substates/regions for processing
     fi
 exit_BothOff:
     /* execute on exit BothOff actions */
@@ -78,16 +78,16 @@ body_LampOff:
     printf("MSC: > StateLampOff event %e in state %d\n", evtRecv.evId, _currentState); 
     if
         :: (evtRecv.evId == event_ExitState) -> 
-	    assert(evtRecv.toState == idx_state_LampOff);
-            goto exit_LampOff;
-	    
+        assert(evtRecv.toState == idx_state_LampOff);
+        goto exit_LampOff;
+        
         :: (evtRecv.evId == event_LampSwitch) -> 
-	    send_event(event_EnterState, idx_state_LightOn);
-            goto exit_LampOff;
+        send_event(event_EnterState, idx_state_LightOn);
+        goto exit_LampOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
-	    send_event(event_EnterState, idx_state_BothOff);
-            goto exit_LampOff;
+        send_event(event_EnterState, idx_state_BothOff);
+        goto exit_LampOff;
     fi
 
 exit_LampOff:
@@ -106,16 +106,16 @@ body_LightOn:
     printf("MSC: > StateLightOn event %e in state %d\n", evtRecv.evId, _currentState); 
     if
         :: (evtRecv.evId == event_ExitState) -> 
-	    assert(evtRecv.toState == idx_state_LightOn);
-            goto exit_LightOn;
-	    
+        assert(evtRecv.toState == idx_state_LightOn);
+        goto exit_LightOn;
+        
         :: (evtRecv.evId == event_LampSwitch) -> 
-	    send_event(event_EnterState, idx_state_LampOff);
-            goto exit_LightOn;
+        send_event(event_EnterState, idx_state_LampOff);
+        goto exit_LightOn;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
-	    send_event(event_EnterState, idx_state_WallOff);
-            goto exit_LightOn;
+        send_event(event_EnterState, idx_state_WallOff);
+        goto exit_LightOn;
     fi
 
 exit_LightOn:
@@ -134,16 +134,16 @@ body_WallOff:
     printf("MSC: > StateWallOff event %e in state %d\n", evtRecv.evId, _currentState); 
     if
         :: (evtRecv.evId == event_ExitState) -> 
-	    assert(evtRecv.toState == idx_state_WallOff);
-            goto exit_WallOff;
-	    
+        assert(evtRecv.toState == idx_state_WallOff);
+        goto exit_WallOff;
+        
         :: (evtRecv.evId == event_LampSwitch) -> 
-	    send_event(event_EnterState, idx_state_BothOff);
-            goto exit_WallOff;
+        send_event(event_EnterState, idx_state_BothOff);
+        goto exit_WallOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
-	    send_event(event_EnterState, idx_state_LightOn);
-            goto exit_WallOff;
+        send_event(event_EnterState, idx_state_LightOn);
+        goto exit_WallOff;
     fi
 
 exit_WallOff:
@@ -164,25 +164,25 @@ end_Switch:
     printf("MSC: > Switch event %e in state %d\n", evtRecv.evId, _currentState); 
     if
         :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_BothOff) -> 
-	    run StateBothOff(substateChannel);
-	    goto body_Switch;
+        run StateBothOff(substateChannel);
+        goto body_Switch;
 
         :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_LampOff) -> 
-	    run StateLampOff(substateChannel);
-	    goto body_Switch;
+        run StateLampOff(substateChannel);
+        goto body_Switch;
 
         :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_LightOn) -> 
-	    run StateLightOn(substateChannel);
-	    goto body_Switch;
+        run StateLightOn(substateChannel);
+        goto body_Switch;
 
         :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_WallOff) -> 
-	    run StateWallOff(substateChannel);
-	    goto body_Switch;
+        run StateWallOff(substateChannel);
+        goto body_Switch;
 
-	:: else
-            //send event to substates/regions for processing
-	    substateChannel!evtRecv.evId(_currentState);
-	    goto body_Switch;
+        :: else
+        //send event to substates/regions for processing
+        substateChannel!evtRecv.evId(_currentState);
+        goto body_Switch;
     fi
     goto body_Switch;
 } // Switch
@@ -229,6 +229,6 @@ init {
 ltl { always/*[]*/ eventually/*<>*/
     (   (_currentState == idx_state_BothOff && _isLightOn == false) 
            implies/*->*/ (_currentState == idx_state_LightOn && _isLightOn == true) 
-	   implies/*->*/ (_currentState == idx_state_BothOff && _isLightOn == false)
+       implies/*->*/ (_currentState == idx_state_BothOff && _isLightOn == false)
 )}
 
