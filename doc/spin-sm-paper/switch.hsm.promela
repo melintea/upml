@@ -188,9 +188,8 @@ end_Switch:
 } // Switch
 
 
-proctype TestEnvironment()
+proctype TestEnvironment() provided (_stateMachineReady)
 {
-    (_stateMachineReady == true);
     assert(_currentState == idx_state_BothOff);
     
     if
