@@ -298,8 +298,8 @@ init {
 
 
 ltl { always/*[]*/ eventually/*<>*/
-    (   (Switch:currentState == idx_state_BothOff && _isLightOn == false) 
-           implies/*->*/ (Switch:currentState == idx_state_LightOn && _isLightOn == true) 
-       implies/*->*/ (Switch:currentState == idx_state_BothOff && _isLightOn == false)
+    (             (Switch:currentState == idx_state_BothOff && _isLightOn == false) 
+    implies/*->*/ (Switch:currentState == idx_state_LightOn && _isLightOn == true) 
+    implies/*->*/ (Switch:currentState == idx_state_BothOff && _isLightOn == false)
 )}
 

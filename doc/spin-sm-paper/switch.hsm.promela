@@ -247,8 +247,8 @@ init {
 
 
 ltl { always/*[]*/ eventually/*<>*/
-    (   (_currentState == idx_state_BothOff && _isLightOn == false) 
-           implies/*->*/ (_currentState == idx_state_LightOn && _isLightOn == true) 
-           implies/*->*/ (_currentState == idx_state_BothOff && _isLightOn == false)
+    (             (_currentState == idx_state_BothOff && _isLightOn == false) 
+    implies/*->*/ (_currentState == idx_state_LightOn && _isLightOn == true) 
+    implies/*->*/ (_currentState == idx_state_BothOff && _isLightOn == false)
 )}
 
