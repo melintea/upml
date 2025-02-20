@@ -28,9 +28,11 @@ make # result: Src/spin
 
 #xspin is under optional_gui/ispin.tcl
 ```
-Alternative GUI: jSpin:
-- [code](https://github.com/motib/jspin). See also spinSpider.
-- [install guide](https://gist.github.com/kocsenc/10130261)
+Alternative GUI: 
+- jSpin:
+  - [code](https://github.com/motib/jspin). See also spinSpider.
+  - [install guide](https://gist.github.com/kocsenc/10130261)
+- [SpinRCP](http://lms.uni-mb.si/spinrcp/)
 
 ## Timeline editor
 
