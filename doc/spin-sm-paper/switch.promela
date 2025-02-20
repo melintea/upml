@@ -260,9 +260,8 @@ body_WallOff:
 } // Switch
 
 
-proctype TestEnvironment()
+proctype TestEnvironment() provided (_stateMachineReady)
 {
-    (_stateMachineReady == true);
     assert(Switch:currentState == idx_state_BothOff);
     
     if

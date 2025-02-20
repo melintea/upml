@@ -3,7 +3,9 @@
  About 10k states in the first draft => 3300 now
 
 TODO:
-- queue state transitions at the front in reverse order
+- queue state transitions at the front in reverse order => sorted order is not foolproof/fully RTC
+  - two channels? 
+- superstate to process evt only if substates dont
 
 */
 
@@ -24,12 +26,12 @@ bool  _stateMachineReady = false;
 bool  _isLightOn = false;
 
 
-inline push_event(evt, toState) // sorted order
+inline send_internal_event(evt, toState) // sorted order
 {
     _stateMachineChannel!!evt(toState);
 }
     
-inline send_event_if_empty(evt, toState)
+inline send_event(evt, toState)
 {
     empty(_stateMachineChannel);
     _stateMachineChannel!evt(toState);
@@ -49,18 +51,19 @@ body_BothOff:
 end_BothOff: // valid verification' end
     superChannel?evtRecv; 
     printf("MSC: > StateBothOff event %e in state %d\n", evtRecv.evId, _currentState); 
-    if
+    atomic {
+      if
         :: (evtRecv.evId == event_ExitState) -> 
         assert(evtRecv.toState == idx_state_BothOff);
         goto exit_BothOff;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         /* execute transition actions then on exit state BothOff; not UML-compliant*/
-        atomic { push_event(event_EnterState, idx_state_WallOff); }
+        send_internal_event(event_EnterState, idx_state_WallOff);
         goto exit_BothOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
-        atomic { push_event(event_EnterState, idx_state_LampOff); }
+        send_internal_event(event_EnterState, idx_state_LampOff);
         goto exit_BothOff;
         
         // No warning?
@@ -69,7 +72,8 @@ end_BothOff: // valid verification' end
         
         //:: else
         //  send event to substates/regions for processing
-    fi
+      fi
+    } // atomic
 exit_BothOff:
     /* execute on exit BothOff actions */
 }
@@ -85,19 +89,21 @@ entry_LampOff:
 body_LampOff:
     superChannel?evtRecv; 
     printf("MSC: > StateLampOff event %e in state %d\n", evtRecv.evId, _currentState); 
-    if
+    atomic {
+      if
         :: (evtRecv.evId == event_ExitState) -> 
         assert(evtRecv.toState == idx_state_LampOff);
         goto exit_LampOff;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
-        atomic { push_event(event_EnterState, idx_state_LightOn); }
+        send_internal_event(event_EnterState, idx_state_LightOn);
         goto exit_LampOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
-        atomic { push_event(event_EnterState, idx_state_BothOff); }
+        send_internal_event(event_EnterState, idx_state_BothOff);
         goto exit_LampOff;
-    fi
+      fi
+    } // atomic
 
 exit_LampOff:
 }
@@ -113,19 +119,21 @@ entry_LightOn:
 body_LightOn:
     superChannel?evtRecv; 
     printf("MSC: > StateLightOn event %e in state %d\n", evtRecv.evId, _currentState); 
-    if
+    atomic {
+      if
         :: (evtRecv.evId == event_ExitState) -> 
         assert(evtRecv.toState == idx_state_LightOn);
         goto exit_LightOn;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
-        atomic { push_event(event_EnterState, idx_state_LampOff); }
+        send_internal_event(event_EnterState, idx_state_LampOff);
         goto exit_LightOn;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
-        atomic { push_event(event_EnterState, idx_state_WallOff); }
+        send_internal_event(event_EnterState, idx_state_WallOff);
         goto exit_LightOn;
-    fi
+      fi
+    } // atomic
 
 exit_LightOn:
     _isLightOn = false;
@@ -141,19 +149,21 @@ entry_WallOff:
 body_WallOff:
     superChannel?evtRecv; 
     printf("MSC: > StateWallOff event %e in state %d\n", evtRecv.evId, _currentState); 
-    if
+    atomic {
+      if
         :: (evtRecv.evId == event_ExitState) -> 
         assert(evtRecv.toState == idx_state_WallOff);
         goto exit_WallOff;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
-        atomic { push_event(event_EnterState, idx_state_BothOff); }
+        send_internal_event(event_EnterState, idx_state_BothOff);
         goto exit_WallOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
-        atomic { push_event(event_EnterState, idx_state_LightOn); }
+        send_internal_event(event_EnterState, idx_state_LightOn);
         goto exit_WallOff;
-    fi
+      fi
+    } // atomic
 
 exit_WallOff:
 }
@@ -164,13 +174,14 @@ proctype Switch(chan superChannel)
     chan substateChannel = [1] of {event};
 
 entry_Switch:
-    push_event(event_EnterState, idx_state_BothOff); // initial state
+    send_internal_event(event_EnterState, idx_state_BothOff); // initial state
 
 body_Switch:
 end_Switch: 
     superChannel?evtRecv; 
     printf("MSC: > Switch event %e in state %d\n", evtRecv.evId, _currentState); 
-    if
+    atomic {
+      if
         :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_BothOff) -> 
         run StateBothOff(substateChannel);
         goto body_Switch;
@@ -191,33 +202,35 @@ end_Switch:
         //send event to substates/regions for processing
         substateChannel!evtRecv.evId(_currentState);
         goto body_Switch;
-    fi
-    goto body_Switch;
+      fi
+      goto body_Switch;
+    } // atomic
 } // Switch
 
 
-proctype TestEnvironment() provided (_stateMachineReady)
+proctype TestEnvironment() 
 {
+    (_stateMachineReady == true);
     assert(_currentState == idx_state_BothOff);
     
     if
     :: true -> 
-       send_event_if_empty(event_WallSwitch, _currentState); 
-       send_event_if_empty(event_LampSwitch, _currentState); //assert(_isLightOn == true); // error because race condition
+       send_event(event_WallSwitch, _currentState); 
+       send_event(event_LampSwitch, _currentState); //assert(_isLightOn == true); // error because race condition
     :: true -> 
-       send_event_if_empty(event_LampSwitch, _currentState); 
-       send_event_if_empty(event_WallSwitch, _currentState); //assert(_isLightOn == true); // idem
+       send_event(event_LampSwitch, _currentState); 
+       send_event(event_WallSwitch, _currentState); //assert(_isLightOn == true); // idem
     fi
     (_isLightOn == true);
     assert(_currentState == idx_state_LightOn);
     
     if
     :: true -> 
-       send_event_if_empty(event_LampSwitch, _currentState);
-       send_event_if_empty(event_WallSwitch, _currentState);
+       send_event(event_LampSwitch, _currentState);
+       send_event(event_WallSwitch, _currentState);
     :: true -> 
-       send_event_if_empty(event_WallSwitch, _currentState);
-       send_event_if_empty(event_LampSwitch, _currentState);
+       send_event(event_WallSwitch, _currentState);
+       send_event(event_LampSwitch, _currentState);
     fi
     (_isLightOn == false);
     (_currentState == idx_state_BothOff);
