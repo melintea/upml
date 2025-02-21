@@ -175,8 +175,8 @@ entry_BothOff: //0
     _stateMachineReady = true;
     currentState = idx_state_BothOff;
 
-body_BothOff:
 end_Switch: // invalid end state (at depth 32)
+body_BothOff:
     _stateMachineChannel?evtRecv; 
     printf("MSC: > event %e in state %d\n", evtRecv.evId, currentState); 
     if

@@ -21,6 +21,7 @@ mtype = { event_ExitState, event_EnterState, event_LampSwitch, event_WallSwitch,
 typedef event {mtype evId; short toState};
 
 chan  _stateMachineChannel = [3] of {event};
+chan  _stateMachineInternalChannel = [3] of {event};
 short _currentState = idx_unknown;
 bool  _stateMachineReady = false;
 bool  _isLightOn = false;
@@ -28,17 +29,18 @@ bool  _isLightOn = false;
 
 inline send_internal_event(evt, toState) // sorted order
 {
-    _stateMachineChannel!!evt(toState);
+    //_stateMachineInternalChannel!evt(toState); //ko
+    _stateMachineChannel!!evt(toState);          //ok
 }
     
 inline send_event(evt, toState)
 {
-    empty(_stateMachineChannel);
+    empty(_stateMachineInternalChannel);
     _stateMachineChannel!evt(toState);
 }
     
 
-proctype StateBothOff(chan superChannel)
+proctype StateBothOff(chan superChannel; chan eventProcessedChan)
 {
     local event evtRecv; 
 
@@ -53,33 +55,40 @@ end_BothOff: // valid verification' end
     printf("MSC: > StateBothOff event %e in state %d\n", evtRecv.evId, _currentState); 
     atomic {
       if
-        :: (evtRecv.evId == event_ExitState) -> 
-        assert(evtRecv.toState == idx_state_BothOff);
+        :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_BothOff) -> 
+	//eventProcessedChan!true;
         goto exit_BothOff;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         /* execute transition actions then on exit state BothOff; not UML-compliant*/
         send_internal_event(event_EnterState, idx_state_WallOff);
+	//eventProcessedChan!true;
         goto exit_BothOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
         send_internal_event(event_EnterState, idx_state_LampOff);
+	//eventProcessedChan!true;
         goto exit_BothOff;
         
         // No warning?
         :: (evtRecv.evId == event_Dummy) -> 
+	//eventProcessedChan!true;
         goto body_BothOff;
         
-        //:: else
-        //  send event to substates/regions for processing
+        :: else -> skip
       fi
+
+      //TODO  send event to substates/regions for processing
+      //TODO: attempt to process the event per super's transition table
+      goto body_BothOff;
+      
     } // atomic
 exit_BothOff:
     /* execute on exit BothOff actions */
 }
 
 
-proctype StateLampOff(chan superChannel)
+proctype StateLampOff(chan superChannel; chan eventProcessedChan)
 {
     local event evtRecv; 
 
@@ -91,24 +100,33 @@ body_LampOff:
     printf("MSC: > StateLampOff event %e in state %d\n", evtRecv.evId, _currentState); 
     atomic {
       if
-        :: (evtRecv.evId == event_ExitState) -> 
-        assert(evtRecv.toState == idx_state_LampOff);
+        :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_LampOff) -> 
+	//eventProcessedChan!true;
         goto exit_LampOff;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         send_internal_event(event_EnterState, idx_state_LightOn);
+	//eventProcessedChan!true;
         goto exit_LampOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
         send_internal_event(event_EnterState, idx_state_BothOff);
+	//eventProcessedChan!true;
         goto exit_LampOff;
+
+        :: else -> skip
       fi
+
+      //  TODO: send event to substates/regions for processing
+      //TODO: attempt to process the event per super's transition table
+      goto body_LampOff;
+      
     } // atomic
 
 exit_LampOff:
 }
 
-proctype StateLightOn(chan superChannel)
+proctype StateLightOn(chan superChannel; chan eventProcessedChan)
 {
     local event evtRecv; 
 
@@ -121,25 +139,34 @@ body_LightOn:
     printf("MSC: > StateLightOn event %e in state %d\n", evtRecv.evId, _currentState); 
     atomic {
       if
-        :: (evtRecv.evId == event_ExitState) -> 
-        assert(evtRecv.toState == idx_state_LightOn);
+        :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_LightOn) -> 
+	//eventProcessedChan!true;
         goto exit_LightOn;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         send_internal_event(event_EnterState, idx_state_LampOff);
+	//eventProcessedChan!true;
         goto exit_LightOn;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
         send_internal_event(event_EnterState, idx_state_WallOff);
+	//eventProcessedChan!true;
         goto exit_LightOn;
+
+        :: else -> skip
       fi
+
+      //  TODO: send event to substates/regions for processing
+      //TODO: attempt to process the event per super's transition table
+      goto body_LightOn;
+      
     } // atomic
 
 exit_LightOn:
     _isLightOn = false;
 }
 
-proctype StateWallOff(chan superChannel)
+proctype StateWallOff(chan superChannel; chan eventProcessedChan)
 {
     local event evtRecv; 
 
@@ -151,18 +178,27 @@ body_WallOff:
     printf("MSC: > StateWallOff event %e in state %d\n", evtRecv.evId, _currentState); 
     atomic {
       if
-        :: (evtRecv.evId == event_ExitState) -> 
-        assert(evtRecv.toState == idx_state_WallOff);
+        :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_WallOff) -> 
+	//eventProcessedChan!true;
         goto exit_WallOff;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         send_internal_event(event_EnterState, idx_state_BothOff);
+	//eventProcessedChan!true;
         goto exit_WallOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
         send_internal_event(event_EnterState, idx_state_LightOn);
+	//eventProcessedChan!true;
         goto exit_WallOff;
+
+        :: else -> skip
       fi
+
+      //  TODO: send event to substates/regions for processing
+      //TODO: attempt to process the event per super's transition table
+      goto body_WallOff;
+      
     } // atomic
 
 exit_WallOff:
@@ -172,39 +208,62 @@ proctype Switch(chan superChannel)
 {
     local event evtRecv; 
     chan substateChannel = [1] of {event};
+    
+    chan eventProcessedChannel = [0] of {bool}
+    bool eventProcessed = false;
 
 entry_Switch:
     send_internal_event(event_EnterState, idx_state_BothOff); // initial state
 
-body_Switch:
 end_Switch: 
-    superChannel?evtRecv; 
+body_Switch:
+    if
+    :: nempty(_stateMachineInternalChannel) -> _stateMachineInternalChannel?evtRecv
+    :: empty(_stateMachineInternalChannel)  -> superChannel?evtRecv;
+    fi
     printf("MSC: > Switch event %e in state %d\n", evtRecv.evId, _currentState); 
+      
     atomic {
       if
         :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_BothOff) -> 
-        run StateBothOff(substateChannel);
+        run StateBothOff(substateChannel, eventProcessedChannel);
         goto body_Switch;
 
         :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_LampOff) -> 
-        run StateLampOff(substateChannel);
+        run StateLampOff(substateChannel, eventProcessedChannel);
         goto body_Switch;
 
         :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_LightOn) -> 
-        run StateLightOn(substateChannel);
+        run StateLightOn(substateChannel, eventProcessedChannel);
         goto body_Switch;
 
         :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_WallOff) -> 
-        run StateWallOff(substateChannel);
+        run StateWallOff(substateChannel, eventProcessedChannel);
         goto body_Switch;
 
-        :: else
-        //send event to substates/regions for processing
-        substateChannel!evtRecv.evId(_currentState);
+        :: (evtRecv.evId == event_ExitState) -> 
+        substateChannel!evtRecv;
+	eventProcessedChannel?eventProcessed;
         goto body_Switch;
+
+        :: else -> skip // send to substates for processing
+        //goto body_Switch;
       fi
+      
+      //send event to substates/regions for processing
+      substateChannel!evtRecv.evId(_currentState);
+      //eventProcessedChannel?eventProcessed;
+      if
+      :: (eventProcessed == true) -> goto body_Switch;
+      :: else -> skip // to the transition table next
+      fi
+      
+      //TODO: attempt to process the event per super's transition table
+      
       goto body_Switch;
     } // atomic
+
+exit_Switch: 
 } // Switch
 
 
