@@ -50,23 +50,23 @@ end_BothOff: // valid verification' end
     //atomic {
       if
         :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_BothOff) -> 
-	eventProcessedChan!true;
+	    eventProcessedChan!true;
         goto exit_BothOff;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         /* execute transition actions then on exit state BothOff; not UML-compliant*/
         send_internal_event(event_EnterState, idx_state_WallOff);
-	eventProcessedChan!true;
+	    eventProcessedChan!true;
         goto exit_BothOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
         send_internal_event(event_EnterState, idx_state_LampOff);
-	eventProcessedChan!true;
+	    eventProcessedChan!true;
         goto exit_BothOff;
         
         // No warning?
         :: (evtRecv.evId == event_Dummy) -> 
-	eventProcessedChan!true;
+	    eventProcessedChan!true;
         goto body_BothOff;
         
         :: else -> assert(false); skip;
@@ -95,17 +95,17 @@ body_LampOff:
     //atomic {
       if
         :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_LampOff) -> 
-	eventProcessedChan!true;
+    	eventProcessedChan!true;
         goto exit_LampOff;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         send_internal_event(event_EnterState, idx_state_LightOn);
-	eventProcessedChan!true;
+	    eventProcessedChan!true;
         goto exit_LampOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
         send_internal_event(event_EnterState, idx_state_BothOff);
-	eventProcessedChan!true;
+    	eventProcessedChan!true;
         goto exit_LampOff;
 
         :: else -> assert(false); skip;
@@ -134,17 +134,17 @@ body_LightOn:
     //atomic {
       if
         :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_LightOn) -> 
-	eventProcessedChan!true;
+	    eventProcessedChan!true;
         goto exit_LightOn;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         send_internal_event(event_EnterState, idx_state_LampOff);
-	eventProcessedChan!true;
+	    eventProcessedChan!true;
         goto exit_LightOn;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
         send_internal_event(event_EnterState, idx_state_WallOff);
-	eventProcessedChan!true;
+    	eventProcessedChan!true;
         goto exit_LightOn;
 
         :: else -> assert(false); skip;
@@ -173,17 +173,17 @@ body_WallOff:
     //atomic {
       if
         :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_WallOff) -> 
-	eventProcessedChan!true;
+    	eventProcessedChan!true;
         goto exit_WallOff;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         send_internal_event(event_EnterState, idx_state_BothOff);
-	eventProcessedChan!true;
+    	eventProcessedChan!true;
         goto exit_WallOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
         send_internal_event(event_EnterState, idx_state_LightOn);
-	eventProcessedChan!true;
+    	eventProcessedChan!true;
         goto exit_WallOff;
 
         :: else -> assert(false); skip;
@@ -217,7 +217,7 @@ body_Switch:
     fi
     printf("MSC: > Switch event %e in state %d\n", evtRecv.evId, _currentState); 
       
-    //atomic {
+    atomic {
       if
         :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_BothOff) -> 
         run StateBothOff(substateChannel, eventProcessedChannel);
@@ -237,7 +237,7 @@ body_Switch:
 
         :: (evtRecv.evId == event_ExitState) -> 
         substateChannel!evtRecv;
-	eventProcessedChannel?eventProcessed;
+	    eventProcessedChannel?eventProcessed;
         goto body_Switch;
 
         :: else -> skip; // send to substates for processing
@@ -256,7 +256,7 @@ body_Switch:
       assert(false);
       
       goto body_Switch;
-    //} // atomic
+    } // atomic
 
 exit_Switch: 
 } // Switch

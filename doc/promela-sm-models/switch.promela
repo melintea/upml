@@ -180,19 +180,13 @@ body_BothOff:
     _stateMachineChannel?evtRecv; 
     printf("MSC: > event %e in state %d\n", evtRecv.evId, currentState); 
     if
-        :: (evtRecv.evId == event_LampSwitch) -> 
-        /* execute on exit state BothOff then transition actions*/
-            goto entry_WallOff;
+    :: (evtRecv.evId == event_LampSwitch) -> 
+    /* execute on exit state BothOff then transition actions*/
+        goto entry_WallOff;
 
-        :: (evtRecv.evId == event_WallSwitch) -> 
-        /* on exit BothOff */
-            goto entry_LampOff;
-        
-    // No warning?
-        :: (evtRecv.evId == event_Dummy) -> 
-        /* execute on exit state BothOff then transition actions*/
-            goto entry_WallOff;
-
+    :: (evtRecv.evId == event_WallSwitch) -> 
+    /* on exit BothOff */
+        goto entry_LampOff;
     fi
 
 /*]state idx_state_BothOff*/
@@ -207,11 +201,11 @@ body_LampOff:
     _stateMachineChannel?evtRecv; 
     printf("MSC: > event %e in state %d\n", evtRecv.evId, currentState); 
     if
-        :: (evtRecv.evId == event_LampSwitch) -> 
-            goto entry_LightOn;
+    :: (evtRecv.evId == event_LampSwitch) -> 
+        goto entry_LightOn;
 
-        :: (evtRecv.evId == event_WallSwitch) -> 
-            goto entry_BothOff;
+    :: (evtRecv.evId == event_WallSwitch) -> 
+        goto entry_BothOff;
     fi
 
 /*]state idx_state_LampOff*/
@@ -227,13 +221,13 @@ body_LightOn:
     _stateMachineChannel?evtRecv; 
     printf("MSC: > event %e in state %d\n", evtRecv.evId, currentState); 
     if
-        :: (evtRecv.evId == event_LampSwitch) -> 
-            _isLightOn = false;
-            goto entry_LampOff;
+    :: (evtRecv.evId == event_LampSwitch) -> 
+        _isLightOn = false;
+        goto entry_LampOff;
 
-        :: (evtRecv.evId == event_WallSwitch) -> 
-            _isLightOn = false;
-            goto entry_WallOff;
+    :: (evtRecv.evId == event_WallSwitch) -> 
+        _isLightOn = false;
+        goto entry_WallOff;
     fi
 
 /*]state idx_state_LightOn*/
@@ -248,11 +242,11 @@ body_WallOff:
     _stateMachineChannel?evtRecv; 
     printf("MSC: > event %e in state %d\n", evtRecv.evId, currentState); 
     if
-        :: (evtRecv.evId == event_LampSwitch) -> 
-            goto entry_BothOff;
+    :: (evtRecv.evId == event_LampSwitch) -> 
+        goto entry_BothOff;
 
-        :: (evtRecv.evId == event_WallSwitch) -> 
-            goto entry_LightOn;
+    :: (evtRecv.evId == event_WallSwitch) -> 
+        goto entry_LightOn;
     fi
 
 /*]state idx_state_WallOff*/
