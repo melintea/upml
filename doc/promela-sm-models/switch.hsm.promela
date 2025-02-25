@@ -209,11 +209,10 @@ proctype Switch(chan superChannel)
 entry_Switch:
     send_internal_event(event_EnterState, idx_state_BothOff); // initial state
 
-end_Switch: 
 body_Switch:
     if
     :: nempty(_stateMachineInternalChannel) -> _stateMachineInternalChannel?evtRecv
-    :: empty(_stateMachineInternalChannel)  -> superChannel?evtRecv;
+    :: empty(_stateMachineInternalChannel)  -> end_Switch: superChannel?evtRecv;
     fi
     printf("MSC: > Switch event %e in state %d\n", evtRecv.evId, _currentState); 
       
