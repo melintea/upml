@@ -1,0 +1,339 @@
+/*
+
+ About 10k states in the first draft => less than 4k with atomics but about 625k (!) states with fairness constraints 
+ loop 150: max 277k state, sub-second run. With fairness: OOM/cannot complete (!) even with loop=10
+ 
+             States/Time
+ Loop        NP w/o fair   NP fair     Sfty w/o fair Sfty fair   Acc w/o fair    Acc fair
+   1 0-chan  3843/0s       137k/0.52   2107/0.01     n/a         3108/0s         625k/0.3
+     stmt    ?/?           ?/?         ?/?           n/a         ?/?             ?/?
+  10 0-chan  52k/0.03      2.5m/49s    23k/0.01      n/a         33k/0.02        4.7m/22.2
+     stmt    same          130k/0.1    ?/?           n/a         same            77k/0.04
+ 100 0-chan  ?/?           ?/?         ?/?           n/a         ?/?             ?/?
+     stmt    270k/0.13     655k/0.13   116k/0.06     n/a         172k/0.09       376k/0.2
+
+*/
+
+#define idx_unknown -1
+
+#define idx_state_BothOff 0
+#define idx_state_LampOff 1
+#define idx_state_LightOn 2
+#define idx_state_WallOff 3
+
+#define idx_processed_NotProcessed 0
+#define idx_processed_Processed    1
+
+mtype = { event_ExitState, event_EnterState, event_LampSwitch, event_WallSwitch, event_Dummy, }
+
+typedef event {mtype evId; short toState};
+
+chan  _stateMachineChannel = [6] of {event};
+chan  _stateMachineInternalChannel = [6] of {event};
+short _currentState = idx_unknown;
+bool  _stateMachineReady = false;
+short _eventProcessed = idx_unknown;
+bool  _isLightOn = false;
+
+
+inline send_internal_event(evt, toState) // sorted order
+{
+    _stateMachineInternalChannel!evt(toState);
+}
+    
+inline send_event(evt, toState)
+{
+    empty(_stateMachineInternalChannel);
+    _stateMachineChannel!evt(toState);
+}
+    
+
+proctype StateBothOff(chan superChannel)
+{
+    local event evtRecv; 
+
+entry_BothOff:
+    /* execute on entry BothOff actions */
+    _currentState = idx_state_BothOff; //0
+    _stateMachineReady = true;
+
+body_BothOff:
+end_BothOff: // valid verification' end
+    superChannel?evtRecv; 
+    printf("MSC: > StateBothOff event %e in state %d\n", evtRecv.evId, _currentState); 
+    //atomic {
+      if
+        :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_BothOff) -> 
+	_eventProcessed = idx_processed_Processed;
+        goto exit_BothOff;
+        
+        :: (evtRecv.evId == event_LampSwitch) -> 
+        /* execute transition actions then on exit state BothOff; not UML-compliant*/
+        send_internal_event(event_EnterState, idx_state_WallOff);
+	_eventProcessed = idx_processed_Processed;
+        goto exit_BothOff;
+
+        :: (evtRecv.evId == event_WallSwitch) -> 
+        send_internal_event(event_EnterState, idx_state_LampOff);
+	_eventProcessed = idx_processed_Processed;
+        goto exit_BothOff;
+        
+        // No warning?
+        :: (evtRecv.evId == event_Dummy) -> 
+	_eventProcessed = idx_processed_Processed;
+        goto body_BothOff;
+        
+        :: else -> assert(false);
+	_eventProcessed = idx_processed_NotProcessed;
+	 skip;
+      fi
+
+      //TODO  send event to substates/regions for processing
+      //TODO: attempt to process the event per super's transition table
+      goto body_BothOff;
+      
+    //} // atomic
+exit_BothOff:
+    /* execute on exit BothOff actions */
+}
+
+
+proctype StateLampOff(chan superChannel)
+{
+    local event evtRecv; 
+
+entry_LampOff:
+    _currentState = idx_state_LampOff; //1
+
+body_LampOff:
+    superChannel?evtRecv; 
+    printf("MSC: > StateLampOff event %e in state %d\n", evtRecv.evId, _currentState); 
+    //atomic {
+      if
+        :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_LampOff) -> 
+	_eventProcessed = idx_processed_Processed;
+        goto exit_LampOff;
+        
+        :: (evtRecv.evId == event_LampSwitch) -> 
+        send_internal_event(event_EnterState, idx_state_LightOn);
+	_eventProcessed = idx_processed_Processed;
+        goto exit_LampOff;
+
+        :: (evtRecv.evId == event_WallSwitch) -> 
+        send_internal_event(event_EnterState, idx_state_BothOff);
+	_eventProcessed = idx_processed_Processed;
+        goto exit_LampOff;
+
+        :: else -> assert(false);
+	_eventProcessed = idx_processed_NotProcessed;
+	 skip;
+      fi
+
+      //  TODO: send event to substates/regions for processing
+      //TODO: attempt to process the event per super's transition table
+      goto body_LampOff;
+      
+    //} // atomic
+
+exit_LampOff:
+}
+
+proctype StateLightOn(chan superChannel)
+{
+    local event evtRecv; 
+
+entry_LightOn: 
+    _currentState = idx_state_LightOn; //2
+    _isLightOn = true;
+
+body_LightOn:
+    superChannel?evtRecv; 
+    printf("MSC: > StateLightOn event %e in state %d\n", evtRecv.evId, _currentState); 
+    //atomic {
+      if
+        :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_LightOn) -> 
+	_eventProcessed = idx_processed_Processed;
+        goto exit_LightOn;
+        
+        :: (evtRecv.evId == event_LampSwitch) -> 
+        send_internal_event(event_EnterState, idx_state_LampOff);
+	_eventProcessed = idx_processed_Processed;
+        goto exit_LightOn;
+
+        :: (evtRecv.evId == event_WallSwitch) -> 
+        send_internal_event(event_EnterState, idx_state_WallOff);
+	_eventProcessed = idx_processed_Processed;
+        goto exit_LightOn;
+
+        :: else -> assert(false);
+	_eventProcessed = idx_processed_NotProcessed;
+	 skip;
+      fi
+
+      //  TODO: send event to substates/regions for processing
+      //TODO: attempt to process the event per super's transition table
+      goto body_LightOn;
+      
+    //} // atomic
+
+exit_LightOn:
+    _isLightOn = false;
+}
+
+proctype StateWallOff(chan superChannel)
+{
+    local event evtRecv; 
+
+entry_WallOff:
+    _currentState = idx_state_WallOff; //3
+
+body_WallOff:
+    superChannel?evtRecv; 
+    printf("MSC: > StateWallOff event %e in state %d\n", evtRecv.evId, _currentState); 
+    //atomic {
+      if
+        :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_WallOff) -> 
+	_eventProcessed = idx_processed_Processed;
+        goto exit_WallOff;
+        
+        :: (evtRecv.evId == event_LampSwitch) -> 
+        send_internal_event(event_EnterState, idx_state_BothOff);
+	_eventProcessed = idx_processed_Processed;
+        goto exit_WallOff;
+
+        :: (evtRecv.evId == event_WallSwitch) -> 
+        send_internal_event(event_EnterState, idx_state_LightOn);
+	_eventProcessed = idx_processed_Processed;
+        goto exit_WallOff;
+
+        :: else -> assert(false);
+	_eventProcessed = idx_processed_NotProcessed;
+	 skip;
+      fi
+
+      //  TODO: send event to substates/regions for processing
+      //TODO: attempt to process the event per super's transition table
+      goto body_WallOff;
+      
+    //} // atomic
+
+exit_WallOff:
+}
+
+proctype Switch(chan superChannel)
+{
+    local event evtRecv; 
+    chan substateChannel = [1] of {event};
+    
+entry_Switch:
+    send_internal_event(event_EnterState, idx_state_BothOff); // initial state
+
+body_Switch:
+    if
+    :: nempty(_stateMachineInternalChannel) -> _stateMachineInternalChannel?evtRecv
+    :: empty(_stateMachineInternalChannel)  -> end_Switch: superChannel?evtRecv;
+    fi
+    printf("MSC: > Switch event %e in state %d\n", evtRecv.evId, _currentState); 
+      
+    atomic {
+      _eventProcessed = idx_unknown;
+      if
+        :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_BothOff) -> 
+        run StateBothOff(substateChannel);
+        goto body_Switch;
+
+        :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_LampOff) -> 
+        run StateLampOff(substateChannel);
+        goto body_Switch;
+
+        :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_LightOn) -> 
+        run StateLightOn(substateChannel);
+        goto body_Switch;
+
+        :: (evtRecv.evId == event_EnterState && evtRecv.toState == idx_state_WallOff) -> 
+        run StateWallOff(substateChannel);
+        goto body_Switch;
+
+        :: (evtRecv.evId == event_ExitState) -> 
+        substateChannel!evtRecv;
+        goto body_Switch;
+
+        :: else -> skip; // send to substates for processing
+        //goto body_Switch;
+      fi
+      
+      //send event to substates/regions for processing
+      _eventProcessed = idx_unknown;
+      substateChannel!evtRecv.evId(_currentState);
+      (_eventProcessed != idx_unknown);
+      if
+      :: (_eventProcessed == idx_processed_Processed) -> goto body_Switch;
+      :: else -> skip; // to the transition table next
+      fi
+      
+      //TODO: attempt to process the event per super's transition table
+      assert(false);
+      
+      goto body_Switch;
+    } // atomic
+
+exit_Switch: 
+} // Switch
+
+
+proctype TestEnvironment() 
+{
+    int loop = 0;
+    
+    (_stateMachineReady == true);
+    assert(_currentState == idx_state_BothOff);
+
+begin_loop:
+    loop = loop +1;
+    if
+    :: (loop > 100) -> goto end_loop;
+    :: else -> skip;
+    fi
+
+    if
+    :: true -> 
+       send_event(event_WallSwitch, _currentState); 
+       send_event(event_LampSwitch, _currentState); //assert(_isLightOn == true); // error because race condition
+    :: true -> 
+       send_event(event_LampSwitch, _currentState); 
+       send_event(event_WallSwitch, _currentState); //assert(_isLightOn == true); // idem
+    fi
+    (_isLightOn == true);
+    assert(_currentState == idx_state_LightOn);
+    
+    if
+    :: true -> 
+       send_event(event_LampSwitch, _currentState);
+       send_event(event_WallSwitch, _currentState);
+    :: true -> 
+       send_event(event_WallSwitch, _currentState);
+       send_event(event_LampSwitch, _currentState);
+    fi
+    (_isLightOn == false);
+    (_currentState == idx_state_BothOff);
+    goto begin_loop;
+    
+end_loop:
+} // TestEnvironment
+
+
+init {
+    atomic {
+        run Switch(_stateMachineChannel); 
+        run TestEnvironment(); 
+    }
+    //(_nr_pr == 1); 
+}
+
+
+ltl { always/*[]*/ eventually/*<>*/
+    (             (_currentState == idx_state_BothOff && _isLightOn == false) 
+    implies/*->*/ (_currentState == idx_state_LightOn && _isLightOn == true) 
+    implies/*->*/ (_currentState == idx_state_BothOff && _isLightOn == false)
+)}
+
