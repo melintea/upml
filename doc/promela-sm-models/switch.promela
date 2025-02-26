@@ -1,141 +1,23 @@
 /*
-  Error free
+  Error free. Stats w/o fairness:
 
 Safety
 ------
-spin -a  switch.promela
-
-cc -DMEMLIM=1024 -O2 -DXUSAFE -DSAFETY -DNOCLAIM -w -o pan pan.c
-./pan -m10000 
-Pid: 1071763
-
-(Spin Version 6.5.2 -- 6 December 2019)
-    + Partial Order Reduction
-
-Full statespace search for:
-    never claim             - (not selected)
-    assertion violations    +
-    cycle checks        - (disabled by -DSAFETY)
-    invalid end states  +
-
 State-vector 44 byte, depth reached 44, errors: 0
       136 states, stored
        10 states, matched
-      146 transitions (= stored+matched)
-        1 atomic steps
-hash conflicts:         0 (resolved)
-
-Stats on memory usage (in Megabytes):
-    0.009   equivalent memory usage for states (stored*(State-vector + overhead))
-    0.282   actual memory usage for states
-  128.000   memory used for hash table (-w24)
-    0.534   memory used for DFS stack (-m10000)
-  128.730   total actual memory usage
-
-
-unreached in proctype Switch
-    switch.promela:126, state 43, "-end-"
-    (1 of 43 states)
-unreached in proctype TestEnvironment
-    (0 of 47 states)
-unreached in init
-    (0 of 4 states)
-unreached in claim ltl_0
-    _spin_nvr.tmp:3, state 5, "(!((!((!(((Switch.currentState==0)&&(isLightOn==0)))||((Switch.currentState==2)&&(isLightOn==1))))||((Switch.currentState==0)&&(isLightOn==0)))))"
-    _spin_nvr.tmp:3, state 5, "(1)"
-    _spin_nvr.tmp:8, state 10, "(!((!((!(((Switch.currentState==0)&&(isLightOn==0)))||((Switch.currentState==2)&&(isLightOn==1))))||((Switch.currentState==0)&&(isLightOn==0)))))"
-    _spin_nvr.tmp:10, state 13, "-end-"
-    (3 of 13 states)
-
 
 non-progress
 ------------
-spin -a  switch.promela
-ltl ltl_0: [] (<> ((! ((! (((Switch:currentState==0)) && ((_isLightOn==0)))) || (((Switch:currentState==2)) && ((_isLightOn==1))))) || (((Switch:currentState==0)) && ((_isLightOn==0)))))
-gcc -DMEMLIM=1024 -O2 -DXUSAFE -DNP -DNOCLAIM -w -o pan pan.c
-./pan -m10000  -l
-Pid: 1071779
-
-(Spin Version 6.5.2 -- 6 December 2019)
-    + Partial Order Reduction
-
-Full statespace search for:
-    never claim             + (:np_:)
-    assertion violations    + (if within scope of claim)
-    non-progress cycles     + (fairness disabled)
-    invalid end states  - (disabled by never claim)
-
 State-vector 60 byte, depth reached 88, errors: 0
       271 states, stored (406 visited)
       310 states, matched
-      716 transitions (= visited+matched)
-        2 atomic steps
-hash conflicts:         0 (resolved)
-
-Stats on memory usage (in Megabytes):
-    0.023   equivalent memory usage for states (stored*(State-vector + overhead))
-    0.282   actual memory usage for states
-  128.000   memory used for hash table (-w24)
-    0.534   memory used for DFS stack (-m10000)
-  128.730   total actual memory usage
-
-
-unreached in proctype Switch
-    switch.promela:168, state 43, "-end-"
-    (1 of 43 states)
-unreached in proctype TestEnvironment
-    (0 of 47 states)
-unreached in init
-    (0 of 4 states)
-unreached in claim ltl_0
-    _spin_nvr.tmp:3, state 5, "(!((!((!(((Switch.currentState==0)&&(isLightOn==0)))||((Switch.currentState==2)&&(isLightOn==1))))||((Switch.currentState==0)&&(isLightOn==0)))))"
-    _spin_nvr.tmp:3, state 5, "(1)"
-    _spin_nvr.tmp:8, state 10, "(!((!((!(((Switch.currentState==0)&&(isLightOn==0)))||((Switch.currentState==2)&&(isLightOn==1))))||((Switch.currentState==0)&&(isLightOn==0)))))"
-    _spin_nvr.tmp:10, state 13, "-end-"
-    (3 of 13 states)
 
 acceptance
 ----------
-spin -a  switch.promela
-ltl ltl_0: [] (<> ((! ((! (((Switch:currentState==0)) && ((_isLightOn==0)))) || (((Switch:currentState==2)) && ((_isLightOn==1))))) || (((Switch:currentState==0)) && ((_isLightOn==0)))))
-gcc -DMEMLIM=1024 -O2 -DXUSAFE -w -o pan pan.c
-./pan -m10000  -a
-Pid: 1071885
-
-(Spin Version 6.5.2 -- 6 December 2019)
-    + Partial Order Reduction
-
-Full statespace search for:
-    never claim             + (ltl_0)
-    assertion violations    + (if within scope of claim)
-    acceptance   cycles     + (fairness disabled)
-    invalid end states  - (disabled by never claim)
-
 State-vector 60 byte, depth reached 88, errors: 0
       242 states, stored (348 visited)
       221 states, matched
-      569 transitions (= visited+matched)
-        1 atomic steps
-hash conflicts:         0 (resolved)
-
-Stats on memory usage (in Megabytes):
-    0.020   equivalent memory usage for states (stored*(State-vector + overhead))
-    0.282   actual memory usage for states
-  128.000   memory used for hash table (-w24)
-    0.534   memory used for DFS stack (-m10000)
-  128.730   total actual memory usage
-
-
-unreached in proctype Switch
-    switch.promela:260, state 43, "-end-"
-    (1 of 43 states)
-unreached in proctype TestEnvironment
-    (0 of 47 states)
-unreached in init
-    (0 of 4 states)
-unreached in claim ltl_0
-    _spin_nvr.tmp:10, state 13, "-end-"
-    (1 of 13 states)
 */
 
 #define idx_unknown -1
@@ -181,11 +63,11 @@ body_BothOff:
     printf("MSC: > event %e in state %d\n", evtRecv.evId, currentState); 
     if
     :: (evtRecv.evId == event_LampSwitch) -> 
-    /* execute on exit state BothOff then transition actions*/
+        /* execute on exit state BothOff then transition actions*/
         goto entry_WallOff;
 
     :: (evtRecv.evId == event_WallSwitch) -> 
-    /* on exit BothOff */
+        /* on exit BothOff & transition actions */
         goto entry_LampOff;
     fi
 

@@ -61,38 +61,38 @@ body_BothOff:
 end_BothOff: // valid verification' end
     superChannel?evtRecv; 
     printf("MSC: > StateBothOff event %e in state %d\n", evtRecv.evId, _currentState); 
-    //atomic {
+    atomic {
       if
         :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_BothOff) -> 
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto exit_BothOff;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         /* execute transition actions then on exit state BothOff; not UML-compliant*/
         send_internal_event(event_EnterState, idx_state_WallOff);
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto exit_BothOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
         send_internal_event(event_EnterState, idx_state_LampOff);
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto exit_BothOff;
         
         // No warning?
         :: (evtRecv.evId == event_Dummy) -> 
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto body_BothOff;
         
         :: else -> assert(false);
-	_eventProcessed = idx_processed_NotProcessed;
-	 skip;
+        _eventProcessed = idx_processed_NotProcessed;
+         skip;
       fi
 
       //TODO  send event to substates/regions for processing
       //TODO: attempt to process the event per super's transition table
       goto body_BothOff;
       
-    //} // atomic
+    } // atomic
 exit_BothOff:
     /* execute on exit BothOff actions */
 }
@@ -108,32 +108,32 @@ entry_LampOff:
 body_LampOff:
     superChannel?evtRecv; 
     printf("MSC: > StateLampOff event %e in state %d\n", evtRecv.evId, _currentState); 
-    //atomic {
+    atomic {
       if
         :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_LampOff) -> 
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto exit_LampOff;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         send_internal_event(event_EnterState, idx_state_LightOn);
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto exit_LampOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
         send_internal_event(event_EnterState, idx_state_BothOff);
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto exit_LampOff;
 
         :: else -> assert(false);
-	_eventProcessed = idx_processed_NotProcessed;
-	 skip;
+        _eventProcessed = idx_processed_NotProcessed;
+         skip;
       fi
 
       //  TODO: send event to substates/regions for processing
       //TODO: attempt to process the event per super's transition table
       goto body_LampOff;
       
-    //} // atomic
+    } // atomic
 
 exit_LampOff:
 }
@@ -149,32 +149,32 @@ entry_LightOn:
 body_LightOn:
     superChannel?evtRecv; 
     printf("MSC: > StateLightOn event %e in state %d\n", evtRecv.evId, _currentState); 
-    //atomic {
+    atomic {
       if
         :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_LightOn) -> 
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto exit_LightOn;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         send_internal_event(event_EnterState, idx_state_LampOff);
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto exit_LightOn;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
         send_internal_event(event_EnterState, idx_state_WallOff);
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto exit_LightOn;
 
         :: else -> assert(false);
-	_eventProcessed = idx_processed_NotProcessed;
-	 skip;
+        _eventProcessed = idx_processed_NotProcessed;
+         skip;
       fi
 
       //  TODO: send event to substates/regions for processing
       //TODO: attempt to process the event per super's transition table
       goto body_LightOn;
       
-    //} // atomic
+    } // atomic
 
 exit_LightOn:
     _isLightOn = false;
@@ -190,32 +190,32 @@ entry_WallOff:
 body_WallOff:
     superChannel?evtRecv; 
     printf("MSC: > StateWallOff event %e in state %d\n", evtRecv.evId, _currentState); 
-    //atomic {
+    atomic {
       if
         :: (evtRecv.evId == event_ExitState && evtRecv.toState == idx_state_WallOff) -> 
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto exit_WallOff;
         
         :: (evtRecv.evId == event_LampSwitch) -> 
         send_internal_event(event_EnterState, idx_state_BothOff);
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto exit_WallOff;
 
         :: (evtRecv.evId == event_WallSwitch) -> 
         send_internal_event(event_EnterState, idx_state_LightOn);
-	_eventProcessed = idx_processed_Processed;
+        _eventProcessed = idx_processed_Processed;
         goto exit_WallOff;
 
         :: else -> assert(false);
-	_eventProcessed = idx_processed_NotProcessed;
-	 skip;
+        _eventProcessed = idx_processed_NotProcessed;
+         skip;
       fi
 
       //  TODO: send event to substates/regions for processing
       //TODO: attempt to process the event per super's transition table
       goto body_WallOff;
       
-    //} // atomic
+    } // atomic
 
 exit_WallOff:
 }
