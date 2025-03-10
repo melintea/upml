@@ -8,6 +8,7 @@
  *
  */
 
+#include "iostream.hpp"
 #include "plantuml_parser.hpp"
 #include "promela_generator.hpp"
 #include "pluscal_generator.hpp"
@@ -93,14 +94,13 @@ int main(int argc, char* argv[])
         outfs << "\n*/\n";
     }
 
+    lpt::autoindent_ostream out(outfs.is_open() ? outfs : std::cout);
 
     const std::string& backend(vm["backend"].as<std::string>());
     if (backend == "spin") {
-        ret = ret & upml::promela_generator(outfs.is_open() ? outfs : std::cout,
-                                            sm);
+        ret = ret & upml::promela_generator(out, sm);
     } else if (backend == "tla") {
-        ret = ret & upml::pluscal_generator(outfs.is_open() ? outfs : std::cout,
-                                            sm);
+        ret = ret & upml::pluscal_generator(out, sm);
     } else if (backend == "none") {
         ; // 
     } else {
