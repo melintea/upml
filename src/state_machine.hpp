@@ -13,7 +13,7 @@
 
 #pragma once
 
-#include "indent.hpp"
+#include "iostream.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -51,8 +51,6 @@ inline std::ostream& operator<<(std::ostream& os, const location& l)
     os << "F:'" << l._file << "';L:" << l._line << ";C:" << l._col;
     return os;
 }
-
-//using indent = upml::indent;
 
 // helper
 template <typename T> struct hasher
@@ -94,7 +92,7 @@ struct transition : public location
     guard  _guard;
     effect _effect;
 
-    indent& trace(indent& id, std::ostream& os) const;
+    std::ostream& trace(std::ostream& os) const;
     
     friend std::ostream& operator<<(std::ostream& os, const transition& t);
 }; // transition
@@ -119,7 +117,7 @@ struct activity : public location
     id_t _activity;  // entry, exit, precondition, postcondition, invariant, timeout
     args _args;      // specific to each type of _activity
 
-    indent& trace(indent& id, std::ostream& os) const;
+    std::ostream& trace(std::ostream& os) const;
     
     friend std::ostream& operator<<(std::ostream& os, const activity& t);
 }; // activity
@@ -154,7 +152,7 @@ struct region : public location
 
     stateptr_t state(const id_t& state) const;
     
-    indent& trace(indent& id, std::ostream& os) const;
+    std::ostream& trace(std::ostream& os) const;
 
     friend std::ostream& operator<<(std::ostream& os, const region& r);
     friend std::ostream& operator<<(std::ostream& os, const regionptr_t& r);
@@ -194,7 +192,7 @@ struct state : public location
 
     bool operator==(const state& other) const { return other._id == _id; }
 
-    indent& trace(indent& id, std::ostream& os) const;
+    std::ostream& trace(std::ostream& os) const;
 
     friend std::ostream& operator<<(std::ostream& os, const state& s);
     friend std::ostream& operator<<(std::ostream& os, const stateptr_t& s);
@@ -233,7 +231,7 @@ struct state_machine : public location
 
     stateptr_t state(const id_t& state) const;
 
-    indent& trace(indent& id, std::ostream& os) const;
+    std::ostream& trace(std::ostream& os) const;
 
     friend std::ostream& operator<<(std::ostream& os, const state_machine& sm);
 }; // state_machine
@@ -423,42 +421,38 @@ inline std::ostream& operator<<(std::ostream& os, const transition::guard& as)
     return os;
 }
 
-inline indent& transition::trace(indent& id, std::ostream& os) const
+inline std::ostream& transition::trace(std::ostream& os) const
 {
-    indent_level il(id);
-    os  << id 
-        << '(' << static_cast<location>(*this) << ") "
+    lpt::autoindent_guard indent(os);
+    os  << '(' << static_cast<location>(*this) << ") "
         << _fromState << " --> " << _toState << " " 
         << _event << '[' << _guard << "]/" << _effect
-        << " (" << _id << ")\n"
+        << " (" << _id << ")"
         ;
-    return id;
+    return os;
 }
 
 inline std::ostream& operator<<(std::ostream& os, const transition& t)
 {
-    indent id("");
-    t.trace(id, os);
+    t.trace(os);
     return os;
 }
 
-inline indent& activity::trace(indent& id, std::ostream& os) const
+inline std::ostream& activity::trace(std::ostream& os) const
 {
-    indent_level il(id);
-    os  << id 
-        << '(' << static_cast<location>(*this) << ") "
+    lpt::autoindent_guard indent(os);
+    os  << '(' << static_cast<location>(*this) << ") "
         << _state << ":" << _activity << ": "
         ;
     std::ranges::copy(_args, std::ostream_iterator<args::value_type>(os, ","));
-    os  << " (" << _id << ")\n"
+    os  << " (" << _id << ")"
         ;
-    return id;
+    return os;
 }
 
 inline std::ostream& operator<<(std::ostream& os, const activity& a)
 {
-    indent id("");
-    a.trace(id, os);
+    a.trace(os);
     return os;
 }
 
@@ -468,29 +462,28 @@ inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, t
     return os;
 }
 
-inline indent& region::trace(indent& id, std::ostream& os) const
+inline std::ostream& region::trace(std::ostream& os) const
 {
-    indent_level il(id);
-    os << id << '(' << static_cast<location>(*this) << ")\n";
-    os << id << "-- " << _id << " _ownedByState:" << (_ownedByState ? _ownedByState->_id : "-") << " {\n";
+    lpt::autoindent_guard indent(os);
+    os << '(' << static_cast<location>(*this) << ")\n";
+    os << "-- " << _id << " _ownedByState:" << (_ownedByState ? _ownedByState->_id : "-") << " {\n";
     for (const auto& [k, v] : _substates)
     {
-        v->trace(id, os);
+        v->trace(os);
+        os << '\n';
     }
-    os << id << "} " <<_id << "\n";
-    return id;
+    os << "} " <<_id;
+    return os;
 }
 
 inline std::ostream& operator<<(std::ostream& os, const region& r)
 {
-    indent id("");
-    r.trace(id, os);
+    r.trace(os);
     return os;
 }
 
 inline std::ostream& operator<<(std::ostream& os, const regionptr_t& rp)
 {
-    indent id("");
     if (rp) {
         os << *rp;
     } else {
@@ -506,45 +499,48 @@ inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, r
 }
 
 
-inline indent& state::trace(indent& id, std::ostream& os) const
+inline std::ostream& state::trace(std::ostream& os) const
 {
-    indent_level il(id);
-    os << id << '(' << static_cast<location>(*this) << ")\n";
-    os << id << "state " << _id 
+    lpt::autoindent_guard indent(os);
+    os << '(' << static_cast<location>(*this) << ")\n";
+    os << "state " << _id 
        << " final:" << _final << ";initial:" << _initial 
        << ";_superState:" << (_superState ? _superState->_id : "-") 
        << ";_ownedByRegion:" << (_ownedByRegion ? _ownedByRegion->_id : "-") 
        << " {\n";
     for (const auto& [k, v] : _transitions)
     {
-        v.trace(id, os);
+        v.trace(os);
+        os << '\n';
     }
     for (const auto& v : _activities)
     {
-        v.trace(id, os);
+        v.trace(os);
+        os << '\n';
     }
     for (const auto& [k, v] : _regions)
     {
-        v->trace(id, os);
+        v->trace(os);
+        os << '\n';
     }
     if (_config.size())
     {
-        indent_level il2(id);
-        os << id;
-        for (const auto& cf : _config)
         {
-            os << cf << ',';
+            lpt::autoindent_guard indent(os);
+            for (const auto& cf : _config)
+            {
+                os << cf << ',';
+            }
         }
         os << '\n';
     }
-    os << id << "} " << _id << "\n";
-    return id;
+    os << "} " << _id;
+    return os;
 }
 
 inline std::ostream& operator<<(std::ostream& os, const state& s)
 {
-    indent id("");
-    s.trace(id, os);
+    s.trace(os);
     return os;
 }
 
@@ -565,23 +561,23 @@ inline std::ostream& operator<<(std::ostream& os, const std::pair<std::string, s
 }
 
 
-inline indent& state_machine::trace(indent& id, std::ostream& os) const
+inline std::ostream& state_machine::trace(std::ostream& os) const
 {
-    indent_level il(id);
-    os << id << '(' << static_cast<location>(*this) << ")\n";
-    os << id << "machine " << _id << " {\n";
+    lpt::autoindent_guard indent(os);
+    os << '(' << static_cast<location>(*this) << ")\n";
+    os << "machine " << _id << " {\n";
     for (const auto& [k, v] : _regions)
     {
-        v->trace(id, os);
+        v->trace(os);
+        os << '\n';
     }
-    os << id << "} " << _id << '\n';
-    return id;
+    os << "} " << _id << '\n';
+    return os;
 }
 
 inline std::ostream& operator<<(std::ostream& os, const state_machine& sm)
 {
-    indent id("");
-    sm.trace(id, os);
+    sm.trace(os);
     return os;
 }
 

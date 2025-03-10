@@ -434,7 +434,7 @@ void Visitor::visit_transition(
     const auto idxCrtState(idx(state(s._id)));
 
     _out << '\n';
-    _out << indent8 << "\\* " << t;
+    _out << indent8 << "\\* " << t << '\n';
     _out << xndent8 << "await (evtRecv = " << idx(event(evt._name)); 
          visit_guard(idxCrtState, t);
     _out << ");" ;
@@ -511,7 +511,7 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
                 continue;
             }
             if (a._activity == "entry") {
-                _out << indent4 << "\\* " << a;
+                _out << indent4 << "\\* " << a << '\n';
                 _out << xndent4;
                 visit_activity(idxCrtState, a);
             }
@@ -531,7 +531,7 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "invariant") {
-                _out << indent8 << "\\* " << a;
+                _out << indent8 << "\\* " << a << '\n';
                 _out << xndent8 << "/\\ [](";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
@@ -555,7 +555,7 @@ void Visitor::visit_preconditions(const upml::sm::state&  s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "precondition") {
-                _out << indent4 << "\\* " << a;
+                _out << indent4 << "\\* " << a << '\n';
                 _out << xndent4 << upml::sm::tag('L', ++_labelIdx) << ": assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
@@ -575,7 +575,7 @@ void Visitor::visit_postconditions(const upml::sm::state&  s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "postcondition") {
-                _out << indent8 << "\\* " << a;
+                _out << indent8 << "\\* " << a << '\n';
                 _out << indent8 << upml::sm::tag('L', ++_labelIdx) << ": assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
@@ -602,7 +602,7 @@ void Visitor::visit_initial_entry_activities(const upml::sm::state& s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "entry") {
-                _out << indent4 << "\\* " << a;
+                _out << indent4 << "\\* " << a << '\n';
                 _out << xndent4;
                 visit_activity(idxCrtState, a);
             }
@@ -622,7 +622,7 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
                 continue;
             }
             if (a._activity == "exit") {
-                _out << indent4 << "\\* " << a;
+                _out << indent4 << "\\* " << a << '\n';
                 _out << xndent4;
                 visit_activity(idxCrtState, a);
             }
@@ -707,7 +707,7 @@ void Visitor::visit_ltl(const upml::sm::state& s) const
             continue;
         }
 
-        _out << "\\* " << a;
+        _out << "\\* " << a << '\n';
         if (a._args.size() < 3) {
             _out << "\\* not enough arguments \n";
             continue;
@@ -732,12 +732,12 @@ void Visitor::visit_ltl() const
     // LTLs are model-wide but plantuml forces ltl inside a state as an activity.
     // Any state would do but for now assume only the closed environment/top ones have ltl clauses
     for (const auto& [k, r] : _sm._regions) {
-        //std::cerr << r << '\n';
+        //std::cerr << r->_id << '\n';
         for (const auto& [k, s] : r->_substates) {
             //std::cerr << s->_id << '\n';
             visit_ltl(*s);
             for (const auto& [k, r2] : s->_regions) {
-                //std::cerr << r2 << '\n';
+                //std::cerr << r2->_id << '\n';
                 for (const auto& [k, s2] : r2->_substates) {
                     visit_ltl(*s2);
                 }
