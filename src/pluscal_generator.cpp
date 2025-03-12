@@ -8,6 +8,7 @@
  *
  */
 
+#include "iostream.hpp"
 #include "pluscal_generator.hpp"
 
 #include <boost/algorithm/string/trim.hpp>
@@ -17,14 +18,6 @@
 #include <map>
 #include <numeric>
 #include <set>
-
-static std::string indent0 ("\n");
-static std::string indent4 ("\n    ");
-static std::string xndent4 (  "    ");
-static std::string indent8 ("\n        ");
-static std::string xndent8 (  "        ");
-static std::string indent12("\n            ");
-static std::string xndent12(  "            ");
 
 namespace upml {
 
@@ -262,19 +255,24 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     const id_t llabel(name("loop", s._id) + ": skip;");
     const id_t plabel(name("progress", s._id) + ": skip;"); //TODO:non-progress cycles
 
-    _out << indent0 << "\n\\* state " << idxCrtState << "[\n";
-    _out << indent0 << ilabel 
-         << indent4 << "currentState[self] := newState;";
-    if (  s._config.count("noInboundEvents") 
-       || s._transitions.empty()
-    ) {
-        _out << indent4 << "noChannel := TRUE;";
-    }
-    _out << indent0;
+    _out << "\n\n\\* state " << idxCrtState << "[\n"
+         << '\n' << ilabel; 
+    {
+        lpt::autoindent_guard indent(_out);
 
-    visit_preconditions(s);
-    //visit_initial_entry_activities(s);
-    visit_entry_activities(s);
+        _out << "\ncurrentState[self] := newState;";
+        if (  s._config.count("noInboundEvents") 
+           || s._transitions.empty()
+        ) {
+            _out << "\nnoChannel := TRUE;";
+        }
+
+        _out << '\n';
+
+        visit_preconditions(s);
+        //visit_initial_entry_activities(s);
+        visit_entry_activities(s);
+    }
 
     _out << "\n\n" << blabel;
     if (s._initial || s._final) {
@@ -283,25 +281,29 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     if (s._config.count("progressTag")) {
         _out << "\n" << plabel;
     }
-    _out << indent4 << "if ( noChannel = FALSE ) {";
-    if (s._final) {
-        _out << indent0 << elabel; // TODO: skip completely the channel read 
+    {
+        lpt::autoindent_guard indent(_out);
+
+        _out << "\nif ( noChannel = FALSE ) { ";
+        if (s._final) {
+            _out << elabel; // TODO: skip completely the channel read 
+        }
+        _out << "\n    " << upml::sm::tag('L', ++_labelIdx) << ":recv_event(evtRecv, self, currentState[self]); "
+             << "\n} else {"
+             << "\n    " << "evtRecv := " << idx(event("NullEvent")) << ";"
+             << "\n};"
+             << "\n\n"
+             ;
+
+        //if (s._transitions.empty()) {
+        //    _out << "\n/* state " << idxCrtState << " has no transitions */\n";
+        //    return;
+        //}
+        visit_transitions(s, rd);
+        visit_postconditions(s);
     }
-    _out    << indent8 << upml::sm::tag('L', ++_labelIdx) << ":recv_event(evtRecv, self, currentState[self]); "
-            << indent4 << "} else {"
-            << indent8 << "evtRecv := " << idx(event("NullEvent")) << ";"
-            << indent4 << "};"
-            << "\n\n"
-            ;
 
-    //if (s._transitions.empty()) {
-    //    _out << indent0 << "\n/* state " << idxCrtState << " has no transitions */\n";
-    //    return;
-    //}
-    visit_transitions(s, rd);
-    visit_postconditions(s);
-
-    _out << indent0 << "\\*]state " << idxCrtState << "\n";
+    _out << "\n\\*]state " << idxCrtState << "\n";
 }
 
 void Visitor::visit_state_regions(const upml::sm::state& s) const
@@ -433,23 +435,24 @@ void Visitor::visit_transition(
     const auto toSt(scoped_name::create(t._toState));
     const auto idxCrtState(idx(state(s._id)));
 
-    _out << '\n';
-    _out << indent8 << "\\* " << t << '\n';
-    _out << xndent8 << "await (evtRecv = " << idx(event(evt._name)); 
+    lpt::autoindent_guard indent(_out);
+
+    _out << "\n\n\\* " << t << '\n';
+    _out << "await (evtRecv = " << idx(event(evt._name)); 
          visit_guard(idxCrtState, t);
     _out << ");" ;
          visit_effect(idxCrtState, t);
-    _out << indent8 << "visitedTransitions[\"" << t._id << "\"] := TRUE;\n";
+    _out << "\nvisitedTransitions[\"" << t._id << "\"] := TRUE;\n";
 
     if (idx(state(toSt._name)) == idxCrtState) {
         visit_postconditions(s);
-        _out << indent8<< "newState := " << idx(state(toSt._name)) << "; ";
-        _out << indent8 << "goto " << name("body", s._id) << ';';
+        _out << "\nnewState := " << idx(state(toSt._name)) << "; ";
+        _out << "\ngoto " << name("body", s._id) << ';';
     } else {
         visit_exit_activities(s);
         visit_postconditions(s);
-        _out << indent8 << "newState := " << idx(state(toSt._name)) << "; ";
-        _out << indent8 << "goto " << name("entry", toSt._name) << ';';
+        _out << "\nnewState := " << idx(state(toSt._name)) << "; ";
+        _out << "\ngoto " << name("entry", toSt._name) << ';';
     }
     _out << "\n";
 }
@@ -460,21 +463,21 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
     const auto idxCrtState(idx(state(s._id)));
 
     if ( ! s._transitions.empty()) {
-        _out << indent4 << "\\* transitions " << idxCrtState << "[ "
-             << indent4 << upml::sm::tag('L', ++_labelIdx) << ':'
-             << indent4 << (s._transitions.size() > 1 ? "" : "\\* ") << "either {";
+        _out << "\n\\* transitions " << idxCrtState << "[ "
+             << '\n' << upml::sm::tag('L', ++_labelIdx) << ':'
+             << '\n' << (s._transitions.size() > 1 ? "" : "\\* ") << "either {";
         auto it = s._transitions.begin();
         do {
            visit_transition(s, it->second);
            ++it;
            if (it != s._transitions.end()) {
-               _out << indent4 << "} or {";
+               _out <<  "\n} or {";
            }
         } while (it != s._transitions.end());
         visit_timeout(s);
         //TODO: resend unhandled events to the hierarchical parent state
-        _out << indent4 << (s._transitions.size() > 1 ? "" : "\\* ") << "}; \\* either"
-             << indent4 << "\\*]transitions " << idxCrtState << "\n"
+        _out << '\n' << (s._transitions.size() > 1 ? "" : "\\* ") << "}; \\* either"
+             << "\n\\*]transitions " << idxCrtState << "\n"
              ;
     }
 
@@ -511,8 +514,7 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
                 continue;
             }
             if (a._activity == "entry") {
-                _out << indent4 << "\\* " << a << '\n';
-                _out << xndent4;
+                _out << "\n\\* " << a << '\n';
                 visit_activity(idxCrtState, a);
             }
         }
@@ -531,8 +533,9 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "invariant") {
-                _out << indent8 << "\\* " << a << '\n';
-                _out << xndent8 << "/\\ [](";
+                    lpt::autoindent_guard indent(_out);
+                _out << "\n\\* " << a << '\n';
+                _out << "/\\ [](";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -555,8 +558,8 @@ void Visitor::visit_preconditions(const upml::sm::state&  s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "precondition") {
-                _out << indent4 << "\\* " << a << '\n';
-                _out << xndent4 << upml::sm::tag('L', ++_labelIdx) << ": assert(";
+                _out << "\n\\* " << a << '\n';
+                _out << upml::sm::tag('L', ++_labelIdx) << ": assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -575,8 +578,8 @@ void Visitor::visit_postconditions(const upml::sm::state&  s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "postcondition") {
-                _out << indent8 << "\\* " << a << '\n';
-                _out << indent8 << upml::sm::tag('L', ++_labelIdx) << ": assert(";
+                _out << "\n\\* " << a << '\n';
+                _out << upml::sm::tag('L', ++_labelIdx) << ": assert(";
                 for (const auto& tok: a._args) {
                     _out << token(tok);
                 }
@@ -602,8 +605,7 @@ void Visitor::visit_initial_entry_activities(const upml::sm::state& s) const
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
             if (a._activity == "entry") {
-                _out << indent4 << "\\* " << a << '\n';
-                _out << xndent4;
+                _out << "\n\\* " << a << '\n';
                 visit_activity(idxCrtState, a);
             }
         }
@@ -622,8 +624,7 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
                 continue;
             }
             if (a._activity == "exit") {
-                _out << indent4 << "\\* " << a << '\n';
-                _out << xndent4;
+                _out << "\n\\* " << a << '\n';
                 visit_activity(idxCrtState, a);
             }
         }
@@ -783,24 +784,29 @@ void Visitor::visit() const
                                       [](std::string all, const auto& r){
                                           return std::move(all + ", " + idx(region(r.first)));
                                       }));
-    _out << indent4 <<"procs = { " << procs << " };";
-    _out << indent4 <<"channels = [p \\in procs |-> <<>>];";
-    _out << indent4 <<"currentState = [p \\in procs |-> idx_Unknown];";
 
-    std::string tls;
-    if (_transitionLabels.empty()) {
-        std::cerr << "Warning: no transitions\n";
-    } else {
-        tls = std::move(std::accumulate(std::next(_transitionLabels.begin()), _transitionLabels.end(),
-                                        std::string('"' + *_transitionLabels.begin() + '"'),
-                                        [](std::string all, const auto& l){
-                                            return std::move(all + ", \"" + l + '"');
-                                        }));
+    {
+        lpt::autoindent_guard indent(_out);
+
+        _out << "\nprocs = { " << procs << " };";
+        _out << "\nchannels = [p \\in procs |-> <<>>];";
+        _out << "\ncurrentState = [p \\in procs |-> idx_Unknown];";
+
+        std::string tls;
+        if (_transitionLabels.empty()) {
+            std::cerr << "Warning: no transitions\n";
+        } else {
+            tls = std::move(std::accumulate(std::next(_transitionLabels.begin()), _transitionLabels.end(),
+                                            std::string('"' + *_transitionLabels.begin() + '"'),
+                                            [](std::string all, const auto& l){
+                                                return std::move(all + ", \"" + l + '"');
+                                            }));
+        }
+        _out << "\nstateTransitions = { " << tls << " };";
+        _out << "\nvisitedTransitions = [t \\in stateTransitions |-> FALSE];";
+
+        _out << "\nmaxUmlEvents = -20;  \\* limit the number of UML events in the run";
     }
-    _out << indent4 <<"stateTransitions = { " << tls << " };";
-    _out << indent4 <<"visitedTransitions = [t \\in stateTransitions |-> FALSE];";
-
-    _out << indent4 <<"maxUmlEvents = -20;  \\* limit the number of UML events in the run";
 
     _out << R"--(
 
@@ -817,9 +823,10 @@ define {
         /\ [](TRUE) \* ensure not empty
     )--";
     for (const auto& [k, r] : _sm._regions) {
+        lpt::autoindent_guard indent(_out);
         visit_invariants(*r);
     }
-    _out << "}; \n";
+    _out << "\n}; \\* define \n";
 
 
     _out << R"--(
