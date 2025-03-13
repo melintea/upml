@@ -251,7 +251,7 @@ inline names_t state::events() const
     }
     for (const auto& a : _activities) {
         if (a._activity == "entry" || a._activity == "exit") {
-            //TODO: asert this is a send activity
+            //TODO: assert this is a send activity
             evts.insert(a._args[activity::_argOrder::aoEvent]);
         }
     }
