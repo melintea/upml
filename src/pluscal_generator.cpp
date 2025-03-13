@@ -235,7 +235,6 @@ Visitor::Visitor(upml::sm::state_machine& sm,
     , _out(out)
 {
     _events  = names("", sm.events());
-    _events.emplace(name("", "NullEvent"), _events.size());
 
     _regions = names("", sm.regions(true));
     _states  = names("", sm.states(true));
@@ -290,7 +289,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
         }
         _out << "\n    " << upml::sm::tag('L', ++_labelIdx) << ":recv_event(evtRecv, self, currentState[self]); "
              << "\n} else {"
-             << "\n    " << "evtRecv := " << idx(event("NullEvent")) << ";"
+             << "\n    " << "evtRecv := " << idx(event(upml::sm::event::_NullEvent)) << ";"
              << "\n};"
              << "\n\n"
              ;

@@ -74,7 +74,26 @@ struct event
 {
     static constexpr const char _tag = 'e';
 
+    // Reserved events
+    static constexpr const id_t _NullEvent  = "NullEvent";
+    static constexpr const id_t _EnterState = "EnterState";
+    static constexpr const id_t _ExitState  = "ExitState";
+
     id_t _id;
+};
+
+// EnterState or ExitState
+struct state_change_event
+{
+    event  _event;
+    id_t   _state;
+};
+using state_to_state_path = std::vector<state_change_event>;
+
+struct state_to_state_transition
+{
+    state_to_state_path _exitStates;
+    state_to_state_path _enterStates;
 };
 
 // transition: trigger [guard] /effect
@@ -255,6 +274,9 @@ inline names_t state::events() const
             evts.insert(a._args[activity::_argOrder::aoEvent]);
         }
     }
+    evts.insert(event::_NullEvent);
+    evts.insert(event::_EnterState);
+    evts.insert(event::_ExitState);
     return evts;
 }
 

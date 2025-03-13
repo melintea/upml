@@ -227,7 +227,6 @@ Visitor::Visitor(upml::sm::state_machine& sm,
     , _out(out)
 {
     _events  = names("", sm.events());
-    _events.emplace(name("", "NullEvent"), _events.size());
 
     _regions = names("", sm.regions(true));
     _states  = names("", sm.states(true));
@@ -280,7 +279,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
         _out << "\n    myChan?evtRecv; "
              << "\n    printf(\"MSC: > %d " << region(rd._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, currentState); "
              << "\n:: else"
-             << "\n    evtRecv.evId = " << event("NullEvent") << ";"
+             << "\n    evtRecv.evId = " << event(upml::sm::event::_NullEvent) << ";"
              ;
         _out << "\nfi\n\n";
         
