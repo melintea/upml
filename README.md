@@ -54,7 +54,7 @@ Additions:
 
 ## Build
 
-Depends on boost (spirit, program_options, filesystem).
+Depends on boost (spirit, program_options, filesystem). Requires C++20 or later.
 
 ## Similar tools & various links
 

@@ -20,6 +20,8 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <ranges>
+#include <span>
 #include <string>
 #include <map>  // unordered not supported by boost::spirit/phoenix?
 #include <set>
@@ -65,6 +67,9 @@ using stateptr_t = std::shared_ptr<state>; // break circular dep between regions
 using states_t   = std::map<id_t, stateptr_t>;
 //using states_t   = std::set<ptr_t, hasher<state>>;
 
+// Path from this state (at index zero) up to the root of the state machine.
+using statepath_t   = std::vector<stateptr_t>;
+
 struct region;
 using regionptr_t = std::shared_ptr<region>; 
 using regions_t = std::map<id_t, regionptr_t>;
@@ -85,8 +90,8 @@ struct event
 // EnterState or ExitState
 struct state_change_event
 {
-    event  _event;
-    id_t   _state;
+    event        _event;
+    stateptr_t   _statePtr;
 };
 using state_to_state_path = std::vector<state_change_event>;
 
@@ -200,16 +205,23 @@ struct state : public location
     activities_t   _activities;
     bool           _initial{false};
     bool           _final{false};
-    config_t       _config;  // noInboundEvents, progressTag
+    config_t       _config;     // noInboundEvents, progressTag
+    statepath_t    _pathToRoot; // excluding this state
 
     names_t events() const;
     names_t states(bool recursive)  const;
     names_t regions(bool recursive) const;
 
+    // Excludes this state from the path
+    const statepath_t& path_to_root();
+
     //  which region has @param state 
     const regionptr_t owner_region(const id_t& state) const;
 
-    bool operator==(const state& other) const { return other._id == _id; }
+    friend bool operator==(const state& left, const state& right);
+    friend bool operator==(const stateptr_t& left, const stateptr_t& right);
+    friend bool operator==(const state& left, const id_t& right);
+    friend bool operator==(const stateptr_t& left, const id_t& right);
 
     std::ostream& trace(std::ostream& os) const;
 
@@ -250,13 +262,115 @@ struct state_machine : public location
 
     stateptr_t state(const id_t& state) const;
 
+    stateptr_t least_common_ancestor(
+                    const stateptr_t& fromState, 
+                    const stateptr_t& toState, 
+                    bool internalTransition = true);
+    state_to_state_transition transition(
+                    const stateptr_t& fromState, 
+                    const stateptr_t& toState,  
+                    bool internalTransition = true);
+
     std::ostream& trace(std::ostream& os) const;
 
     friend std::ostream& operator<<(std::ostream& os, const state_machine& sm);
 }; // state_machine
 
 //-----------------------------------------------------------------------------
+inline bool operator==(const state& left, const state& right)
+{
+    return left._id == right._id;
+}
 
+inline bool operator==(const stateptr_t& left, const stateptr_t& right)
+{
+    return left->_id == right->_id;
+}
+
+inline bool operator==(const state& left, const id_t& right)
+{
+    return left._id == right;
+}
+
+inline bool operator==(const stateptr_t& left, const id_t& right)
+{
+    return left->_id == right;
+}
+
+//-----------------------------------------------------------------------------
+inline const statepath_t& state::path_to_root() 
+{ 
+    if (_pathToRoot.empty() && _superState)
+    {
+        _pathToRoot.push_back(_superState);
+        _pathToRoot.insert(_pathToRoot.end(),
+                           _superState->path_to_root().begin(), 
+                           _superState->path_to_root().end());
+    }
+    return _pathToRoot; 
+}
+
+inline stateptr_t state_machine::least_common_ancestor(
+    const stateptr_t& fromState, 
+    const stateptr_t& toState,  
+    bool internalTransition)
+{
+    if (fromState == toState) {
+        return internalTransition ? fromState : fromState->_superState; 
+    }
+
+    const auto& fromStateRootPath(fromState->path_to_root());
+    const auto& toStateRootPath(toState->path_to_root());
+    for (const auto& fromPtr : fromStateRootPath) {
+        for (const auto& toPtr : toStateRootPath) {
+            if (fromPtr == toPtr) {
+                return fromPtr;
+            }
+        }
+    }
+    return {};
+}
+
+inline state_to_state_transition state_machine::transition(
+    const stateptr_t& fromState, 
+    const stateptr_t& toState,  
+    bool internalTransition)
+{
+    state_to_state_transition path;
+
+    if ((fromState == toState) && internalTransition) {
+        return {}; 
+    }
+
+    const auto& fromStateRootPath(fromState->path_to_root());
+    const auto& toStateRootPath(toState->path_to_root() | std::views::reverse);
+    const auto& lcaState(least_common_ancestor(fromState, toState, internalTransition));
+    assert(lcaState);
+
+    path._exitStates.push_back({event::_ExitState, fromState});
+    for (const auto& exitState : fromStateRootPath) {
+        if (exitState == lcaState) {
+            break;
+        }
+        path._exitStates.push_back({event::_ExitState, exitState});
+    }
+
+    size_t nDrop = 1; // for lcaState
+    for (const auto& enterState: toStateRootPath) {
+        if (enterState == lcaState) {
+            break;
+        }
+        ++nDrop;
+    }
+    for (const auto& enterState: toStateRootPath | std::views::drop(nDrop)) {
+        path._enterStates.push_back({event::_EnterState, enterState});
+    }
+    path._enterStates.push_back({event::_EnterState, toState});
+
+    return path;
+}
+
+//-----------------------------------------------------------------------------
 inline names_t state::events() const
 {
     names_t evts;
