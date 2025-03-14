@@ -25,6 +25,7 @@
 #include <string>
 #include <map>  // unordered not supported by boost::spirit/phoenix?
 #include <set>
+#include <utility>
 #include <vector>
 
 namespace upml::sm {
@@ -99,6 +100,8 @@ struct state_to_state_transition
 {
     state_to_state_path _exitStates;
     state_to_state_path _enterStates;
+
+    friend std::ostream& operator<<(std::ostream& os, const state_to_state_transition& t);
 };
 
 // transition: trigger [guard] /effect
@@ -571,6 +574,20 @@ inline std::ostream& transition::trace(std::ostream& os) const
 inline std::ostream& operator<<(std::ostream& os, const transition& t)
 {
     t.trace(os);
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const state_to_state_transition& t)
+{
+    std::ranges::for_each(std::as_const(t._exitStates), 
+                          [&os](const auto& change) {
+                              os << change._event._id << ':' << change._statePtr->_id << "->";
+                          });
+    std::ranges::for_each(std::as_const(t._enterStates), 
+                          [&os](const auto& change) {
+                              os << change._event._id << ':' << change._statePtr->_id << "->";
+                          });
+    os << "[*]";
     return os;
 }
 
