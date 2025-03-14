@@ -579,10 +579,12 @@ inline std::ostream& operator<<(std::ostream& os, const transition& t)
 
 inline std::ostream& operator<<(std::ostream& os, const state_to_state_transition& t)
 {
+    os << "[*]->";
     std::ranges::for_each(std::as_const(t._exitStates), 
                           [&os](const auto& change) {
                               os << change._event._id << ':' << change._statePtr->_id << "->";
                           });
+    os << "[^]->";
     std::ranges::for_each(std::as_const(t._enterStates), 
                           [&os](const auto& change) {
                               os << change._event._id << ':' << change._statePtr->_id << "->";
