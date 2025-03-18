@@ -10,7 +10,7 @@ The state machine is described in an plantuml file (again, a subset of what plan
 
 Finite state machines (FSM) should be fully supported. Hierarchical state machines (HSM) are only partially supported currently: only one hierachical level.
 
-Self-transitions ([exit state & enter it again](doc/uml.md)) are not supported and are implemented as internal transitions.
+Self-transitions ([exit state & enter it again](doc/uml/uml.md)) are not supported and are implemented as internal transitions.
 
 Resulting models might violate run-to-completion (RTC) semantics. This might accurately reflect usage of the real state machine implementation in a multi-threaded environment.
 
