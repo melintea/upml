@@ -10,16 +10,21 @@ spinfile="${pumlfile%.*}.promela"
 tlafile="${pumlfile%.*}.tla"
 #echo "$pumlfile => $spinfile" && exit 0
 
-make || exit 1
+gitroot=`git rev-parse --show-toplevel`
+exeupml=${gitroot}/src/upml
 
-./upml \
+pushd ${gitroot}/src
+make || exit 1
+popd
+
+${exeupml} \
     --in "$pumlfile" \
     --backend spin \
     --out "$spinfile" \
     2>&1  || exit 1
 meld "$spinfile" &
 
-./upml \
+${exeupml} \
     --in "$pumlfile" \
     --backend tla \
     --out "$tlafile" \
