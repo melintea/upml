@@ -17,11 +17,10 @@ Depends on boost (spirit, program_options, filesystem). Requires C++20 or later.
 
 ## upml documentation
 
-[Syntax](doc/upml/syntax.md)
-Examples:
-- [A lamp switch](doc/upml/switch.md)
-- [Some SIP stuff](doc/upml/sip.md)
-
+- [Syntax](doc/upml/syntax.md)
+- Examples:
+  - [A lamp switch](doc/upml/switch.md)
+  - [Some SIP stuff](doc/upml/sip.md)
 
 ## Similar tools & various links
 
