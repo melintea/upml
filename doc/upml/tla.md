@@ -4,8 +4,6 @@
 - [Differences with PlusCal](#differences-with-pluscal)
 - [Usage](#usage)
 - [Cheat sheet](#cheat-sheet)
-- [A lamp switch](#a-lamp-switch)
-- [SIP stuff](#sip-stuff)
 - [Varia](#varia)
 
 ## Install
@@ -31,11 +29,19 @@ Adjust ```maxUmlEvents``` as needed and note it is a negative. I could have used
 
 ## Model
 
-By and large the same as the [Promela](README.spin.md#model) one.
+- There is at least one region in the state machine.
+- Each region executes in its own (promela) process.
+- A composite state executes in its own region - it has at
+  least one region.
+- A simple state executes in the composite state/region 
+  that owns it. 
+- Events are asynchronous messages. Event names are unique per 
+  plantuml file.
+- State names are unique per plantuml file.
 
 ## Differences with PlusCal
 
-See the [Promela](README.spin.md#differences-with-pluscal) page.
+See the [Promela](spin.md#differences-with-pluscal) page.
 
 ## Usage
 
@@ -73,27 +79,6 @@ TYPE
 TYPE_CONSTRAINT
 VIEW
 ```
-
-## A lamp switch
-
-Close the system as described in the [Promela](README.spin.md#a-lamp-switch) page. Note: this will generate an infinite run (for now).
-
-Then run upml and load the result in the toolbox:
-
-```
-./upml --in ../plantuml/switch/switch.plantuml --out ../plantuml/switch/switch.tla --backend tla
-```
-
-Adjust ```maxUmlEvents``` to something like ```-5```; ```MaxEventsReached``` will fire.
-
-## SIP stuff
-
-Close the system as described in the [Promela](README.spin.md#sip-stuff) page, run upml:
-
-```
-./upml --in ../plantuml/sip/sip.plantuml --out ../plantuml/sip/sip.tla --backend tla
-```
-Then use the toolbox with e.g. Temporal Formula: Spec and a Deadlock check.
 
 ## Varia
 
