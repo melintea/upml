@@ -7,7 +7,7 @@ Resulting HSM/FSM respect run-to-completion (RTC) semantics.
 Canonical execution order (CEO):
 
 * respected by FSM.
-* not respected by HSM; HSM execution order is transition actions then state exit actions then state enter actions.
+* not respected by HSM; HSM execution order is: transition actions then state exit actions then state enter actions.
 
 **Plantuml**: @see [the plantuml state diagram](https://plantuml.com/state-diagram):
 

@@ -9,7 +9,7 @@ The state machine is described in an plantuml file (again, a subset of what plan
 
 ## Status
 
-Finite state machines (FSM) should be fully supported. Hierarchical state machines (HSM) are only partially supported currently: only one hierachical level.
+Finite state machines (FSM) should be fully supported. Hierarchical state machines (HSM) are WIP.
 
 ## Build
 
