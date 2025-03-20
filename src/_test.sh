@@ -10,13 +10,16 @@ echo "--- $1"
 
 pumlfile="$1" 
 
+gitroot=`git rev-parse --show-toplevel`
+exeupml=${gitroot}/src/upml
+
 #
 #
 #
 
 tlafile="${pumlfile%.*}.tla"
 
-./upml \
+${exeupml} \
     --in "$pumlfile" \
     --backend tla \
     --out "$tlafile" \
@@ -32,7 +35,7 @@ java -cp ${tlahome}/tla2tools.jar pcal.trans "$tlafile"
 
 spinfile="${pumlfile%.*}.promela"
 
-./upml \
+${exeupml} \
     --in "$pumlfile" \
     --backend spin \
     --out "$spinfile" \
