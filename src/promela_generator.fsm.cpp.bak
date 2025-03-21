@@ -786,7 +786,9 @@ inline send_event(channel, evt, fs, ts)
     _out <<     "/*UPML end*/\n\n";
 }
 
-bool generate(
+} // spin
+
+bool promela_generator(
     std::ostream&            out,
     upml::sm::state_machine& sm)
 {
@@ -794,8 +796,6 @@ bool generate(
     psm.visit();
     return true;
 }
-
-} // spin
 
 } //namespace upml
 

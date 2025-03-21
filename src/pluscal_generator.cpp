@@ -860,9 +860,8 @@ macro recv_event(evtId, channel, inState) {
 
 } // Visitor::visit
 
-} // tla
 
-bool pluscal_generator(
+bool generate(
     std::ostream&            out,
     upml::sm::state_machine& sm)
 {
@@ -870,6 +869,8 @@ bool pluscal_generator(
     psm.visit();
     return true;
 }
+
+} // tla
 
 } //namespace upml
 

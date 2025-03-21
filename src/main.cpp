@@ -98,9 +98,9 @@ int main(int argc, char* argv[])
 
     const std::string& backend(vm["backend"].as<std::string>());
     if (backend == "spin") {
-        ret = ret & upml::promela_generator(out, sm);
+        ret = ret & upml::spin::generate(out, sm);
     } else if (backend == "tla") {
-        ret = ret & upml::pluscal_generator(out, sm);
+        ret = ret & upml::tla::generate(out, sm);
     } else if (backend == "none") {
         ; // 
     } else {

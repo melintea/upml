@@ -15,16 +15,16 @@
 
 #include "state_machine.hpp"
 
-namespace upml {
+namespace upml::tla {
 
 /*
  *
  */
-bool pluscal_generator(
+bool generate(
     std::ostream&            out,
     upml::sm::state_machine& sm);
 
-} //namespace upml
+} //namespace upml::tla
 
 
 #endif //#define INCLUDED_pluscal_generator_hpp_e94097d6_5656_4154_821b_c92761e084cb
