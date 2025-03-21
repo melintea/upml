@@ -14,6 +14,7 @@
 #pragma once
 
 #include "iostream.hpp"
+#include "reserved_words.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -79,11 +80,6 @@ using regions_t = std::map<id_t, regionptr_t>;
 struct event 
 {
     static constexpr const char _tag = 'e';
-
-    // Reserved events
-    static constexpr const id_t _NullEvent  = "NullEvent";
-    static constexpr const id_t _EnterState = "EnterState";
-    static constexpr const id_t _ExitState  = "ExitState";
 
     id_t _id;
 };
@@ -350,12 +346,12 @@ inline state_to_state_transition state_machine::transition(
     const auto& lcaState(least_common_ancestor(fromState, toState, internalTransition));
     assert(lcaState);
 
-    path._exitStates.push_back({event::_ExitState, fromState});
+    path._exitStates.push_back({word::ExitState, fromState});
     for (const auto& exitState : fromStateRootPath) {
         if (exitState == lcaState) {
             break;
         }
-        path._exitStates.push_back({event::_ExitState, exitState});
+        path._exitStates.push_back({word::ExitState, exitState});
     }
 
     size_t nDrop = 1; // for lcaState
@@ -366,9 +362,9 @@ inline state_to_state_transition state_machine::transition(
         ++nDrop;
     }
     for (const auto& enterState: toStateRootPath | std::views::drop(nDrop)) {
-        path._enterStates.push_back({event::_EnterState, enterState});
+        path._enterStates.push_back({word::EnterState, enterState});
     }
-    path._enterStates.push_back({event::_EnterState, toState});
+    path._enterStates.push_back({word::EnterState, toState});
 
     return path;
 }
@@ -391,9 +387,9 @@ inline names_t state::events() const
             evts.insert(a._args[activity::_argOrder::aoEvent]);
         }
     }
-    evts.insert(event::_NullEvent);
-    evts.insert(event::_EnterState);
-    evts.insert(event::_ExitState);
+    evts.insert(word::NullEvent);
+    evts.insert(word::EnterState);
+    evts.insert(word::ExitState);
     return evts;
 }
 

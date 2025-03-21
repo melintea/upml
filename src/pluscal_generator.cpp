@@ -10,6 +10,7 @@
 
 #include "iostream.hpp"
 #include "pluscal_generator.hpp"
+#include "reserved_words.hpp"
 
 #include <boost/algorithm/string/trim.hpp>
 
@@ -289,7 +290,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
         }
         _out << "\n    " << upml::sm::tag('L', ++_labelIdx) << ":recv_event(evtRecv, self, currentState[self]); "
              << "\n} else {"
-             << "\n    " << "evtRecv := " << idx(event(upml::sm::event::_NullEvent)) << ";"
+             << "\n    " << "evtRecv := " << idx(event(upml::word::NullEvent)) << ";"
              << "\n};"
              << "\n\n"
              ;

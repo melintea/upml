@@ -10,6 +10,7 @@
 
 #include "iostream.hpp"
 #include "promela_generator.hpp"
+#include "reserved_words.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -279,7 +280,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
         _out << "\n    myChan?evtRecv; "
              << "\n    printf(\"MSC: > %d " << region(rd._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, currentState); "
              << "\n:: else"
-             << "\n    evtRecv.evId = " << event(upml::sm::event::_NullEvent) << ";"
+             << "\n    evtRecv.evId = " << event(upml::word::NullEvent) << ";"
              ;
         _out << "\nfi\n\n";
         
