@@ -12,6 +12,7 @@
 #define BOOST_SPIRIT_USE_PHOENIX_V3
 
 #include "plantuml_parser.hpp"
+#include "reserved_words.hpp"
 #include "state_machine.hpp"
 
 #include <boost/phoenix/phoenix.hpp>
@@ -163,7 +164,7 @@ struct plantuml_grammar final
         activity %= rstring >> ':' >> rstring >> ':' >> *(tokstring) > ';';
 
         //                _state:           config:                     _setting
-        config_setting %= rstring >> ':' >> qi::lit("config") > ':' >> rstring > ';';
+        config_setting %= rstring >> ':' >> qi::lit(keyword::config) > ':' >> rstring > ';';
 
         //            _fromState  -->               _toState      :       _event        [     _guard          ]         /   _effect
         //transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> *(rstring) > ']') >> -('/' >> *(rstring));

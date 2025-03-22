@@ -249,7 +249,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
 {
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
-    const id_t ilabel(name("entry", s._id) + ": skip;"); //skip because we cannot have two consecutive labels
+    const id_t ilabel(name(keyword::entry, s._id) + ": skip;"); //skip because we cannot have two consecutive labels
     const id_t elabel(name("end", s._id) + ": skip;");
     const id_t blabel(name("body", s._id) + ": skip;");
     const id_t llabel(name("loop", s._id) + ": skip;");
@@ -261,7 +261,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
         lpt::autoindent_guard indent(_out);
 
         _out << "\ncurrentState[self] := newState;";
-        if (  s._config.count("noInboundEvents") 
+        if (  s._config.count(keyword::noInboundEvents) 
            || s._transitions.empty()
         ) {
             _out << "\nnoChannel := TRUE;";
@@ -278,7 +278,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     if (s._initial || s._final) {
         _out << "\n" << llabel;
     }
-    if (s._config.count("progressTag")) {
+    if (s._config.count(keyword::progressTag)) {
         _out << "\n" << plabel;
     }
     {
@@ -290,7 +290,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
         }
         _out << "\n    " << upml::sm::tag('L', ++_labelIdx) << ":recv_event(evtRecv, self, currentState[self]); "
              << "\n} else {"
-             << "\n    " << "evtRecv := " << idx(event(upml::word::NullEvent)) << ";"
+             << "\n    " << "evtRecv := " << idx(event(upml::keyword::NullEvent)) << ";"
              << "\n};"
              << "\n\n"
              ;
@@ -317,9 +317,9 @@ void Visitor::visit_activity(
     const upml::tla::id_t&    idxCrtState,
     const upml::sm::activity& a) const
 {
-    if ("send" == a._args[upml::sm::activity::_argOrder::aoActivity]) {
+    if (keyword::send == a._args[upml::sm::activity::_argOrder::aoActivity]) {
         return visit_send_activity(idxCrtState, a);
-    } else if ("trace" == a._args[upml::sm::activity::_argOrder::aoActivity]) {
+    } else if (keyword::trace == a._args[upml::sm::activity::_argOrder::aoActivity]) {
         return visit_trace_activity(idxCrtState, a);
     } else {
         std::cerr << "Unsuported: " << a << std::endl; 
@@ -341,13 +341,13 @@ void Visitor::visit_send_activity(
     const upml::tla::id_t&    idxCrtState,
     const upml::sm::activity& a) const
 {
-    assert("send" == a._args[upml::sm::activity::_argOrder::aoActivity]);
+    assert(keyword::send == a._args[upml::sm::activity::_argOrder::aoActivity]);
     const auto toSt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoState]));
-    assert(toSt._scope == "state");
+    assert(toSt._scope == keyword::state);
     const auto destRegPtr(_sm.owner_region(toSt._name));
     assert(destRegPtr);
     const auto evt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoEvent]));
-    assert(evt._scope == "event");
+    assert(evt._scope == keyword::event);
 
     const auto& destStatePtr(_sm.state(toSt._name));
     assert(destStatePtr != nullptr); // unless someone made a typo
@@ -372,7 +372,7 @@ std::string Visitor::token(const std::string& tok) const
     };
 
     const auto ttok(scoped_name::create(tok));
-    if ( ! ttok._item.empty() && ttok._scope == "state") {
+    if ( ! ttok._item.empty() && ttok._scope == keyword::state) {
         const auto& destStatePtr(_sm.state(ttok._name));
         assert(destStatePtr != nullptr);
         assert(destStatePtr->_regions.size() == 1); // TODO: syntax error if multiple regions
@@ -452,7 +452,7 @@ void Visitor::visit_transition(
         visit_exit_activities(s);
         visit_postconditions(s);
         _out << "\nnewState := " << idx(state(toSt._name)) << "; ";
-        _out << "\ngoto " << name("entry", toSt._name) << ';';
+        _out << "\ngoto " << name(keyword::entry, toSt._name) << ';';
     }
     _out << "\n";
 }
@@ -513,7 +513,7 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
                 std::cerr << "Warning: activity with no args:\n"<< a << "\n";
                 continue;
             }
-            if (a._activity == "entry") {
+            if (a._activity == keyword::entry) {
                 _out << "\n\\* " << a << '\n';
                 visit_activity(idxCrtState, a);
             }
@@ -532,7 +532,7 @@ void Visitor::visit_invariants(const upml::sm::state&  s) const
 {
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
-            if (a._activity == "invariant") {
+            if (a._activity == keyword::invariant) {
                     lpt::autoindent_guard indent(_out);
                 _out << "\n\\* " << a << '\n';
                 _out << "/\\ [](";
@@ -557,7 +557,7 @@ void Visitor::visit_preconditions(const upml::sm::state&  s) const
 {
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
-            if (a._activity == "precondition") {
+            if (a._activity == keyword::precondition) {
                 _out << "\n\\* " << a << '\n';
                 _out << upml::sm::tag('L', ++_labelIdx) << ": assert(";
                 for (const auto& tok: a._args) {
@@ -577,7 +577,7 @@ void Visitor::visit_postconditions(const upml::sm::state&  s) const
 {
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
-            if (a._activity == "postcondition") {
+            if (a._activity == keyword::postcondition) {
                 _out << "\n\\* " << a << '\n';
                 _out << upml::sm::tag('L', ++_labelIdx) << ": assert(";
                 for (const auto& tok: a._args) {
@@ -604,7 +604,7 @@ void Visitor::visit_initial_entry_activities(const upml::sm::state& s) const
 
     if ( ! s._activities.empty()) {
         for (const auto& a : s._activities) {
-            if (a._activity == "entry") {
+            if (a._activity == keyword::entry) {
                 _out << "\n\\* " << a << '\n';
                 visit_activity(idxCrtState, a);
             }
@@ -623,7 +623,7 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
                 std::cerr << "Warning: activity with no args:\n"<< a << "\n";
                 continue;
             }
-            if (a._activity == "exit") {
+            if (a._activity == keyword::exit) {
                 _out << "\n\\* " << a << '\n';
                 visit_activity(idxCrtState, a);
             }
@@ -704,7 +704,7 @@ void Visitor::visit_ltl(const upml::sm::state& s) const
         if ( ! a._args.size() ) {
             continue;
         }
-        if (a._activity != "ltl") {
+        if (a._activity != keyword::ltl) {
             continue;
         }
 

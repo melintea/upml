@@ -137,7 +137,7 @@ struct activity : public location
 
     id_t _id;
     id_t _state;     // owner
-    id_t _activity;  // entry, exit, precondition, postcondition, invariant, timeout
+    id_t _activity;  // entry, exit, precondition, etc
     args _args;      // specific to each type of _activity
 
     std::ostream& trace(std::ostream& os) const;
@@ -346,12 +346,12 @@ inline state_to_state_transition state_machine::transition(
     const auto& lcaState(least_common_ancestor(fromState, toState, internalTransition));
     assert(lcaState);
 
-    path._exitStates.push_back({word::ExitState, fromState});
+    path._exitStates.push_back({keyword::ExitState, fromState});
     for (const auto& exitState : fromStateRootPath) {
         if (exitState == lcaState) {
             break;
         }
-        path._exitStates.push_back({word::ExitState, exitState});
+        path._exitStates.push_back({keyword::ExitState, exitState});
     }
 
     size_t nDrop = 1; // for lcaState
@@ -362,9 +362,9 @@ inline state_to_state_transition state_machine::transition(
         ++nDrop;
     }
     for (const auto& enterState: toStateRootPath | std::views::drop(nDrop)) {
-        path._enterStates.push_back({word::EnterState, enterState});
+        path._enterStates.push_back({keyword::EnterState, enterState});
     }
-    path._enterStates.push_back({word::EnterState, toState});
+    path._enterStates.push_back({keyword::EnterState, toState});
 
     return path;
 }
@@ -382,14 +382,14 @@ inline names_t state::events() const
         evts.insert(t._event);
     }
     for (const auto& a : _activities) {
-        if (a._activity == "entry" || a._activity == "exit") {
+        if (a._activity == keyword::exit || a._activity == keyword::exit) {
             //TODO: assert this is a send activity
             evts.insert(a._args[activity::_argOrder::aoEvent]);
         }
     }
-    evts.insert(word::NullEvent);
-    evts.insert(word::EnterState);
-    evts.insert(word::ExitState);
+    evts.insert(keyword::NullEvent);
+    evts.insert(keyword::EnterState);
+    evts.insert(keyword::ExitState);
     return evts;
 }
 
