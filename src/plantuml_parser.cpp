@@ -133,8 +133,9 @@ struct plantuml_grammar final
         rstring  %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_.") ] ]
                  |  qi::string("[*]")
                  ;
+        // conditions/checks expressions
         // [guard] & LTL expression                    ':' for scoped ids e.g. event:xxx
-        tokstring  %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_.:") ] ]
+        tokexpr    %= qi::raw [ qi::lexeme[ +qi::char_("a-zA-Z0-9_.:") ] ]
                    |  qi::string("(")   |  qi::string(")")
                    |  qi::string("==")  |  qi::string("!=")
                    |  qi::string("&&")  |  qi::string("||")
@@ -145,6 +146,12 @@ struct plantuml_grammar final
                    |  qi::string("[]")  |  qi::string("<>")
                    |  qi::string("\\/") |  qi::string("/\\")
                    |  qi::string("->")  |  qi::string("<->")
+                   ;
+
+        // instructions/change-allowing expressions
+        tokinstr   %= tokexpr
+                   |  qi::string("=")
+                   |  qi::string("[")   |  qi::string("]")
                    ;
 
         //discard = qi::lit("state") >> qstring >> qi::string("as") >> *(qi::char_ - '{')
@@ -161,14 +168,14 @@ struct plantuml_grammar final
               ;
         // entry,exit, pre/postcondition,invariant, ltl
         //            _state    :     _activity   :      args
-        activity %= rstring >> ':' >> rstring >> ':' >> *(tokstring) > ';';
+        activity %= rstring >> ':' >> rstring >> ':' >> *(tokinstr) > ';';
 
         //                _state:           config:                     _setting
         config_setting %= rstring >> ':' >> qi::lit(keyword::config) > ':' >> rstring > ';';
 
         //            _fromState  -->               _toState      :       _event        [     _guard          ]         /   _effect
         //transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> rstring) >> -('[' >> *(rstring) > ']') >> -('/' >> *(rstring));
-        transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> -rstring) >> -('[' >> +(tokstring) > ']') >> -('/' >> +(tokstring) > ';');
+        transition %= rstring >> qi::omit[arrow] >> rstring >> -(':' >> -rstring) >> -('[' >> +(tokexpr) > ']') >> -('/' >> +(tokinstr) > ';');
 
         // There is one known limitation though, when you try to use a struct that has a single element that is also a container compilation fails unless you add qi::eps >> ... to your rule
         // https://stackoverflow.com/questions/78241220/boostspirit-error-no-type-named-value-type-in-struct-xxx
@@ -217,7 +224,8 @@ struct plantuml_grammar final
     qi::rule<ITER, std::string()> arrow;
     qi::rule<ITER, std::string()> qstring;   // "in quotes"
     qi::rule<ITER, std::string()> rstring;   // name string
-    qi::rule<ITER, std::string()> tokstring; // found in expression
+    qi::rule<ITER, std::string()> tokexpr;   // expression tokens
+    qi::rule<ITER, std::string()> tokinstr;  // instruction/activity/effect tokens
     qi::rule<ITER, ast_activity(), SKIPPER>        activity;
     qi::rule<ITER, ast_transition(), SKIPPER>      transition;
     qi::rule<ITER, ast_config_setting(), SKIPPER>  config_setting;
