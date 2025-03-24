@@ -152,6 +152,7 @@ struct plantuml_grammar final
         tokinstr   %= tokexpr
                    |  qi::string("=")
                    |  qi::string("[")   |  qi::string("]")
+                   |  qi::string("\\;")
                    ;
 
         //discard = qi::lit("state") >> qstring >> qi::string("as") >> *(qi::char_ - '{')

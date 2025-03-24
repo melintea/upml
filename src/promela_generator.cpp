@@ -12,6 +12,8 @@
 #include "promela_generator.hpp"
 #include "reserved_words.hpp"
 
+#include <boost/algorithm/string/trim.hpp>
+
 #include <algorithm>
 #include <chrono>
 #include <map>
@@ -351,6 +353,10 @@ void Visitor::visit_send_activity(
 
 std::string Visitor::token(const std::string& tok) const
 {
+    static const std::map<std::string, std::string> spinTokens{
+        {"\\;", ";"}
+    };
+
     const auto ttok(scoped_name::create(tok));
     if ( ! ttok._item.empty() && ttok._scope == keyword::state) {
         const auto& destStatePtr(_sm.state(ttok._name));
@@ -362,7 +368,10 @@ std::string Visitor::token(const std::string& tok) const
         assert(false);
     }
     else {
-        return ttok.to_string();
+        auto umlTok(ttok.to_string());
+        boost::algorithm::trim(umlTok);
+        const auto it(spinTokens.find(umlTok));
+        return it != spinTokens.end() ? it->second : umlTok;
     }
 
     assert(false);
