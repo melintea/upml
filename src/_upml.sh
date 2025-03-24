@@ -2,7 +2,7 @@
 #set -x
 
 #
-# Usage: _upml.sh --file file.plantuml --verify spin|tla|both
+# Usage: _upml.sh --file file.plantuml --verify spin|tla|both|none <--ide off> <--diff off>
 #
 
 gitroot=`git rev-parse --show-toplevel`
@@ -15,7 +15,12 @@ xexespin=${HOME}/work/Spin/optional_gui/ispin.tcl
 tlahome=${HOME}/tla/toolbox
 tlatoolbox=${tlahome}/toolbox
 
-echo "Usage: $0 --file file.plantuml --verify spin|tla|both"
+xdiffer=meld
+
+
+echo "Usage: $0 --file file.plantuml --verify spin|tla|both|none <--ide off> <--diff off>"
+echo "[=== $@"
+
 
 while [ $# -gt 0 ]; do
     if [[ $1 == *"--"* ]]; then
@@ -39,13 +44,19 @@ pushd ${gitroot}/src
 make || exit 1
 popd
 
+function generate_none() {
+    ${exeupml} \
+        --in "$pumlfile" \
+        --backend none \
+        2>&1  || exit 1
+} # generate_tla
+
 function generate_tla() {
     ${exeupml} \
         --in "$pumlfile" \
         --backend tla \
         --out "$tlafile" \
         2>&1  || exit 1
-    meld "$tlafile" &
 } # generate_tla
 
 function generate_spin() {
@@ -54,12 +65,10 @@ function generate_spin() {
         --backend spin \
         --out "$spinfile" \
         2>&1  || exit 1
-    meld "$spinfile" &
 } # generate_spin
 
 function verify_tla() {
     java -cp ${tlahome}/tla2tools.jar pcal.trans "$tlafile" || exit 1
-    #${tlatoolbox} "$tlafile" &
 
     ## pluscal -> tla
     #java -cp ${tlahome}/tla2tools.jar pcal.trans "$*"
@@ -80,10 +89,12 @@ function spinit()
 }
 
 function verify_spin() {
-    if [ -f "${xexespin}" ]; then
-        ${xexespin} "$spinfile"&
-        #exit 0
+    rm pan.* _spin_nvr.tmp
+    ${exespin} -a "$spinfile" || exit 1
+    if [[ ! -f pan.c ]]; then
+        exit 1
     fi
+    rm pan.* _spin_nvr.tmp
 
     # -c columnated output
     # -g global vars
@@ -111,13 +122,32 @@ function verify_spin() {
 } # test_spin
 
 
-generate_spin
+
+if [ x"${verify}" == xnone ]; then
+    generate_none
+fi
+
 if [ x"${verify}" == xspin ] || [ x"${verify}" == xboth ]; then
+    generate_spin
     verify_spin
+    if [ x"${diff}" != xoff ]; then
+        ${xdiffer} "$spinfile" &
+    fi
+    if [ x"${ide}" != xoff ] && [ -f "${xexespin}" ]; then
+        ${xexespin} "$spinfile"&
+        #exit 0
+    fi
 fi
 
-generate_tla
 if [ x"${verify}" == xtla ] || [ x"${verify}" == xboth ]; then
+    generate_tla
     verify_tla
+    if [ x"${diff}" != xoff ]; then
+        ${xdiffer} "$tlafile" &
+    fi
+    if [ x"${ide}" != xoff ]; then
+        ${tlatoolbox} "$tlafile" &
+    fi
 fi
 
+echo "]=== $pumlfile"
