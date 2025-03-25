@@ -107,6 +107,7 @@ Operation_BizData_Collection -3down-> Operation_BizData_Anylasis
 
 Operation -5down-> [*]
 
+
 state Switch {
 
 Switch:local: int _dummy = 0; 
@@ -135,6 +136,14 @@ On --> LampOff : WallSwitch
 
 }
 
+state HumanFlipSwitch {
+
+[*] --> Flip
+Flip: config: noInboundEvents;
+Flip --> Flip : NullEvent /send event:LampSwitch to state:Switch\; _dummy = 1\; ;
+Flip --> Flip : NullEvent /send event:WallSwitch to state:Switch;
+
+}
 
 @enduml
 
