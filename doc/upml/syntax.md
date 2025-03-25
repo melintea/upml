@@ -1,15 +1,14 @@
 ## Syntax
 
-Self-transitions ([exit state & enter it again](uml.md)) are not supported and are implemented as internal transitions.
+* **Case-sensitive!**
+* Self-transitions ([exit state & enter it again](uml.md)) are not supported and are implemented as internal transitions.
 
-Resulting HSM/FSM respect run-to-completion (RTC) semantics.
+* Resulting HSM/FSM models respect run-to-completion (RTC) semantics.
+* Canonical execution order (CEO):
+  * is respected by FSM.
+  * is not respected by HSM; HSM execution order is: transition actions then state exit actions then state enter actions.
 
-Canonical execution order (CEO):
-
-* respected by FSM.
-* not respected by HSM; HSM execution order is: transition actions then state exit actions then state enter actions.
-
-**Plantuml**: @see [the plantuml state diagram](https://plantuml.com/state-diagram):
+**Plantuml** limitations: @see [the plantuml state diagram](https://plantuml.com/state-diagram):
 
 - unsupported: history
 - unsupported: fork, join
