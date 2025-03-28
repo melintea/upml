@@ -19,6 +19,7 @@
 #include <map>
 #include <numeric>
 #include <set>
+#include <span>
 
 namespace upml {
 
@@ -415,11 +416,12 @@ void Visitor::visit_effect(
         return;
     }
 
-    upml::sm::activity a = { 
+    std::span stmt(t._effect.begin(), t._effect.end());
+    upml::sm::activity a = {
         ._id       = upml::sm::tag(upml::sm::activity::_tag, t._line),
         ._state    = idxCrtState,
-        ._activity = t._effect[0],
-        ._args     = upml::sm::activity::args(t._effect.begin(), t._effect.end())
+        ._activity = stmt[0],
+        ._args     = upml::sm::activity::args(stmt.begin(), stmt.end())
     };
     // TODO: UML transition semanic: exit old state, generate effect, enter new state
     // unless new state == old state
