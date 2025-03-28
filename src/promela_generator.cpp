@@ -353,9 +353,7 @@ void Visitor::visit_send_activity(
 
 std::string Visitor::token(const std::string& tok) const
 {
-    //TODO: this  needs to be a qi::symbol map
     static const std::map<std::string, std::string> spinTokens{
-        {"\\;", ";"}
     };
 
     const auto ttok(scoped_name::create(tok));

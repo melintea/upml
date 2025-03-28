@@ -368,8 +368,7 @@ std::string Visitor::token(const std::string& tok) const
         {"||", "\\/"},
         {"!",  "~"},
         {"==", "="},
-        {"!=", "/="},
-        {"\\;", ";"}
+        {"!=", "/="}
     };
 
     const auto ttok(scoped_name::create(tok));

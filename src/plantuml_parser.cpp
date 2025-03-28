@@ -34,6 +34,17 @@ namespace qi       = bs::qi;
 //namespace encoding = qi::unicode;
 namespace encoding = qi::ascii;
 
+// Escaped chars
+struct _morphs : qi::symbols<const char, const char>
+{
+    _morphs() 
+    {
+        add
+        ("\\;",  ';')
+        ;
+    }
+} morphs; 
+
 template <typename It>
 struct skipper final : qi::grammar<It>
 {
@@ -152,7 +163,7 @@ struct plantuml_grammar final
         tokinstr   %= tokexpr
                    |  qi::string("=")
                    |  qi::string("[")   |  qi::string("]")
-                   |  qi::string("\\;")
+                   |  qi::lexeme[+morphs] // qi::as_string[morphs]
                    ;
 
         //discard = qi::lit("state") >> qstring >> qi::string("as") >> *(qi::char_ - '{')
