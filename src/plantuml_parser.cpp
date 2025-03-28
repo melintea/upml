@@ -40,7 +40,7 @@ struct _morphs : qi::symbols<const char, const char>
     _morphs() 
     {
         add
-        ("\\;",  ';')
+        ("\\;",  upml::keyword::stmtSep)
         ;
     }
 } morphs; 
