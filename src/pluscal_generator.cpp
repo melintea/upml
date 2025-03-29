@@ -416,6 +416,7 @@ void Visitor::visit_effect(
         return;
     }
 
+    // TODO: loop over individual statements
     std::span stmt(t._effect.begin(), t._effect.end());
     upml::sm::activity a = {
         ._id       = upml::sm::tag(upml::sm::activity::_tag, t._line),

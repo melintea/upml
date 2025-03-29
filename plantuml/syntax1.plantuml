@@ -142,6 +142,7 @@ state HumanFlipSwitch {
 Flip: config: noInboundEvents;
 Flip --> Flip : NullEvent /send event:LampSwitch to state:Switch\; _dummy = 1\; ;
 Flip --> Flip : NullEvent /send event:WallSwitch to state:Switch;
+Flip: entry: send event:INVITE to state:Bob\; _dummy = 1\; ;
 
 }
 
