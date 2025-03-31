@@ -94,21 +94,23 @@ function verify_spin() {
     if [[ ! -f pan.c ]]; then
         exit 1
     fi
+    gcc -DMEMLIM=1024 -O2 -DXUSAFE -DSAFETY -w -o pan pan.c || exit 1
+    ./pan -m10000  || exit 1
     rm pan.* _spin_nvr.tmp
 
     # -c columnated output
     # -g global vars
-    spinit -c -g -l -u400 "$spinfile"
+    #spinit -c -g -l -u400 "$spinfile"
 
     # -r print receive events
     # -s
-    spinit -r -s -u400 "$spinfile"
+    #spinit -r -s -u400 "$spinfile"
 
     # -p print all statements
     # -d symbol table
     # -C use of channels
     # -A warnings about useless statements
-    spinit -p -u400 "$spinfile"
+    #spinit -p -u400 "$spinfile"
 
     # spin -a $1
     # gcc -DBFS -DVERBOSE -o pan pan.c
