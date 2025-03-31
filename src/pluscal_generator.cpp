@@ -318,13 +318,29 @@ void Visitor::visit_activity(
     const upml::tla::id_t&    idxCrtState,
     const upml::sm::activity& a) const
 {
-    if (keyword::send == a._args[upml::sm::activity::_argOrder::aoActivity]) {
-        return visit_send_activity(idxCrtState, a);
-    } else if (keyword::trace == a._args[upml::sm::activity::_argOrder::aoActivity]) {
-        return visit_trace_activity(idxCrtState, a);
-    } else {
-        std::cerr << "Unsuported: " << a << std::endl; 
-    }
+    auto itB(a._args.begin());
+    do {
+        auto itE(std::find(itB, a._args.end(), upml::keyword::stmtSepStr));
+        upml::sm::activity astmt = {
+            ._id       = a._id,
+            ._state    = idxCrtState,
+            ._activity = a._activity,
+            ._args     = upml::sm::activity::args(itB, itE)
+        };
+
+        if (keyword::send == astmt._args[upml::sm::activity::_argOrder::aoActivity]) {
+            return visit_send_activity(idxCrtState, astmt);
+        } else if (keyword::trace == astmt._args[upml::sm::activity::_argOrder::aoActivity]) {
+            return visit_trace_activity(idxCrtState, astmt);
+        } else {
+            //TODO: this is plain Promela syntax
+            std::ranges::copy(astmt._args.begin()+1, 
+                              astmt._args.end(),
+                              std::ostream_iterator<upml::sm::activity::args::value_type>(_out, " "));
+        }
+
+        itB = itE == a._args.end() ?  itE : itE + 1;
+    } while(itB != a._args.end());
 }
 
 void Visitor::visit_trace_activity(
