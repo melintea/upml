@@ -318,6 +318,7 @@ void Visitor::visit_activity(
     const upml::tla::id_t&    idxCrtState,
     const upml::sm::activity& a) const
 {
+    _out << "\\* " << a << '\n';
     auto itB(a._args.begin());
     do {
         auto itE(std::find(itB, a._args.end(), upml::keyword::stmtSepStr));
@@ -327,7 +328,9 @@ void Visitor::visit_activity(
             ._activity = a._activity,
             ._args     = upml::sm::activity::args(itB, itE)
         };
-        assert(astmt._args.size());
+        if ( ! astmt._args.size() ) {
+            std::cerr << "Warning: activity with no args:\n"<< astmt << "\n";
+        }
 
         if (keyword::send == astmt._args[upml::sm::activity::_argOrder::aoActivity]) {
             return visit_send_activity(idxCrtState, astmt);
