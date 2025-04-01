@@ -110,11 +110,9 @@ Operation -5down-> [*]
 
 state Switch {
 
-Switch:local: int _dummy = 0; 
-Switch:local:data: bool _bummy = true;
-Switch:model:data: std::string _s;
-model:data: std::string _s;
-global:data: std::string _s;
+Switch:local:var: bool _bummy = true;
+Switch:global:var: std::string _s;
+global:var: std::string _s;
 
 [*] --> BothOff
 BothOff: config: progressTag;

@@ -33,6 +33,8 @@ inline constexpr const char*   noInboundEvents  = "noInboundEvents";
 inline constexpr const char*   progressTag      = "progressTag";
 inline constexpr const char* ltl     = "ltl"; // actually this is at model/global level
 inline constexpr const char* timeout = "timeout"; //TODO
+inline constexpr const char* localVar       = "local:var";
+inline constexpr const char* globalVar      = "global:var"; // global scope but scoped in a state due to plantuml limitations 
 
 // Actions
 inline constexpr const char* send   = "send";

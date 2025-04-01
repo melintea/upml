@@ -318,15 +318,15 @@ void Visitor::visit_activity(
             ._activity = a._activity,
             ._args     = upml::sm::activity::args(itB, itE)
         };
+        assert(astmt._args.size());
 
         if (keyword::send == astmt._args[upml::sm::activity::_argOrder::aoActivity]) {
             return visit_send_activity(idxCrtState, astmt);
         } else if (keyword::trace == astmt._args[upml::sm::activity::_argOrder::aoActivity]) {
             return visit_trace_activity(idxCrtState, astmt);
         } else {
-            std::ranges::copy(astmt._args.begin()+1, 
-                              astmt._args.end(),
-                              std::ostream_iterator<upml::sm::activity::args::value_type>(_out, " "));
+            std::ranges::for_each(astmt._args.begin()+1/*;*/, astmt._args.end(),
+                                  [self=this](auto&& tok){ self->_out << self->token(tok) << ' '; });
         }
 
         itB = itE == a._args.end() ?  itE : itE + 1;
