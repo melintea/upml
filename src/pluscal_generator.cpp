@@ -193,8 +193,6 @@ public:
 
     void visit() const;
     void visit_region(const upml::sm::region& r, const id_t& ownerTag) const;
-    void visit_preconditions(const upml::sm::region&  r) const;
-    void visit_postconditions(const upml::sm::region&  r) const;
     void visit_state(const upml::sm::state& s, const RegionData& rd) const;
     void visit_state_regions(const upml::sm::state& s) const;
     void visit_preconditions(const upml::sm::state& s) const;
@@ -352,6 +350,14 @@ void Visitor::visit_activity(
                             a._args.end(),
                             std::ostream_iterator<upml::sm::activity::args::value_type>(_out, " "));
             _out << "\", \"\\n\">>; \n";
+        } else if (  a._activity == keyword::precondition
+                  || a._activity == keyword::postcondition
+                  ) {
+            _out << upml::sm::tag('L', ++_labelIdx) << ": assert(";
+            for (const auto& tok: a._args) {
+                _out << token(tok);
+            }
+            _out << ");\n";
         } else {
             std::ranges::for_each(astmt._args.begin()+1/*;*/, astmt._args.end(),
                                   [self=this](auto&& tok){ self->_out << self->token(tok) << ' '; });
@@ -529,10 +535,6 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
     }
 }
 
-void Visitor::visit_preconditions(const upml::sm::region&  r) const
-{
-}
-
 void Visitor::visit_preconditions(const upml::sm::state&  s) const
 {
     if ( ! s._activities.empty()) {
@@ -547,10 +549,6 @@ void Visitor::visit_preconditions(const upml::sm::state&  s) const
             }
         }
     }
-}
-
-void Visitor::visit_postconditions(const upml::sm::region&  r) const
-{
 }
 
 void Visitor::visit_postconditions(const upml::sm::state&  s) const
@@ -620,8 +618,6 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
          << "\nproc_body_" << idx(rname) << ": currentState[self] := initialState;" 
          ;
 
-    visit_preconditions(r);
-
     for (const auto& [k, s] : r._substates) {
         if (s->_initial) {
             assert(idx(state(k)) == regionData._initialState);
@@ -644,8 +640,6 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
             break;  //only one such (supposedly)
         }
     }
-
-    visit_postconditions(r);
 
     _out << "\n} \\* " << rname << ' ' << ownerTag << "\n";
 
