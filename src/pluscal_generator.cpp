@@ -178,6 +178,8 @@ class Visitor
         id_t _finalState;
     };
 
+    using ActivityProcessor_t = std::function<void(const upml::sm::activity&)>;
+
 public: 
 
     Visitor(upml::sm::state_machine& sm,
@@ -225,8 +227,11 @@ public:
     void visit_trace_activity(
         const upml::tla::id_t&    idxCrtState,
         const upml::sm::activity& a) const;
-    void visit_ltl() const;
-    void visit_ltl(const upml::sm::state& s) const;
+    void visit_activity(const std::string& activityType,
+                        const ActivityProcessor_t& processor) const;
+    void visit_activity(const std::string&     activityType,
+                        const upml::sm::state& s,
+                        const ActivityProcessor_t& processor) const;
     // Turn a plantuml token in a guard/post/pre/condition/invariant into valid PlusCal.
     std::string token(const std::string& tok) const;
 }; // Visitor
@@ -318,7 +323,7 @@ void Visitor::visit_activity(
     const upml::tla::id_t&    idxCrtState,
     const upml::sm::activity& a) const
 {
-    _out << "\\* " << a << '\n';
+    _out << "\n\\* " << a << '\n';
     auto itB(a._args.begin());
     do {
         auto itE(std::find(itB, a._args.end(), upml::keyword::stmtSepStr));
@@ -542,7 +547,6 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
                 continue;
             }
             if (a._activity == keyword::entry) {
-                _out << "\n\\* " << a << '\n';
                 visit_activity(idxCrtState, a);
             }
         }
@@ -723,52 +727,39 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     }
 }
 
-void Visitor::visit_ltl(const upml::sm::state& s) const
+void Visitor::visit_activity(
+    const std::string&     activityType,
+    const upml::sm::state& s,
+    const ActivityProcessor_t& processor) const
 {
     if (s._activities.empty()) {
         return;
     }
     for (const auto& a : s._activities) {
+        //std::cerr << s._id << "activity: " << a << '\n';
         if ( ! a._args.size() ) {
             continue;
         }
-        if (a._activity != keyword::ltl) {
+        if (a._activity != activityType) {
             continue;
         }
-
-        _out << "\\* " << a << '\n';
-        if (a._args.size() < 3) {
-            _out << "\\* not enough arguments \n";
-            continue;
-        }
-
-        _out << *a._args.begin() << " == ";
-        for (auto itTok = ++a._args.begin(); 
-             itTok != a._args.end();
-             ++itTok) {
-            auto item(token(*itTok));
-            if (item == "{" || item == "}") {
-                continue;
-            }
-            _out << item << ' ';
-        }
-        _out << "\n ";
+        processor(a);
     }
 }
 
-void Visitor::visit_ltl() const
+void Visitor::visit_activity(
+    const std::string& activityType,
+    const ActivityProcessor_t& processor) const
 {
-    // LTLs are model-wide but plantuml forces ltl inside a state as an activity.
-    // Any state would do but for now assume only the closed environment/top ones have ltl clauses
     for (const auto& [k, r] : _sm._regions) {
         //std::cerr << r->_id << '\n';
         for (const auto& [k, s] : r->_substates) {
             //std::cerr << s->_id << '\n';
-            visit_ltl(*s);
+            visit_activity(activityType, *s, processor);
             for (const auto& [k, r2] : s->_regions) {
                 //std::cerr << r2->_id << '\n';
                 for (const auto& [k, s2] : r2->_substates) {
-                    visit_ltl(*s2);
+                    visit_activity(activityType, *s2, processor);
                 }
             }
         }
@@ -880,7 +871,28 @@ macro recv_event(evtId, channel, inState) {
     _out << "\n\n} \\* algorithm " << _sm._id
          << "\n\n**********************************************************************)\n\n";
     
-    visit_ltl(); //TODO
+    // LTLs are model-wide but plantuml forces ltl inside a state as an activity.
+    // Any state would do but for now assume only the closed environment/top ones have ltl clauses
+    visit_activity(keyword::ltl,
+                   [self=this](const upml::sm::activity& a){
+                        self->_out << "\\* " << a << '\n';
+                        if (a._args.size() < 3) {
+                            self->_out << "\\* not enough arguments \n";
+                            return;
+                        }
+
+                        self->_out << *a._args.begin() << " == ";
+                        for (auto itTok = ++a._args.begin(); 
+                            itTok != a._args.end();
+                            ++itTok) {
+                            auto item(self->token(*itTok));
+                            if (item == "{" || item == "}") {
+                                continue;
+                            }
+                            self->_out << item << ' ';
+                        }
+                        self->_out << "\n ";
+                   });
 
     _out << "\\* Weakly fair scheduling \n"
             "(* PlusCal options (wf) *) \n"

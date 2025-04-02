@@ -15,6 +15,7 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
+#include <boost/version.hpp>
 
 #include <cstdlib>
 #include <iostream>
@@ -47,7 +48,8 @@ int main(int argc, char* argv[])
     bpo::store(bpo::parse_command_line(argc, argv, po), vm);
     if (vm.count("help"))
     {
-        std::cerr << "\n" << argv[0] << ":\n" << po;
+        std::cerr << "\n" << argv[0]  << " v" << UPML_VERSION << " boost " << BOOST_VERSION
+                  << ":\n" << po;
         exit(EXIT_SUCCESS);
     }
 

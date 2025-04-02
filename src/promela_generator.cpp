@@ -175,6 +175,8 @@ class Visitor
         id_t _finalState;
     };
 
+    using ActivityProcessor_t = std::function<void(const upml::sm::activity&)>;
+
 public: 
 
     Visitor(upml::sm::state_machine& sm,
@@ -219,8 +221,11 @@ public:
     void visit_trace_activity(
         const upml::spin::id_t&   idxCrtState,
         const upml::sm::activity& a) const;
-    void visit_ltl() const;
-    void visit_ltl(const upml::sm::state& s) const;
+    void visit_activity(const std::string& activityType,
+                        const ActivityProcessor_t& processor) const;
+    void visit_activity(const std::string&     activityType,
+                        const upml::sm::state& s,
+                        const ActivityProcessor_t& processor) const;
     // Turn a plantuml token in a guard/post/pre/condition/invariant/ltl into valid Promela.
     std::string token(const std::string& tok) const;
 }; // Visitor
@@ -309,7 +314,7 @@ void Visitor::visit_activity(
     const upml::spin::id_t&   idxCrtState,
     const upml::sm::activity& a) const
 {
-    _out << "//" << a << '\n';
+    _out << "\n//" << a << '\n';
     auto itB(a._args.begin());
     do {
         auto itE(std::find(itB, a._args.end(), upml::keyword::stmtSepStr));
@@ -499,7 +504,6 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
                 continue;
             }
             if (a._activity == keyword::entry) {
-                _out << "\n//" << a << '\n';
                 //_out << "    :: (newState == " << idxCrtState << ") -> ";
                 visit_activity(idxCrtState, a);
             }
@@ -687,7 +691,10 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     }
 }
 
-void Visitor::visit_ltl(const upml::sm::state& s) const
+void Visitor::visit_activity(
+    const std::string&     activityType,
+    const upml::sm::state& s,
+    const ActivityProcessor_t& processor) const
 {
     if (s._activities.empty()) {
         return;
@@ -697,34 +704,26 @@ void Visitor::visit_ltl(const upml::sm::state& s) const
         if ( ! a._args.size() ) {
             continue;
         }
-        if (a._activity != keyword::ltl) {
+        if (a._activity != activityType) {
             continue;
         }
-
-        _out << "//" << a << '\n';
-        _out << "ltl ";
-        for (const auto& tok: a._args) {
-            auto item(token(tok));
-            _out << item << ' ';
-        }
-        _out << ";\n ";
+        processor(a);
     }
 }
 
-void Visitor::visit_ltl() const
+void Visitor::visit_activity(
+    const std::string& activityType,
+    const ActivityProcessor_t& processor) const
 {
-    // LTLs are model-wide but plantuml forces ltl inside a state as an activity.
-    // Any state would do but for now assume only the closed environment/top ones have ltl clauses
-    _out << "\n// ltl claims: run with spin -ltl xyz or spin -noclaim \n";
     for (const auto& [k, r] : _sm._regions) {
         //std::cerr << r->_id << '\n';
         for (const auto& [k, s] : r->_substates) {
             //std::cerr << s->_id << '\n';
-            visit_ltl(*s);
+            visit_activity(activityType, *s, processor);
             for (const auto& [k, r2] : s->_regions) {
                 //std::cerr << r2->_id << '\n';
                 for (const auto& [k, s2] : r2->_substates) {
-                    visit_ltl(*s2);
+                    visit_activity(activityType, *s2, processor);
                 }
             }
         }
@@ -811,7 +810,19 @@ inline send_event(channel, evt, fs, ts)
 
     _out <<     "} // init\n\n";
 
-    visit_ltl();
+    // LTLs are model-wide but plantuml forces ltl inside a state as an activity.
+    // Any state would do but for now assume only the closed environment/top ones have ltl clauses
+    _out << "\n// ltl claims: run with spin -ltl xyz or spin -noclaim \n";
+    visit_activity(keyword::ltl,
+                   [self=this](const upml::sm::activity& a){
+                        self->_out << "//" << a << '\n';
+                        self->_out << "ltl ";
+                        for (const auto& tok: a._args) {
+                            auto item(self->token(tok));
+                            self->_out << item << ' ';
+                        }
+                        self->_out << ";\n ";
+                   });
 
     _out <<     "/*UPML end*/\n\n";
 }
