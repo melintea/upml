@@ -190,12 +190,10 @@ public:
 
     void visit() const;
     void visit_region(const upml::sm::region& r, const id_t& ownerTag) const;
-    void visit_invariants(const upml::sm::region&  r) const;
     void visit_preconditions(const upml::sm::region&  r) const;
     void visit_postconditions(const upml::sm::region&  r) const;
     void visit_state(const upml::sm::state& s, const RegionData& rd) const;
     void visit_state_regions(const upml::sm::state& s) const;
-    void visit_invariants(const upml::sm::state& s) const;
     void visit_preconditions(const upml::sm::state& s) const;
     void visit_postconditions(const upml::sm::state& s) const;
     void visit_exit_activities(const upml::sm::state& s) const;
@@ -489,37 +487,6 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
     }
 }
 
-void Visitor::visit_invariants(const upml::sm::region&  r) const
-{
-    for (const auto& [k, s] : r._substates) {
-        visit_invariants(*s);
-    }
-}
-
-void Visitor::visit_invariants(const upml::sm::state&  s) const
-{
-    if ( ! s._activities.empty()) {
-        for (const auto& a : s._activities) {
-            if (a._activity == keyword::invariant) {
-                _out << "\n//" << a << '\n';
-                _out << ":: atomic { !(";
-                for (const auto& tok: a._args) {
-                    _out << token(tok);
-                }
-                _out << ") -> assert(";
-                for (const auto& tok: a._args) {
-                    _out << token(tok);
-                }
-                _out << ") };\n";
-            }
-        }
-    }
-
-    for (const auto& [k, r] : s._regions) {
-        visit_invariants(*r);
-    }
-}
-
 void Visitor::visit_preconditions(const upml::sm::region&  r) const
 {
 }
@@ -654,9 +621,6 @@ void Visitor::visit_activity(
     const upml::sm::state& s,
     const ActivityProcessor_t& processor) const
 {
-    if (s._activities.empty()) {
-        return;
-    }
     for (const auto& a : s._activities) {
         //std::cerr << s._id << "activity: " << a << '\n';
         if ( ! a._args.size() ) {
@@ -666,6 +630,12 @@ void Visitor::visit_activity(
             continue;
         }
         processor(a);
+    }
+
+    for (const auto& [k1, r1] : s._regions) {
+        for (const auto& [k2, s2] : r1->_substates) {
+            visit_activity(activityType, *s2, processor);
+        }
     }
 }
 
@@ -752,7 +722,21 @@ inline send_event(channel, evt, fs, ts)
         // Per the doc, remoterefs proc[0]@label or proc[x]:var are valid 
         // only in a never claim but this is accepted with spin 6.5.2
         for (const auto& [k, r] : _sm._regions) {
-            visit_invariants(*r);
+            for (const auto& [k2, s2] : r->_substates) {
+                visit_activity(keyword::invariant, *s2, 
+                              [self=this](const upml::sm::activity& a){
+                                    self->_out << "\n//" << a << '\n';
+                                    self->_out << ":: atomic { !(";
+                                    for (const auto& tok: a._args) {
+                                        self->_out << self->token(tok);
+                                    }
+                                    self->_out << ") -> assert(";
+                                    for (const auto& tok: a._args) {
+                                        self->_out << self->token(tok);
+                                    }
+                                    self->_out << ") };\n";
+                              });
+            }
         }
     }
     _out << "\nod\n} // invariants\n\n";
