@@ -203,7 +203,6 @@ public:
     void visit_postconditions(const upml::sm::state& s) const;
     void visit_exit_activities(const upml::sm::state& s) const;
     void visit_entry_activities(const upml::sm::state& s) const;
-    void visit_initial_entry_activities(const upml::sm::state& s) const;
     void visit_timeout(const upml::sm::state& s) const;
     void visit_transitions(const upml::sm::state& s, const RegionData& rd) const;
     void visit_transition(
@@ -270,7 +269,6 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
         _out << '\n';
 
         visit_preconditions(s);
-        //visit_initial_entry_activities(s);
         visit_entry_activities(s);
     }
 
@@ -605,25 +603,6 @@ void Visitor::visit_timeout(const upml::sm::state& s) const
 {
 }
 
-void Visitor::visit_initial_entry_activities(const upml::sm::state& s) const
-{
-    const int myIdx(_states.find(s._id)->second);
-    const auto idxCrtState(idx(state(s._id)));
-
-    if ( ! s._initial) {
-        return;
-    }
-
-    if ( ! s._activities.empty()) {
-        for (const auto& a : s._activities) {
-            if (a._activity == keyword::entry) {
-                _out << "\n\\* " << a << '\n';
-                visit_activity(idxCrtState, a);
-            }
-        }
-    }
-}
-
 void Visitor::visit_exit_activities(const upml::sm::state& s) const
 {
     const int myIdx(_states.find(s._id)->second);
@@ -636,7 +615,6 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
                 continue;
             }
             if (a._activity == keyword::exit) {
-                _out << "\n\\* " << a << '\n';
                 visit_activity(idxCrtState, a);
             }
         }
