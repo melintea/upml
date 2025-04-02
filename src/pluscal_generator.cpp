@@ -221,12 +221,6 @@ public:
     void visit_activity(
         const upml::tla::id_t&    idxCrtState,
         const upml::sm::activity& a) const;
-    void visit_send_activity(
-        const upml::tla::id_t&    idxCrtState,
-        const upml::sm::activity& a) const;
-    void visit_trace_activity(
-        const upml::tla::id_t&    idxCrtState,
-        const upml::sm::activity& a) const;
     void visit_activity(const std::string& activityType,
                         const ActivityProcessor_t& processor) const;
     void visit_activity(const std::string&     activityType,
@@ -338,9 +332,30 @@ void Visitor::visit_activity(
         }
 
         if (keyword::send == astmt._args[upml::sm::activity::_argOrder::aoActivity]) {
-            return visit_send_activity(idxCrtState, astmt);
+            assert(keyword::send == a._args[upml::sm::activity::_argOrder::aoActivity]);
+            const auto toSt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoState]));
+            assert(toSt._scope == keyword::state);
+            const auto destRegPtr(_sm.owner_region(toSt._name));
+            assert(destRegPtr);
+            const auto evt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoEvent]));
+            assert(evt._scope == keyword::event);
+
+            const auto& destStatePtr(_sm.state(toSt._name));
+            assert(destStatePtr != nullptr); // unless someone made a typo
+            for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
+                _out << upml::sm::tag('L', ++_labelIdx)
+                    << ":send_event(" << idx(region(destRegPtr->_id))
+                    << ", " << idx(event(evt._name))
+                    << ", " << idxCrtState
+                    << ", " << idx(state(toSt._name))
+                    << "); \n";
+            }
         } else if (keyword::trace == astmt._args[upml::sm::activity::_argOrder::aoActivity]) {
-            return visit_trace_activity(idxCrtState, astmt);
+            _out << "print <<\"";
+            std::ranges::copy(a._args.begin()+1, 
+                            a._args.end(),
+                            std::ostream_iterator<upml::sm::activity::args::value_type>(_out, " "));
+            _out << "\", \"\\n\">>; \n";
         } else {
             std::ranges::for_each(astmt._args.begin()+1/*;*/, astmt._args.end(),
                                   [self=this](auto&& tok){ self->_out << self->token(tok) << ' '; });
@@ -348,41 +363,6 @@ void Visitor::visit_activity(
 
         itB = itE == a._args.end() ?  itE : itE + 1;
     } while(itB != a._args.end());
-}
-
-void Visitor::visit_trace_activity(
-    const upml::tla::id_t&    idxCrtState,
-    const upml::sm::activity& a) const
-{
-    _out << "print <<\"";
-    std::ranges::copy(a._args.begin()+1, 
-                      a._args.end(),
-                      std::ostream_iterator<upml::sm::activity::args::value_type>(_out, " "));
-    _out << "\", \"\\n\">>; \n";
-}
-
-void Visitor::visit_send_activity(
-    const upml::tla::id_t&    idxCrtState,
-    const upml::sm::activity& a) const
-{
-    assert(keyword::send == a._args[upml::sm::activity::_argOrder::aoActivity]);
-    const auto toSt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoState]));
-    assert(toSt._scope == keyword::state);
-    const auto destRegPtr(_sm.owner_region(toSt._name));
-    assert(destRegPtr);
-    const auto evt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoEvent]));
-    assert(evt._scope == keyword::event);
-
-    const auto& destStatePtr(_sm.state(toSt._name));
-    assert(destStatePtr != nullptr); // unless someone made a typo
-    for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
-        _out << upml::sm::tag('L', ++_labelIdx)
-             << ":send_event(" << idx(region(destRegPtr->_id))
-             << ", " << idx(event(evt._name))
-             << ", " << idxCrtState
-             << ", " << idx(state(toSt._name))
-             << "); \n";
-    }
 }
 
 std::string Visitor::token(const std::string& tok) const
