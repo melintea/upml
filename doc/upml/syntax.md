@@ -1,5 +1,6 @@
 ## Syntax
 
+**Notes** 
 * **Case-sensitive!**
 * Self-transitions ([exit state & enter it again](uml.md)) are not supported and are implemented as internal transitions.
 

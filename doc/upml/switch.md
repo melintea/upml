@@ -78,3 +78,6 @@ Then run upml and load the result in the toolbox:
 
 Adjust ```maxUmlEvents``` to something like ```-5```; ```MaxEventsReached``` will fire.
 
+![image](../../images/tla1.png)
+
+

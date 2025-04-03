@@ -102,3 +102,4 @@ Close the system as described in the Promela section, run upml:
 ```
 Then use the toolbox with e.g. Temporal Formula: Spec and a Deadlock check.
 
+![image](../../images/tla1.png)
