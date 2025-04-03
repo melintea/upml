@@ -4,5 +4,7 @@
 # 
 #
 
-./_upml.sh "../plantuml/switch/switch.plantuml" || exit 1
-./_spin.sh "../plantuml/switch/switch.promela"
+gitroot=`git rev-parse --show-toplevel`
+shupml=${gitroot}/src/_upml.sh
+
+${shupml} --file "../plantuml/switch/switch.plantuml" --verify spin
