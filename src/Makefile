@@ -20,10 +20,11 @@ test: upml
 	./_upml.sh  --file ../plantuml/sip/sip.plantuml        --verify both  --diff off --ide off
 	./_upml.sh  --file ../plantuml/switch/switch.plantuml  --verify both  --diff off --ide off
 	./_upml.sh  --file ../plantuml/hsm/hsm2.plantuml       --verify none  --diff off --ide off
+	-rm pan*
 	@echo "\e[42m*** Pass ***\e[0m"
 
 lint:
 	clang-tidy promela_generator.cpp -- $(FLAGS) 
 
 clean:
-	-rm *.o upml 
+	-rm *.o upml pan*

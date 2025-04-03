@@ -195,10 +195,6 @@ public:
     void visit_region(const upml::sm::region& r, const id_t& ownerTag) const;
     void visit_state(const upml::sm::state& s, const RegionData& rd) const;
     void visit_state_regions(const upml::sm::state& s) const;
-    void visit_preconditions(const upml::sm::state& s) const;
-    void visit_postconditions(const upml::sm::state& s) const;
-    void visit_exit_activities(const upml::sm::state& s) const;
-    void visit_timeout(const upml::sm::state& s) const;
     void visit_transitions(const upml::sm::state& s, const RegionData& rd) const;
     void visit_transition(
         const upml::sm::state&      s,
@@ -268,7 +264,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
 
         _out << '\n';
 
-        visit_preconditions(s);
+        visit_activity(keyword::precondition, s);
         visit_activity(keyword::entry, s);
     }
 
@@ -298,7 +294,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
         //    return;
         //}
         visit_transitions(s, rd);
-        visit_postconditions(s);
+        visit_activity(keyword::postcondition, s);
     }
 
     _out << "\n\\*]state " << idxCrtState << "\n";
@@ -463,12 +459,12 @@ void Visitor::visit_transition(
     _out << "\nvisitedTransitions[\"" << t._id << "\"] := TRUE;\n";
 
     if (idx(state(toSt._name)) == idx(state(s._id))) {
-        visit_postconditions(s);
+        visit_activity(keyword::postcondition, s);
         _out << "\nnewState := " << idx(state(toSt._name)) << "; ";
         _out << "\ngoto " << name("body", s._id) << ';';
     } else {
-        visit_exit_activities(s);
-        visit_postconditions(s);
+        visit_activity(keyword::exit, s);
+        visit_activity(keyword::postcondition, s);
         _out << "\nnewState := " << idx(state(toSt._name)) << "; ";
         _out << "\ngoto " << name(keyword::entry, toSt._name) << ';';
     }
@@ -492,14 +488,14 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
                _out <<  "\n} or {";
            }
         } while (it != s._transitions.end());
-        visit_timeout(s);
+        visit_activity(keyword::timeout, s);
         //TODO: resend unhandled events to the hierarchical parent state
         _out << '\n' << (s._transitions.size() > 1 ? "" : "\\* ") << "}; \\* either"
              << "\n\\*]transitions " << idxCrtState << "\n"
              ;
     }
 
-    visit_postconditions(s);
+    visit_activity(keyword::postcondition, s);
 }
 
 
@@ -534,60 +530,6 @@ void Visitor::visit_activity(
                 continue;
             }
             if (a._activity == activityType) {
-                visit_activity(s, a);
-            }
-        }
-    }
-}
-
-void Visitor::visit_preconditions(const upml::sm::state&  s) const
-{
-    if ( ! s._activities.empty()) {
-        for (const auto& a : s._activities) {
-            if (a._activity == keyword::precondition) {
-                _out << "\n\\* " << a << '\n';
-                _out << upml::sm::tag('L', ++_labelIdx) << ": assert(";
-                for (const auto& tok: a._args) {
-                    _out << token(tok);
-                }
-                _out << ");\n";
-            }
-        }
-    }
-}
-
-void Visitor::visit_postconditions(const upml::sm::state&  s) const
-{
-    if ( ! s._activities.empty()) {
-        for (const auto& a : s._activities) {
-            if (a._activity == keyword::postcondition) {
-                _out << "\n\\* " << a << '\n';
-                _out << upml::sm::tag('L', ++_labelIdx) << ": assert(";
-                for (const auto& tok: a._args) {
-                    _out << token(tok);
-                }
-                _out << ");\n";
-            }
-        }
-    }
-}
-
-void Visitor::visit_timeout(const upml::sm::state& s) const
-{
-}
-
-void Visitor::visit_exit_activities(const upml::sm::state& s) const
-{
-    const int myIdx(_states.find(s._id)->second);
-    const auto idxCrtState(idx(state(s._id)));
-
-    if ( ! s._activities.empty()) {
-        for (const auto& a : s._activities) {
-            if ( ! a._args.size() ) {
-                std::cerr << "Warning: activity with no args:\n"<< a << "\n";
-                continue;
-            }
-            if (a._activity == keyword::exit) {
                 visit_activity(s, a);
             }
         }
