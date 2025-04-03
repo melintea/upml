@@ -309,7 +309,7 @@ void Visitor::visit_activity(
     _out << "\n//" << a << '\n';
     auto itB(a._args.begin());
     do {
-        auto itE(std::find(itB, a._args.end(), upml::keyword::stmtSepStr));
+        auto itE(std::find(itB, a._args.end(), upml::keyword::stmtSep));
         upml::sm::activity astmt = {
             ._id       = a._id,
             ._state    = idx(state(s._id)),
