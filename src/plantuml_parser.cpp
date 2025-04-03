@@ -12,7 +12,7 @@
 #define BOOST_SPIRIT_USE_PHOENIX_V3
 
 #include "plantuml_parser.hpp"
-#include "reserved_words.hpp"
+#include "keyword.hpp"
 #include "state_machine.hpp"
 
 #include <boost/phoenix/phoenix.hpp>

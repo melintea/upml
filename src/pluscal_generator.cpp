@@ -10,7 +10,7 @@
 
 #include "iostream.hpp"
 #include "pluscal_generator.hpp"
-#include "reserved_words.hpp"
+#include "keyword.hpp"
 
 #include <boost/algorithm/string/trim.hpp>
 
@@ -198,7 +198,6 @@ public:
     void visit_preconditions(const upml::sm::state& s) const;
     void visit_postconditions(const upml::sm::state& s) const;
     void visit_exit_activities(const upml::sm::state& s) const;
-    void visit_entry_activities(const upml::sm::state& s) const;
     void visit_timeout(const upml::sm::state& s) const;
     void visit_transitions(const upml::sm::state& s, const RegionData& rd) const;
     void visit_transition(
@@ -208,19 +207,24 @@ public:
     void visit_transition_labels(const upml::sm::region&  r);
     void visit_transition_labels(const upml::sm::state& s);
     void visit_effect(
-        const upml::tla::id_t&      idxCrtState,
+        const upml::sm::state&      s,
         const upml::sm::transition& t) const;
     void visit_guard(
-        const upml::tla::id_t&      idxCrtState,
+        const upml::sm::state&      s,
         const upml::sm::transition& t) const;
     void visit_activity(
-        const upml::tla::id_t&    idxCrtState,
+        const upml::sm::state&    s,
         const upml::sm::activity& a) const;
-    void visit_activity(const std::string& activityType,
-                        const ActivityProcessor_t& processor) const;
-    void visit_activity(const std::string&     activityType,
-                        const upml::sm::state& s,
-                        const ActivityProcessor_t& processor) const;
+    void visit_activity(
+        const std::string&         activityType,
+        const upml::sm::state&     s) const;
+    void visit_activity(
+        const std::string&         activityType,
+        const ActivityProcessor_t& processor) const;
+    void visit_activity(
+        const std::string&         activityType,
+        const upml::sm::state&     s,
+        const ActivityProcessor_t& processor) const;
     // Turn a plantuml token in a guard/post/pre/condition/invariant into valid PlusCal.
     std::string token(const std::string& tok) const;
 }; // Visitor
@@ -265,7 +269,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
         _out << '\n';
 
         visit_preconditions(s);
-        visit_entry_activities(s);
+        visit_activity(keyword::entry, s);
     }
 
     _out << "\n\n" << blabel;
@@ -308,7 +312,7 @@ void Visitor::visit_state_regions(const upml::sm::state& s) const
 }
 
 void Visitor::visit_activity(
-    const upml::tla::id_t&    idxCrtState,
+    const upml::sm::state&    s,
     const upml::sm::activity& a) const
 {
     _out << "\n\\* " << a << '\n';
@@ -317,7 +321,7 @@ void Visitor::visit_activity(
         auto itE(std::find(itB, a._args.end(), upml::keyword::stmtSepStr));
         upml::sm::activity astmt = {
             ._id       = a._id,
-            ._state    = idxCrtState,
+            ._state    = idx(state(s._id)),
             ._activity = a._activity,
             ._args     = upml::sm::activity::args(itB, itE)
         };
@@ -326,12 +330,12 @@ void Visitor::visit_activity(
         }
 
         if (keyword::send == astmt._args[upml::sm::activity::_argOrder::aoActivity]) {
-            assert(keyword::send == a._args[upml::sm::activity::_argOrder::aoActivity]);
-            const auto toSt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoState]));
+            assert(keyword::send == astmt._args[upml::sm::activity::_argOrder::aoActivity]);
+            const auto toSt(scoped_name::create(astmt._args[upml::sm::activity::_argOrder::aoState]));
             assert(toSt._scope == keyword::state);
             const auto destRegPtr(_sm.owner_region(toSt._name));
             assert(destRegPtr);
-            const auto evt(scoped_name::create(a._args[upml::sm::activity::_argOrder::aoEvent]));
+            const auto evt(scoped_name::create(astmt._args[upml::sm::activity::_argOrder::aoEvent]));
             assert(evt._scope == keyword::event);
 
             const auto& destStatePtr(_sm.state(toSt._name));
@@ -340,21 +344,21 @@ void Visitor::visit_activity(
                 _out << upml::sm::tag('L', ++_labelIdx)
                     << ":send_event(" << idx(region(destRegPtr->_id))
                     << ", " << idx(event(evt._name))
-                    << ", " << idxCrtState
+                    << ", " << astmt._state
                     << ", " << idx(state(toSt._name))
                     << "); \n";
             }
         } else if (keyword::trace == astmt._args[upml::sm::activity::_argOrder::aoActivity]) {
             _out << "print <<\"";
-            std::ranges::copy(a._args.begin()+1, 
-                            a._args.end(),
-                            std::ostream_iterator<upml::sm::activity::args::value_type>(_out, " "));
+            std::ranges::copy(astmt._args.begin()+1, 
+                              astmt._args.end(),
+                              std::ostream_iterator<upml::sm::activity::args::value_type>(_out, " "));
             _out << "\", \"\\n\">>; \n";
-        } else if (  a._activity == keyword::precondition
-                  || a._activity == keyword::postcondition
+        } else if (  astmt._activity == keyword::precondition
+                  || astmt._activity == keyword::postcondition
                   ) {
             _out << upml::sm::tag('L', ++_labelIdx) << ": assert(";
-            for (const auto& tok: a._args) {
+            for (const auto& tok: astmt._args) {
                 _out << token(tok);
             }
             _out << ");\n";
@@ -407,7 +411,7 @@ std::string Visitor::token(const std::string& tok) const
 }
 
 void Visitor::visit_guard(
-    const upml::tla::id_t&      idxCrtState,
+    const upml::sm::state&      s,
     const upml::sm::transition& t) const
 {
     if (t._guard.empty()) {
@@ -421,7 +425,7 @@ void Visitor::visit_guard(
 }
 
 void Visitor::visit_effect(
-    const upml::tla::id_t&      idxCrtState,
+    const upml::sm::state&      s,
     const upml::sm::transition& t) const
 {
     if (t._effect.empty()) {
@@ -432,14 +436,14 @@ void Visitor::visit_effect(
     std::span stmt(t._effect.begin(), t._effect.end());
     upml::sm::activity a = {
         ._id       = upml::sm::tag(upml::sm::activity::_tag, t._line),
-        ._state    = idxCrtState,
+        ._state    = idx(state(s._id)),
         ._activity = stmt[0],
         ._args     = upml::sm::activity::args(stmt.begin(), stmt.end())
     };
     // TODO: UML transition semanic: exit old state, generate effect, enter new state
     // unless new state == old state
     //_out << "currentState[self] = idx_unknown; "; 
-    visit_activity( idxCrtState, a);
+    visit_activity( s, a);
 }
 
 void Visitor::visit_transition(
@@ -448,18 +452,17 @@ void Visitor::visit_transition(
 {
     const auto evt(scoped_name::create(t._event));
     const auto toSt(scoped_name::create(t._toState));
-    const auto idxCrtState(idx(state(s._id)));
 
     lpt::autoindent_guard indent(_out);
 
     _out << "\n\n\\* " << t << '\n';
     _out << "await (evtRecv = " << idx(event(evt._name)); 
-         visit_guard(idxCrtState, t);
+         visit_guard(s, t);
     _out << ");" ;
-         visit_effect(idxCrtState, t);
+         visit_effect(s, t);
     _out << "\nvisitedTransitions[\"" << t._id << "\"] := TRUE;\n";
 
-    if (idx(state(toSt._name)) == idxCrtState) {
+    if (idx(state(toSt._name)) == idx(state(s._id))) {
         visit_postconditions(s);
         _out << "\nnewState := " << idx(state(toSt._name)) << "; ";
         _out << "\ngoto " << name("body", s._id) << ';';
@@ -517,7 +520,9 @@ void Visitor::visit_transition_labels(const upml::sm::state& s)
     }
 }
 
-void Visitor::visit_entry_activities(const upml::sm::state& s) const
+void Visitor::visit_activity(
+    const std::string&         activityType,
+    const upml::sm::state&     s) const
 {
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
@@ -528,8 +533,8 @@ void Visitor::visit_entry_activities(const upml::sm::state& s) const
                 std::cerr << "Warning: activity with no args:\n"<< a << "\n";
                 continue;
             }
-            if (a._activity == keyword::entry) {
-                visit_activity(idxCrtState, a);
+            if (a._activity == activityType) {
+                visit_activity(s, a);
             }
         }
     }
@@ -583,7 +588,7 @@ void Visitor::visit_exit_activities(const upml::sm::state& s) const
                 continue;
             }
             if (a._activity == keyword::exit) {
-                visit_activity(idxCrtState, a);
+                visit_activity(s, a);
             }
         }
     }
@@ -650,8 +655,8 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
 }
 
 void Visitor::visit_activity(
-    const std::string&     activityType,
-    const upml::sm::state& s,
+    const std::string&         activityType,
+    const upml::sm::state&     s,
     const ActivityProcessor_t& processor) const
 {
     for (const auto& a : s._activities) {
@@ -673,7 +678,7 @@ void Visitor::visit_activity(
 }
 
 void Visitor::visit_activity(
-    const std::string& activityType,
+    const std::string&         activityType,
     const ActivityProcessor_t& processor) const
 {
     for (const auto& [k, r] : _sm._regions) {
