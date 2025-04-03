@@ -359,11 +359,11 @@ void Visitor::visit_activity(
             }
             _out << ");\n";
         } else {
-            std::ranges::for_each(astmt._args.begin()+1/*;*/, astmt._args.end(),
+            std::ranges::for_each(astmt._args.begin(), astmt._args.end(),
                                   [self=this](auto&& tok){ self->_out << self->token(tok) << ' '; });
         }
 
-        itB = itE == a._args.end() ?  itE : itE + 1;
+        itB = itE == a._args.end() ?  itE : itE + 1/*;*/;
     } while(itB != a._args.end());
 }
 

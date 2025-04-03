@@ -381,12 +381,6 @@ inline names_t state::events() const
     for (const auto& [k, t] : _transitions) {
         evts.insert(t._event);
     }
-    for (const auto& a : _activities) {
-        if (a._activity == keyword::exit || a._activity == keyword::exit) {
-            //TODO: assert this is a send activity
-            evts.insert(a._args[activity::_argOrder::aoEvent]);
-        }
-    }
     evts.insert(keyword::NullEvent);
     evts.insert(keyword::EnterState);
     evts.insert(keyword::ExitState);
