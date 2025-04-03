@@ -45,8 +45,8 @@ inline constexpr const char* event  = "event";
 inline constexpr const char* state  = "state";
 
 // separate statments in actions/effects
-inline constexpr const char  stmtSep     = ';';
-inline constexpr const char* stmtSepStr  = ";";
+inline constexpr const char  stmtSepChar = ';';
+inline constexpr const char* stmtSep     = ";";
 
 
 } //namespace upml::keyword
