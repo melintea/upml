@@ -1,11 +1,12 @@
 ## Syntax
 
-**Notes** 
+**Notes**
+
 * **Case-sensitive!**
 * Self-transitions ([exit state & enter it again](uml.md)) are not supported and are implemented as internal transitions.
-
 * Resulting HSM/FSM models respect run-to-completion (RTC) semantics.
 * Canonical execution order (CEO):
+
   * is respected by FSM.
   * is not respected by HSM; HSM execution order is: transition actions then state exit actions then state enter actions.
 
@@ -34,17 +35,18 @@
   - at global level: ```AnyState: globalvar: bool lightOn = false;```;
 - transition: ```state --> state : event [guard]/effect ;```
   - note the ending ```;```
-  - currently the effect can only be a ```send``` or a ```trace``` action.
+  - currently the effect can be:
+    - a ```send``` statement: ```send event:INVITE to state:Bob ;```
+    - a ```trace``` statement: ```trace t1 foo bar baz ;```
+    - a simple statement terminated by a ```;```. Examples:
+      - ```send event:INVITE to state:Bob ;```
+      - ```lightOn = true ;```
+    - a (multi-)statement:
+      - ```stmt one \; stmt two \; ;``` Note the escaped semicolons and the ending one
   - ```guard``` is an expression e.g. ```((x==y) && (z!=1 || z!=2))```
-  - ```effect``` is:
-    -  a simple statement terminated by a ```;```. Examples:
-      -  ```send event:INVITE to state:Bob ;```
-      -  ```lightOn = true ;```
-    -  a multi-statement: ```stmt one \; stmt two \; ;```
   - example: ```Deploy -1down-> Operation : BYE [((x==y) && (z!=1 || z!=2))] / send event:ACK to state:Bob ; ```
   - example: ``` Super1 --> Super2 : T1 [g()]/trace t1 foo bar baz;``` (note the lack of quotes)
-- state actions: ```entry```, ```exit```
-  - ```send``` event from state:
+- state actions: ```entry```, ```exit``` : same as transition effects
   - example: ```AInitiated: entry: send event:INVITE to state:Bob ;```
 - preconditions: ```state: precondition: expression ; ```
   - example: ```BInitiated: precondition: (state:BobcurrentState != state:AIdle);```
