@@ -89,7 +89,7 @@ function spinit()
 }
 
 function verify_spin() {
-    rm pan.* _spin_nvr.tmp
+    rm pan.* _spin_nvr.tmp *.trail
     ${exespin} -a "$spinfile" || exit 1
     if [[ ! -f pan.c ]]; then
         exit 1
