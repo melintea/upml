@@ -29,10 +29,18 @@
 - comments: ```//```, non-nested ```/**/```. Plantuml will choke on these: if you can, use ```note``` instead.
 - ```ltl```: these are model artifacts but due to plantuml quirks, the LTL formulas have to be scoped anywhere in a top level state. See the [SIP](sip.md) page example:
   - ```ClosedSystemEnvironment: ltl: ltlFinalStates {[]<>(state:ClosedSystemEnvironment:currentState == state:CallEnded && (state:Alice:currentState == state:Aterminated && (state:Bob:currentState == state:Bterminated)};```
+- variable declarations: ```type name = value;```
+  - at state level: ```state: localvar: bool lightOn = false;```;
+  - at global level: ```AnyState: globalvar: bool lightOn = false;```;
 - transition: ```state --> state : event [guard]/effect ;```
   - note the ending ```;```
   - currently the effect can only be a ```send``` or a ```trace``` action.
   - ```guard``` is an expression e.g. ```((x==y) && (z!=1 || z!=2))```
+  - ```effect``` is:
+    -  a simple statement terminated by a ```;```. Examples:
+      -  ```send event:INVITE to state:Bob ;```
+      -  ```lightOn = true ;```
+    -  a multi-statement: ```stmt one \; stmt two \; ;```
   - example: ```Deploy -1down-> Operation : BYE [((x==y) && (z!=1 || z!=2))] / send event:ACK to state:Bob ; ```
   - example: ``` Super1 --> Super2 : T1 [g()]/trace t1 foo bar baz;``` (note the lack of quotes)
 - state actions: ```entry```, ```exit```

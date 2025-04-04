@@ -358,9 +358,15 @@ void Visitor::visit_activity(
                 _out << token(tok);
             }
             _out << ");\n";
+        } else if (  astmt._activity == keyword::globalvar
+                  || astmt._activity == keyword::localvar
+                  ) {
+                // (0)type, (1)name, =, val
+                _out << token(astmt._args[1]) << astmt._args[2] << token(astmt._args[3]) << ";\n"; 
         } else {
             std::ranges::for_each(astmt._args.begin(), astmt._args.end(),
                                   [self=this](auto&& tok){ self->_out << self->token(tok) << ' '; });
+            _out << ";\n";
         }
 
         itB = itE == a._args.end() ?  itE : itE + 1/*;*/;
@@ -375,7 +381,10 @@ std::string Visitor::token(const std::string& tok) const
         {"!",  "~"},
         {"==", "="},
         {"!=", "/="},
+        {"=",  ":="},
         // variables are untyped
+        {"true",  "TRUE"},
+        {"false", "FALSE"},
         {"bit",   ""},
         {"bool",  ""},
         {"byte",  ""},
@@ -560,8 +569,16 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
          << "\n    initialState = " << regionData._initialState << "; "
          << "\n    finalState = " << regionData._finalState << "; "
          << "\n    newState = initialState; "
-         << "\n    noChannel = FALSE; "
-         << "\n{"
+         << "\n    noChannel = FALSE; \n"
+         ;
+    {
+        lpt::autoindent_guard indent(_out);
+        for (const auto& [k, s] : r._substates) {
+            visit_activity(keyword::localvar, *s);
+        }
+    }
+
+    _out << "\n{"
          << "\nproc_body_" << idx(rname) << ": currentState[self] := initialState;" 
          ;
 
@@ -681,7 +698,13 @@ void Visitor::visit() const
 
         _out << "\nprocs = { " << procs << " };";
         _out << "\nchannels = [p \\in procs |-> <<>>];";
-        _out << "\ncurrentState = [p \\in procs |-> idx_Unknown];";
+        _out << "\ncurrentState = [p \\in procs |-> idx_Unknown]; \n";
+
+        for (const auto& [k, r] : _sm._regions) {
+            for (const auto& [k2, s2] : r->_substates) {
+                visit_activity(keyword::globalvar, *s2);
+            }
+        }
 
         std::string tls;
         if (_transitionLabels.empty()) {

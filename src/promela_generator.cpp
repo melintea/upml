@@ -351,6 +351,7 @@ void Visitor::visit_activity(
         } else {
             std::ranges::for_each(astmt._args.begin(), astmt._args.end(),
                                   [self=this](auto&& tok){ self->_out << self->token(tok) << ' '; });
+            _out << ";\n";
         }
 
         itB = itE == a._args.end() ?  itE : itE + 1/*;*/;
@@ -440,13 +441,13 @@ void Visitor::visit_transition(
          visit_effect(s, t);
     if (idx(state(toSt._name)) == idxCrtState) {
         visit_activity(keyword::postcondition, s);
-        lpt::autoindent_guard indent(_out);
+        //lpt::autoindent_guard indent(_out);
         _out << "\nnewState = " << idx(state(toSt._name)) << "; ";
         _out << "\ngoto " << name("body", s._id) << ';';
     } else {
         visit_activity(keyword::exit, s);
         visit_activity(keyword::postcondition, s);
-        lpt::autoindent_guard indent(_out);
+        //lpt::autoindent_guard indent(_out);
         _out << "\nnewState = " << idx(state(toSt._name)) << "; ";
         _out << "\ngoto " << name(keyword::entry, toSt._name) << ';';
     }
@@ -524,6 +525,12 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
          << "\n    local bool noChannel = false; "
          << "\n"
          ;
+    {
+        lpt::autoindent_guard indent(_out);
+        for (const auto& [k, s] : r._substates) {
+            visit_activity(keyword::localvar, *s);
+        }
+    }
 
     for (const auto& [k, s] : r._substates) {
         if (s->_initial) {
@@ -629,7 +636,12 @@ void Visitor::visit() const
     }
     _out << "}\n";
     _out << "\ntypedef event {mtype evId; short fromState; short toState};";
-    _out << "\n\nchan _channels[" << _regions.size() << "] = [" << _regions.size() << "] of {event};";
+    _out << "\n\nchan _channels[" << _regions.size() << "] = [" << _regions.size() << "] of {event}; \n";
+    for (const auto& [k, r] : _sm._regions) {
+        for (const auto& [k2, s2] : r->_substates) {
+            visit_activity(keyword::globalvar, *s2);
+        }
+    }
 
     _out << R"--(
 
