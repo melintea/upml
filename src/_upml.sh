@@ -89,14 +89,14 @@ function spinit()
 }
 
 function verify_spin() {
-    rm pan.* _spin_nvr.tmp *.trail
+    rm pan pan.* _spin_nvr.tmp *.trail
     ${exespin} -a "$spinfile" || exit 1
     if [[ ! -f pan.c ]]; then
         exit 1
     fi
     gcc -DMEMLIM=1024 -O2 -DXUSAFE -DSAFETY -w -o pan pan.c || exit 1
     ./pan -m10000  || exit 1
-    rm pan.* _spin_nvr.tmp
+    rm pan pan.* _spin_nvr.tmp
 
     # -c columnated output
     # -g global vars
