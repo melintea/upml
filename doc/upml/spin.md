@@ -118,6 +118,12 @@ cat file | spin -pp | ...
 spin -A
 ```
 
+## LTL
+- ```[] P``` P should hold all the time: invariant
+- ```<> P``` P should hold at lest once: guarantee
+- ```[]<> P``` P should hold infinitely often or is the final state: progress
+- ```<>[] P``` P should always hold sometime in the future or is the final state: stability
+
 ## Various links
 - [Spin & Promela](https://spinroot.com)
 - [Tau](https://data.caltech.edu/records/8exsc-7h074)
