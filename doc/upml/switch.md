@@ -64,7 +64,7 @@ depth-limit (-u200 steps) reached
 
 ![image](../../plantuml/switch/switch.png)
 
-- add a "Human" to flip the switches to turn the light on then to turn it back off. This should the the SM back into
+- add a "Human" to flip the switches to turn the light on then to turn it back off. This should get the SM back into
 the ```BothOff``` state.
 - mark ```BothOff``` as the final state for this scenario otherwise an invalid end state error will be reported
 - add a ```lightOn``` ghost variable
