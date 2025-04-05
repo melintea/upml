@@ -548,7 +548,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     }
 
     for (const auto& [k, s] : r._substates) {
-        if (s->_final) {
+        if (s->_final && ! s->_initial) { // initial might be the final too
             assert(idx(state(k)) == regionData._finalState);
             visit_state(*s, regionData);
             break;  //only one such (supposedly)
