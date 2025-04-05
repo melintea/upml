@@ -16,34 +16,45 @@ end note
 
 state Human {
 
-[*] --> Flip
-Flip: config: noInboundEvents;
-Flip --> Flip : NullEvent /send event:LampSwitch to state:Switch;
-Flip --> Flip : NullEvent /send event:WallSwitch to state:Switch;
+[*] --> TurnLightOn
+TurnLightOn: config: noInboundEvents;
+TurnLightOn --> TurnLightOff : NullEvent /send event:LampSwitch to state:Switch\; send event:WallSwitch to state:Switch\; ;
+TurnLightOn --> TurnLightOff : NullEvent /send event:WallSwitch to state:Switch\; send event:LampSwitch to state:Switch\; ;
 
+TurnLightOff: config: noInboundEvents;
+TurnLightOff --> Done : NullEvent /send event:LampSwitch to state:Switch\; send event:WallSwitch to state:Switch\; ;
+TurnLightOff --> Done : NullEvent /send event:WallSwitch to state:Switch\; send event:LampSwitch to state:Switch\; ;
+
+Done --> [*]
+
+Human: ltl: ltlLight {<>[](state:Switch:currentState == state:BothOff && lightOn == false) -> (state:Switch:currentState == state:On && lightOn == true) -> (state:Switch:currentState == state:BothOff && lightOn == false && state:Human:currentState == state:Done)};
 }
 
 
 
 state Switch {
 
+Switch: globalvar: bool lightOn = false;
+
 [*] --> BothOff
 BothOff: config: progressTag;
 BothOff --> WallOff : LampSwitch
-WallOff --> BothOff : LampSwitch
-
 BothOff --> LampOff : WallSwitch
-LampOff --> BothOff : WallSwitch
+BothOff --> [*]
 
 WallOff: config: progressTag;
 WallOff --> On : WallSwitch
-On --> WallOff : LampSwitch
+WallOff --> BothOff : LampSwitch
 
-LampOff: config: progressTag;
+LampOff --> BothOff : WallSwitch
 LampOff --> On : LampSwitch
+LampOff: config: progressTag;
 
+On --> WallOff : WallSwitch
+On --> LampOff : LampSwitch
 On: config: progressTag;
-On --> LampOff : WallSwitch
+On:entry: lightOn = true;
+On:exit: lightOn = false;
 
 }
 
