@@ -121,7 +121,7 @@ Use xspin/ispin.tcl.
 
 ## TLA
 
-Close the system as described in the Promelasection above. Note: this will generate an infinite run (for now).
+Close the system as described in the Promela section above. Note: this might generate an infinite run (as in the first/simulation closed system).
 
 Then run upml and load the result in the toolbox:
 
