@@ -3,8 +3,8 @@
 - [Differences with PlusCal](#differences-with-pluscal)
 - [Model](#model)
 - [Cheat Sheet](#cheat-sheet)
+- [LTL](#ltl)
 - [Various links](#various-links)
-
 
 ## Install spin
 

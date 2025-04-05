@@ -5,12 +5,12 @@ A double (lamp & wall) switch lamp [switch.plantuml](../../plantuml/switch/switc
 
 ## Promela 
 
+The state machine needs an "environment" in which to operate for both simulation and verification; 
+we need to put the statechart in a fully-specified/closed system.
+
 ### Simulation
 
-Left as above, only interactive simulation is possible, if ever. 
-A "human" must be added to randomly flip the switches - the state machine needs 
-the "environment" in which it operates for simulation and verification; verification 
-needs a fully-specified/closed system.
+Add a "human" to randomly flip the switches for an infinite number of times.
 
 Then wrap the switch spec into its own ```Switch``` composite state:
 
@@ -23,8 +23,7 @@ state Human {
 }
 ```
 
-![image](../../plantuml/switch/switch.png)
-
+Generate the spec and run it:
 
 ```
 ./upml --in ../plantuml/switch/switch.plantuml --out ../plantuml/switch/switch.promela --backend spin
@@ -63,8 +62,62 @@ depth-limit (-u200 steps) reached
 
 ### Verification
 
-Mark states as ```progressTag``` e.g. ```On: config: progressTag;``` for non-progress checks.
+![image](../../plantuml/switch/switch.png)
+
+- add a "Human" to flip the switches to turn the light on then to turn it back off. This should the the SM back into
+the ```BothOff``` state.
+- mark ```BothOff``` as the final state for this scenario otherwise an invalid end state error will be reported
+- add a ```lightOn``` ghost variable
+- write the LTL accordingly
+
+
+```
+state Human {
+
+[*] --> TurnLightOn
+TurnLightOn: config: noInboundEvents;
+TurnLightOn --> TurnLightOff : NullEvent /send event:LampSwitch to state:Switch\; send event:WallSwitch to state:Switch\; ;
+TurnLightOn --> TurnLightOff : NullEvent /send event:WallSwitch to state:Switch\; send event:LampSwitch to state:Switch\; ;
+
+TurnLightOff: config: noInboundEvents;
+TurnLightOff --> Done : NullEvent /send event:LampSwitch to state:Switch\; send event:WallSwitch to state:Switch\; ;
+TurnLightOff --> Done : NullEvent /send event:WallSwitch to state:Switch\; send event:LampSwitch to state:Switch\; ;
+
+Done --> [*]
+
+Human: ltl: ltlLight {<>[](state:Switch:currentState == state:BothOff && lightOn == false) -> (state:Switch:currentState == state:On && lightOn == true) -> (state:Switch:currentState == state:BothOff && lightOn == false && state:Human:currentState == state:Done)};
+}
+
+state Switch {
+
+Switch: globalvar: bool lightOn = false;
+
+[*] --> BothOff
+BothOff: config: progressTag;
+BothOff --> WallOff : LampSwitch
+BothOff --> LampOff : WallSwitch
+BothOff --> [*]
+
+WallOff: config: progressTag;
+WallOff --> On : WallSwitch
+WallOff --> BothOff : LampSwitch
+
+LampOff --> BothOff : WallSwitch
+LampOff --> On : LampSwitch
+LampOff: config: progressTag;
+
+On --> WallOff : WallSwitch
+On --> LampOff : LampSwitch
+On: config: progressTag;
+On:entry: lightOn = true;
+On:exit: lightOn = false;
+
+}
+
+```
+
 Use xspin/ispin.tcl.
+
 
 ## TLA
 
