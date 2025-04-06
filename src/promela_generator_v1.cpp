@@ -694,8 +694,9 @@ inline send_event(channel, evt, fs, ts)
                               });
             }
         }
+        _out << "\nod";
     }
-    _out << "\nod\n} // invariants\n\n";
+    _out << "\n} // invariants\n\n";
 
     _out << "\ninit {\n"
         << "    atomic {\n";
