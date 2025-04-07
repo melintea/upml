@@ -89,13 +89,24 @@ function spinit()
 }
 
 function verify_spin() {
+
+    # safety
     rm pan pan.* _spin_nvr.tmp *.trail
     ${exespin} -a "$spinfile" || exit 1
     if [[ ! -f pan.c ]]; then
         exit 1
     fi
     gcc -DMEMLIM=1024 -O2 -DXUSAFE -DSAFETY -w -o pan pan.c || exit 1
-    ./pan -m10000  || exit 1
+    ./pan -m10000 || exit 1
+    rm pan pan.* _spin_nvr.tmp
+
+    # acceptance
+    ${exespin} -a "$spinfile" || exit 1
+    if [[ ! -f pan.c ]]; then
+        exit 1
+    fi
+    gcc -DMEMLIM=1024 -O2 -DXUSAFE -w -o pan pan.c || exit 1
+    ./pan -m10000 -a || exit 1
     rm pan pan.* _spin_nvr.tmp
 
     # -c columnated output
@@ -119,8 +130,6 @@ function verify_spin() {
     # spin -p -t "$spinfile" # follow trail file
 
     # pan -D | dot -Tps | ps2pdf - pan.pdf
-
-    # acceptance: pan -a
 } # test_spin
 
 
