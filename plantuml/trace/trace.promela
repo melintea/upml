@@ -5,6 +5,7 @@
 #define S1 1
 #define S2 2
 #define S3 3
+#define S4 3
 
 mtype = { ack, nak, err, next, accept };
 
@@ -12,6 +13,7 @@ typedef event {mtype evId; short fromState; short toState};
 chan qid = [3] of {event}; 
 
 proctype p() {
+    //qid!ack(S4,4); // trace must fully match all the send and/or recv
     qid!ack(S1,0);
     qid!nak(S2,1);
 } //p
@@ -25,9 +27,9 @@ proctype q() {
 trace {
     do
     //:: qid!ack; qid!nak; //ok
-    //:: qid!ack(S1,_); qid!nak(S2,1); // ok
+    :: qid!ack(S1,_); qid!nak(S2,1); // ok
 
-    :: qid!nak(S2,1); qid!ack(S1,_); // ko: order is important
+    //:: qid!nak(S2,1); qid!ack(S1,_); // ko: order is important
     //:: qid!accept; qid!ack; qid!nak; //error
     //:: qid!ack(S1,3); qid!nak(S2,1); // error
     //:: qid!ack,S1,3; qid!nak,S2,1; // error
