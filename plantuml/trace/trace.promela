@@ -24,9 +24,10 @@ proctype q() {
 
 trace {
     do
-    :: qid!ack(S1,_); qid!nak(S2,1); // ok
     //:: qid!ack; qid!nak; //ok
-    
+    //:: qid!ack(S1,_); qid!nak(S2,1); // ok
+
+    :: qid!nak(S2,1); qid!ack(S1,_); // ko: order is important
     //:: qid!accept; qid!ack; qid!nak; //error
     //:: qid!ack(S1,3); qid!nak(S2,1); // error
     //:: qid!ack,S1,3; qid!nak,S2,1; // error
