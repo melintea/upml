@@ -157,6 +157,8 @@ struct plantuml_grammar final
                    |  qi::string("[]")  |  qi::string("<>")
                    |  qi::string("\\/") |  qi::string("/\\")
                    |  qi::string("->")  |  qi::string("<->")
+                   // (no)trace  Promela support
+                   |  qi::string(",")   |  qi::string("?")
                    ;
 
         // instructions/change-allowing expressions

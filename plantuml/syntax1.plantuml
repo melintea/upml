@@ -110,13 +110,13 @@ Operation -5down-> [*]
 
 state Switch {
 
-Switch:local:var: bool _bummy = true;
-Switch:global:var: std::string _s;
-global:var: std::string _s;
+Switch:localvar: bool _bummy = true;
+Switch:globalvar: std::string _s;
+globalvar: std::string _s;
 
 [*] --> BothOff
 BothOff: config: progressTag;
-BothOff --> WallOff : LampSwitch [true]/ _bummy = false\; _dummy = 1\; ;
+BothOff --> WallOff : LampSwitch [true]/ _bummy = false\; _dummy = 1\; trace foo bar baz\; ;
 WallOff --> BothOff : LampSwitch
 
 BothOff --> LampOff : WallSwitch
@@ -135,6 +135,8 @@ On --> LampOff : WallSwitch
 }
 
 state HumanFlipSwitch {
+HumanFlipSwitch: ltl: ltlLight {<>[](state:Switch:currentState == state:BothOff && lightOn == false) -> (state:Switch:currentState == state:On && lightOn == true) -> (state:Switch:currentState == state:BothOff && lightOn == false && state:Human:currentState == state:Done)};
+HumanFlipSwitch: chanltl: qid!ack(S1,_)\; qid?nak(S2,1)\; ;
 
 [*] --> Flip
 Flip: config: noInboundEvents;
