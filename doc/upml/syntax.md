@@ -30,6 +30,8 @@
 - comments: ```//```, non-nested ```/**/```. Plantuml will choke on these: if you can, use ```note``` instead.
 - ```ltl```: these are model artifacts but due to plantuml quirks, the LTL formulas have to be scoped anywhere in a top level state. See the [SIP](sip.md) page example:
   - ```ClosedSystemEnvironment: ltl: ltlFinalStates {[]<>(state:ClosedSystemEnvironment:currentState == state:CallEnded && (state:Alice:currentState == state:Aterminated && (state:Bob:currentState == state:Bterminated)};```
+- ``chanltl``: Promela ```trace```. No TLA equivalent for now
+- ``nochanltl``: Promela ```notrace```. No TLA equivalent for now
 - variable declarations: ```type name = value;```
   - at state level: ```state: localvar: bool lightOn = false;```;
   - at global level: ```AnyState: globalvar: bool lightOn = false;```;

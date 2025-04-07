@@ -17,6 +17,8 @@ upml: *.cpp *.h* Makefile
 	
 test: upml
 	./_upml.sh  --file ../plantuml/syntax1.plantuml        --verify none  --diff off --ide off
+	./_upml.sh  --file ../plantuml/trace/send.plantuml     --verify spin  --diff off --ide off
+	./_upml.sh  --file ../plantuml/trace/recv.plantuml     --verify spin  --diff off --ide off
 	./_upml.sh  --file ../plantuml/sip/sip.plantuml        --verify both  --diff off --ide off
 	./_upml.sh  --file ../plantuml/switch/switch.plantuml  --verify both  --diff off --ide off
 	./_upml.sh  --file ../plantuml/hsm/hsm2.plantuml       --verify none  --diff off --ide off
