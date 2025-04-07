@@ -37,7 +37,7 @@
   - note the ending ```;```
   - currently the effect can be:
     - a ```send``` statement: ```send event:INVITE to state:Bob ;```
-    - a ```trace``` statement: ```trace t1 foo bar baz ;```
+    - a ```trace``` statement: ```trace t1 foo bar baz ;```. Not to be confused with the Promela ```trace``` construct.
     - a simple statement terminated by a ```;```. Examples:
       - ```send event:INVITE to state:Bob ;```
       - ```lightOn = true ;```
