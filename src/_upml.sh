@@ -98,7 +98,12 @@ function verify_spin() {
     fi
     gcc -DMEMLIM=1024 -O2 -DXUSAFE -DSAFETY -w -o pan pan.c || exit 1
     ./pan -m10000 || exit 1
-    rm pan pan.* _spin_nvr.tmp
+    errs=`./pan -m10000`
+    if [ -z "$errs" ]; then
+        echo "*** errors $errs"
+        exit 1
+    fi
+    rm pan pan.* _spin_nvr.tmp *.trail
 
     # acceptance
     ${exespin} -a "$spinfile" || exit 1
@@ -107,7 +112,12 @@ function verify_spin() {
     fi
     gcc -DMEMLIM=1024 -O2 -DXUSAFE -w -o pan pan.c || exit 1
     ./pan -m10000 -a || exit 1
-    rm pan pan.* _spin_nvr.tmp
+    errs=`./pan -m10000 -a`
+    if [ -z "$errs" ]; then
+        echo "*** errors $errs"
+        exit 1
+    fi
+    rm pan pan.* _spin_nvr.tmp *.trail
 
     # -c columnated output
     # -g global vars

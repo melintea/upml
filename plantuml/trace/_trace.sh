@@ -7,7 +7,7 @@ xdiffer=meld
 spinfile=trace.promela
 
 #rm *.trail
-${xexespin} "$spinfile"&
+#${xexespin} "$spinfile"&
 #${xdiffer} "$spinfile" &
 
 # safety
@@ -18,6 +18,11 @@ if [[ ! -f pan.c ]]; then
 fi
 gcc -DMEMLIM=1024 -O2 -DXUSAFE -DSAFETY -w -o pan pan.c || exit 1
 ./pan -m10000 || exit 1
+errs=`./pan -m10000 | grep 'errors: 0'`
+if [ -z "$errs" ]; then
+    echo "*** errors $errs"
+    exit 1
+fi
 rm pan pan.* _spin_nvr.tmp *.trail
 
 # acceptance
@@ -27,6 +32,11 @@ if [[ ! -f pan.c ]]; then
 fi
 gcc -DMEMLIM=1024 -O2 -DXUSAFE -w -o pan pan.c || exit 1
 ./pan -m10000 -a || exit 1
+$errs=`./pan -m10000 -a | grep 'errors: 0'`
+if [ -z "$errs" ]; then
+    echo "*** errors $errs"
+    exit 1
+fi
 rm pan pan.* _spin_nvr.tmp *.trail
 
 printf "\e[42m*** Pass ***\e[0m \n"
