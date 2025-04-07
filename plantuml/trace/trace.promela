@@ -1,0 +1,38 @@
+/*
+  (no)trace tests
+*/
+
+#define S1 1
+#define S2 2
+
+mtype = { ack, nak, err, next, accept };
+
+typedef event {mtype evId; short fromState; short toState};
+chan qid = [3] of {event}; 
+
+proctype p() {
+    qid!ack(S1,0);
+    qid!nak(S2,1);
+} //p
+
+proctype q() {
+    local event evtRecv;
+    qid?evtRecv;
+    qid?evtRecv;
+} //q
+
+trace {
+    do
+    :: qid!ack; qid!nak;
+    //:: qid!accept; qid!ack; qid!nak; //error
+    od
+}
+
+init {
+    atomic {
+        run p();
+        run q();
+    }
+    //(_nr_pr == 1);
+} // init
+
