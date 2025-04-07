@@ -4,6 +4,7 @@
 
 #define S1 1
 #define S2 2
+#define S3 3
 
 mtype = { ack, nak, err, next, accept };
 
@@ -23,8 +24,13 @@ proctype q() {
 
 trace {
     do
-    :: qid!ack; qid!nak;
+    :: qid!ack(S1,_); qid!nak(S2,1); // ok
+    //:: qid!ack; qid!nak; //ok
+    
     //:: qid!accept; qid!ack; qid!nak; //error
+    //:: qid!ack(S1,3); qid!nak(S2,1); // error
+    //:: qid!ack,S1,3; qid!nak,S2,1; // error
+    //:: qid!ack(S3); qid!nak(S2); // error
     od
 }
 
