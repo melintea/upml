@@ -333,8 +333,17 @@ void Visitor::visit_activity(
 
             const auto& destStatePtr(_sm.state(toSt._name));
             assert(destStatePtr != nullptr); // unless someone made a typo
-            for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
-                _out << "send_event(" << idx(region(destRegPtr->_id))
+            if ( ! destStatePtr->_regions.empty()) {
+                for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
+                    _out << "send_event(" << idx(region(destRegPtr->_id))
+                        << ", " << event(evt._name)
+                        << ", " << astmt._state
+                        << ", " << idx(state(toSt._name))
+                        << "); \n";
+                }
+            } else {
+                // simple leaf state
+                _out << "send_event(" << idx(region(destStatePtr->_ownedByRegion->_id))
                     << ", " << event(evt._name)
                     << ", " << astmt._state
                     << ", " << idx(state(toSt._name))

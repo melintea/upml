@@ -2,4 +2,8 @@ set auto-load safe-path /
 
 set breakpoint pending on
 
-set args --in ../plantuml/error/sip.plantuml --backend spin
+file ./upml
+set args --in ../plantuml/trace/send.plantuml --backend spin
+b promela_generator.cpp:260
+b promela_generator.cpp:331
+
