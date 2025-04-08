@@ -393,12 +393,12 @@ inline upml::sm::stateptr_t ast_visitor<upml::sm::region>::state(const upml::sm:
         return this->_target._ownedByState;
     }
     
-    auto it(this->_target._substates.find(sid));
-    if (it != this->_target._substates.end()) {
-        return it->second;
+    auto pState(this->_target.state(sid));
+    if (pState) {
+        return pState;
     }
     
-    auto pState(std::make_shared<upml::sm::state>());
+    pState = std::make_shared<upml::sm::state>();
     pState->_ownedByRegion = this->_target.shared_from_this();
     pState->_superState    = this->_target._ownedByState;
     pState->_id = sid; 
