@@ -52,7 +52,9 @@ struct scoped_name
 
         // assumption: there is only one or two such
         auto sep1(scopedName.find_first_of(":_")); 
-        if (sep1 == std::string::npos) {
+        if (  sep1 == std::string::npos
+           || sep1 == 0 // start with
+           ) {
             t._name = scopedName;
             return t;
         }
@@ -721,6 +723,29 @@ inline send_event(channel, evt, fs, ts)
                             self->_out << item << ' ';
                         }
                         self->_out << ";\n ";
+                   });
+
+    visit_activity(keyword::chanltl,
+                   [self=this](const upml::sm::activity& a){
+                        self->_out << "//" << a << '\n';
+                        self->_out << "trace { do :: ";
+                        for (const auto& tok: a._args) {
+                            auto ttok(scoped_name::create(tok));
+                            auto item(ttok._scope == keyword::event ? event(ttok._name) : self->token(tok));
+                            self->_out << item << ' ';
+                        }
+                        self->_out << " od; }\n ";
+                   });
+    visit_activity(keyword::nochanltl,
+                   [self=this](const upml::sm::activity& a){
+                        self->_out << "//" << a << '\n';
+                        self->_out << "notrace { do :: ";
+                        for (const auto& tok: a._args) {
+                            auto ttok(scoped_name::create(tok));
+                            auto item(ttok._scope == keyword::event ? event(ttok._name) : self->token(tok));
+                            self->_out << item << ' ';
+                        }
+                        self->_out << " od; }\n ";
                    });
 
     _out <<     "/*UPML end*/\n\n";

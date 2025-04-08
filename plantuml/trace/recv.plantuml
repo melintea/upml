@@ -10,7 +10,7 @@ Cons --> Cons : E2
 [*] --> Prod
 Prod --> [*]
 Prod: entry: send event:E1 to state:Cons\; send event:E2 to state:Cons\; ;
-Prod: chanltl: _channels[state:Cons]?E1 \; _channels[state:Cons]?E2 \; ;
+Prod: chanltl: _channels[state:Cons]?event:E1 \; _channels[state:Cons]?event:E2 \; ;
 
 @enduml
 
