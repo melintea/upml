@@ -1,0 +1,39 @@
+@startuml
+
+[*] --> SuperSuper
+state SuperSuper {
+  SuperSuper: entry: ;
+  SuperSuper: exit: ;
+
+  [*] --> Super2 
+  state Super2 {
+      Super2: entry: ;
+      Super2: exit: ;
+      
+      [*] --> Super21
+      state Super21 {
+          Super21: entry: ;
+          Super21: exit: ;
+	  
+          [*] --> S211
+          S211: entry: ;
+          S211: exit: ;
+      }
+  }
+  
+  state Super1 {
+      [*] --> S11
+      Super1: entry: ;
+      Super1: exit: ;
+      
+      S11: entry: ;
+      S11: exit: ;
+  }
+}
+
+
+Super21 --> S11 : G
+
+
+@enduml
+
