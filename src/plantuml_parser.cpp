@@ -51,16 +51,17 @@ struct skipper final : qi::grammar<It>
     skipper() : skipper::base_type(rule) {}
 
     const qi::rule<It> rule = encoding::space 
-            | ("\\n\\") | ("\\n") 
             | ("//" >> *~encoding::char_("\n")   >> -qi::eol)
             | ("/*" >> *(encoding::char_ - "*/") >> "*/")
             // --- legit plantuml not needed
+            | ("\\n\\") | ("\\n") 
             | ("hide empty description")
             | ("note" >> *(encoding::char_ - "end note") >> "end note")
             | ("note" >> *(encoding::char_ - ":") >> ":" >> *~encoding::char_("\n") >> -qi::eol)
             | ("skinparam" >> *~encoding::char_("\n")   >> -qi::eol)
             | ("skinparam state" >> *(encoding::char_ - "}") >> "}")
             | ("<style>" >> *(encoding::char_ - "</style>") >> "</style>")
+            | ("<color:" >> *(encoding::char_ - ">") >> ">") | ("</color>")
             //| ("state" >> *encoding::char_("a-zA-Z0-9_") >> " as"  >> *~encoding::char_("\n") >> -qi::eol)
             // state "long state name" as ignored
             //| ("state \"" >> *~encoding::char_("\"") >> "\" as"  >> *(encoding::char_ - "{\n") >> -qi::eol)

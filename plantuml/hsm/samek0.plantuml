@@ -36,27 +36,27 @@ state SuperSuper {
 }
 
 
-Super21 -[#green]-> Super21 : A 
+Super21 -[#green]-> Super21 : <color:green>A </color>
 
-Super21 -[#orchid]-> S211 : B
+Super21 -[#orchid]-> S211 : <color:orchid>B </color>
 
-Super2 -[#green]-> Super1 : C 
-Super1 -[#green]-> Super2 : C 
+Super2 -[#green]-> Super1 : <color:green>C </color>
+Super1 -[#green]-> Super2 : <color:green>C </color>
 
-S211 -[#blue]-> Super21 : D 
-S11 -[#blue]-> Super1 : D 
-Super1 -[#blue]-> SuperSuper : D 
+S211 -[#blue]-> Super21 : <color:blue>D </color>
+S11 -[#blue]-> Super1 : <color:blue>D </color>
+Super1 -[#blue]-> SuperSuper : <color:blue>D </color>
 
-SuperSuper -[#red]-> S11 : E 
+SuperSuper -[#red]-> S11 : <color:red>E </color>
 
-Super2 -[#olive]-> S11 : F 
-Super1 -[#olive]-> S211 : F 
+Super2 -[#olive]-> S11 : <color:olive>F </color>
+Super1 -[#olive]-> S211 : <color:olive>F </color>
 
-Super21 -[#sienna]-> S11 : G 
-S11 -[#sienna]-> S211 : G 
+Super21 -[#sienna]-> S11 : <color:sienna>G </color>
+S11 -[#sienna]-> S211 : <color:sienna>G </color>
 
-S211 -[#coral]-> SuperSuper : H 
-S11 -[#coral]-> SuperSuper : H 
+S211 -[#magenta]-> SuperSuper : <color:magenta>H </color>
+S11 -[#magenta]-> SuperSuper : <color:magenta>H </color>
 
 --
 
