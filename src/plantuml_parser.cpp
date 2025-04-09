@@ -51,7 +51,7 @@ struct skipper final : qi::grammar<It>
     skipper() : skipper::base_type(rule) {}
 
     const qi::rule<It> rule = encoding::space 
-            | ("\\n") 
+            | ("\\n\\") | ("\\n") 
             | ("//" >> *~encoding::char_("\n")   >> -qi::eol)
             | ("/*" >> *(encoding::char_ - "*/") >> "*/")
             // --- legit plantuml not needed
