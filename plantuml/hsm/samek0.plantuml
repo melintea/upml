@@ -1,5 +1,9 @@
 @startuml
 
+note top of SuperSuper
+ Miro Samek ch2/p88
+end note
+
 [*] --> SuperSuper
 state SuperSuper {
   SuperSuper: entry: ;
@@ -32,8 +36,35 @@ state SuperSuper {
 }
 
 
-Super21 --> S11 : G
+Super21 -[#green]-> Super21 : A 
 
+Super21 -[#orchid]-> S211 : B
+
+Super2 -[#green]-> Super1 : C 
+Super1 -[#green]-> Super2 : C 
+
+S211 -[#blue]-> Super21 : D 
+S11 -[#blue]-> Super1 : D 
+Super1 -[#blue]-> SuperSuper : D 
+
+SuperSuper -[#red]-> S11 : E 
+
+Super2 -[#olive]-> S11 : F 
+Super1 -[#olive]-> S211 : F 
+
+Super21 -[#sienna]-> S11 : G 
+S11 -[#sienna]-> S211 : G 
+
+S211 -[#coral]-> SuperSuper : H 
+S11 -[#coral]-> SuperSuper : H 
+
+--
+
+state Test {
+[*] --> Test
+Test --> [*]
+Test: entry: send event:G to state:SuperSuper ;
+}
 
 @enduml
 
