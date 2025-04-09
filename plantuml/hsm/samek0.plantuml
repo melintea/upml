@@ -1,6 +1,6 @@
 @startuml
 
-note top of SuperSuper
+note bottom of SuperSuper
  Miro Samek ch2/p88
 end note
 
