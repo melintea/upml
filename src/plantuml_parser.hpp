@@ -377,6 +377,8 @@ inline void ast_visitor<upml::sm::state>::operator()(ast_region& n) const
     upml::sm::regionptr_t pr(new_region());
     ast_node v = n;
     boost::apply_visitor(upml::ast_visitor(*pr, this->_depth+1), v);
+
+    pr->_id = this->_target._id + "IN" + pr->_id;
     this->_target._regions[pr->_id] = pr;
 } // state                                                                                                                      
 inline upml::sm::regionptr_t ast_visitor<upml::sm::state>::new_region() const
@@ -490,6 +492,8 @@ inline void ast_visitor<upml::sm::state_machine>::operator()(ast_region& n) cons
     
     ast_node v = n;
     boost::apply_visitor(upml::ast_visitor(*pr, this->_depth+1), v);
+
+    pr->_id = pr->_ownedByState->_id + "IN" + pr->_id ;
     this->_target._regions[pr->_id] = pr;
 } // state_machine
 
