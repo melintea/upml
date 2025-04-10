@@ -36,7 +36,7 @@ short _eventProcessed = idx_unknown;
 bool  _isLightOn = false;
 
 
-inline send_internal_event(evt, toState) // sorted order
+inline send_internal_event(evt, toState) 
 {
     _stateMachineInternalChannel!evt(toState);
 }
