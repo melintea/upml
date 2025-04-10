@@ -100,6 +100,8 @@ int main(int argc, char* argv[])
 
     const std::string& backend(vm["backend"].as<std::string>());
     if (backend == "spin") {
+        ret = ret & upml::spin::v1::generate(out, sm);
+    } else if (backend == "spin2") {
         ret = ret & upml::spin::generate(out, sm);
     } else if (backend == "tla") {
         ret = ret & upml::tla::generate(out, sm);
