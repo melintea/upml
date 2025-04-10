@@ -261,6 +261,9 @@ struct state_machine : public location
 
     stateptr_t state(const id_t& state) const;
 
+    // how many layers under (including!) fromState
+    size_t depth(const stateptr_t& fromState = nullptr) const;
+
     stateptr_t least_common_ancestor(
                     const stateptr_t& fromState, 
                     const stateptr_t& toState, 
@@ -367,6 +370,31 @@ inline state_to_state_transition state_machine::transition(
     path._enterStates.push_back({keyword::EnterState, toState});
 
     return path;
+}
+
+inline size_t state_machine::depth(const stateptr_t& fromState) const
+{
+    size_t max = 0;
+
+    if  ( ! fromState) {
+        for (const auto& [k, r] : _regions) {
+            for (const auto& [k2, s2] : r->_substates) {
+                max = 1 + std::max(max, depth(s2));
+            }
+        }
+    } else {
+        if (fromState->_regions.empty()) {
+            return 1;
+        } else {
+            for (const auto& [k, r] : fromState->_regions) {
+                for (const auto& [k2, s2] : r->_substates) {
+                    max = 1 + std::max(max, depth(s2));
+                }
+            }
+        }
+    }
+
+    return max;
 }
 
 //-----------------------------------------------------------------------------
