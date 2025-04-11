@@ -110,7 +110,7 @@ function verify_spin() {
     if [[ ! -f pan.c ]]; then
         exit 1
     fi
-    gcc -DMEMLIM=2048 -O2 -DXUSAFE -DNOCLAIM -w -o pan pan.c || exit 1
+    gcc -DMEMLIM=2048 -O2 -DXUSAFE -w -o pan pan.c || exit 1
     ./pan -m10000 -a || exit 1
     errs=`./pan -m10000 -a -f`
     if [ -z "$errs" ]; then
