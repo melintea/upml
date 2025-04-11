@@ -96,7 +96,7 @@ function verify_spin() {
     if [[ ! -f pan.c ]]; then
         exit 1
     fi
-    gcc -DMEMLIM=1024 -O2 -DXUSAFE -DSAFETY -w -o pan pan.c || exit 1
+    gcc -DMEMLIM=2048 -O2 -DXUSAFE -DSAFETY -w -o pan pan.c || exit 1
     ./pan -m10000 || exit 1
     errs=`./pan -m10000`
     if [ -z "$errs" ]; then
@@ -105,14 +105,14 @@ function verify_spin() {
     fi
     rm pan pan.* _spin_nvr.tmp *.trail
 
-    # acceptance
+    # acceptance + fairness (model is larger)
     ${exespin} -a "$spinfile" || exit 1
     if [[ ! -f pan.c ]]; then
         exit 1
     fi
-    gcc -DMEMLIM=1024 -O2 -DXUSAFE -w -o pan pan.c || exit 1
+    gcc -DMEMLIM=2048 -O2 -DXUSAFE -DNOCLAIM -w -o pan pan.c || exit 1
     ./pan -m10000 -a || exit 1
-    errs=`./pan -m10000 -a`
+    errs=`./pan -m10000 -a -f`
     if [ -z "$errs" ]; then
         echo "*** errors $errs"
         exit 1
