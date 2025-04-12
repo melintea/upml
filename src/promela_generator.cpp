@@ -169,14 +169,6 @@ class Visitor
     map_t  _states;
     map_t  _regions;
 
-    struct RegionData
-    {
-        id_t _id;
-        int  _regionIdx{0};
-        id_t _initialState;
-        id_t _finalState;
-    };
-
     using ActivityProcessor_t = std::function<void(const upml::sm::activity&)>;
 
 public: 
@@ -191,10 +183,9 @@ public:
     Visitor& operator=(Visitor&&)      = delete;
 
     void visit() const;
-    void visit_region(const upml::sm::region& r, const id_t& ownerTag) const;
-    void visit_state(const upml::sm::state& s, const RegionData& rd) const;
-    void visit_state_regions(const upml::sm::state& s) const;
-    void visit_transitions(const upml::sm::state& s, const RegionData& rd) const;
+    void visit_region(const upml::sm::region& r) const;
+    void visit_state(const upml::sm::state& sbrk) const;
+    void visit_transitions(const upml::sm::state& s) const;
     void visit_transition(
         const upml::sm::state&      s,
         const upml::sm::transition& t) const;
@@ -232,7 +223,7 @@ Visitor::Visitor(upml::sm::state_machine& sm,
     _states  = names("", sm.states(true));
 }
 
-void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
+void Visitor::visit_state(const upml::sm::state& s) const
 {
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
@@ -241,6 +232,18 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     const id_t blabel(name("body", s._id));
     const id_t llabel(name("loop", s._id));
     const id_t plabel(name("progress", s._id)); //TODO:non-progress cycles
+
+    for (const auto& [k, r] : s._regions) {
+        visit_region(*r);
+    }
+
+    _out << "\n/*\n" << s << "\n*/";
+    _out << "\nproctype "  << s._id << "(chan superChannel; chan eventProcessedChan) \n{";
+    _out << "\n    local event evtRecv; \n";
+    _out << "\n" << ilabel << ":\n";
+    //TODO
+    _out << "} // "  << s._id << "\n\n";
+    return;
 
     _out << "\n\n/* state " << idxCrtState << "[*/\n"
          << '\n' << ilabel << ':';
@@ -276,7 +279,7 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
             _out << elabel << ':'; // TODO: skip completely the channel read 
         }
         _out << "\n    myChan?evtRecv; "
-             << "\n    printf(\"MSC: > %d " << region(rd._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, currentState); "
+             << "\n    printf(\"MSC: > %d " << region(s._ownedByRegion->_id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, currentState); "
              << "\n:: else"
              << "\n    evtRecv.evId = " << event(upml::keyword::NullEvent) << ";"
              ;
@@ -286,18 +289,11 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
         //    _out << "\n/* state " << idxCrtState << " has no transitions */\n";
         //    return;
         //}
-        visit_transitions(s, rd);
+        visit_transitions(s);
         visit_activity(keyword::postcondition, s);
     }
 
     _out << "\n/*]state " << idxCrtState << "*/\n";
-}
-
-void Visitor::visit_state_regions(const upml::sm::state& s) const
-{
-    for (const auto& [k, r] : s._regions) {
-        visit_region(*r, s._id);
-    }
 }
 
 void Visitor::visit_activity(
@@ -465,7 +461,7 @@ void Visitor::visit_transition(
     _out << "\n";
 }
 
-void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) const
+void Visitor::visit_transitions(const upml::sm::state& s) const
 {
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
@@ -506,36 +502,8 @@ void Visitor::visit_activity(
     }
 }
 
-void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) const
+void Visitor::visit_region(const upml::sm::region& r) const
 {
-    RegionData regionData;
-    regionData._id        = r._id;
-    regionData._regionIdx = _regions.find(r._id)->second; // TODO: this is always 0 - wrong
-    const id_t rname(name("region", r._id));
-
-    regionData._initialState = "idx_unknown";
-    regionData._finalState   = "idx_unknown";
-    for (const auto& [k, s] : r._substates) {
-        if (s->_initial) {
-            regionData._initialState = idx(state(k));
-        }
-        if (s->_final) {
-            regionData._finalState = idx(state(k));
-        }
-    }
-
-    _out << "\n\nproctype " << rname << "() // " << ownerTag
-         << "\n{"
-         << "\n    local short myIdx = " << idx(region(r._id)) << ";"
-         << "\n    local chan myChan = _channels[myIdx]; xr myChan; "
-         << "\n    local event evtRecv; "
-         << "\n    local short initialState = " << regionData._initialState << "; "
-         << "\n    local short finalState = " << regionData._finalState << "; "
-         << "\n    local short currentState = initialState; "
-         << "\n    local short newState = initialState; "
-         << "\n    local bool noChannel = false; "
-         << "\n"
-         ;
     {
         lpt::autoindent_guard indent(_out);
         for (const auto& [k, s] : r._substates) {
@@ -545,8 +513,8 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
 
     for (const auto& [k, s] : r._substates) {
         if (s->_initial) {
-            assert(idx(state(k)) == regionData._initialState);
-            visit_state(*s, regionData);
+            //assert(idx(state(k)) == regionData._initialState);
+            visit_state(*s);
             break;  //only one such (supposedly)
         }
     }
@@ -555,22 +523,14 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
         if (s->_initial || s->_final) {
             continue;
         }
-        visit_state(*s, regionData);
+        visit_state(*s);
     }
 
     for (const auto& [k, s] : r._substates) {
         if (s->_final && ! s->_initial) { // initial might be the final too
-            assert(idx(state(k)) == regionData._finalState);
-            visit_state(*s, regionData);
+            visit_state(*s);
             break;  //only one such (supposedly)
         }
-    }
-
-    _out << "\n} // " << rname << ' ' << ownerTag << "\n";
-
-
-    for (const auto& [k, s] : r._substates) {
-        visit_state_regions(*s);
     }
 }
 
@@ -647,7 +607,11 @@ void Visitor::visit() const
     }
     _out << "}\n";
     _out << "\ntypedef event {mtype evId; short fromState; short toState};";
-    _out << "\n\nchan _channels[" << _regions.size() << "] = [" << _regions.size() << "] of {event}; \n";
+    _out << "\nchan _externalEvents = [1] of {event};";
+    _out << "\nchan _internalEvents = [2*" << _sm.depth() << "+1] of {event};";
+    _out << "\nchan _eventProcessed = [1] of {event};";
+    _out << "\nbool _stateMachineReady = false;";
+    _out << "\n";
     for (const auto& [k, r] : _sm._regions) {
         for (const auto& [k2, s2] : r->_substates) {
             visit_activity(keyword::globalvar, *s2);
@@ -656,18 +620,25 @@ void Visitor::visit() const
 
     _out << R"--(
 
-inline send_event(channel, evt, fs, ts)
+inline send_internal_event(evt, fromState, toState) 
 {
-    local event evtSend;
-    evtSend.evId      = evt;
-    evtSend.fromState = fs;
-    evtSend.toState   = ts;
-    _channels[channel]!evtSend;
+    assert(nfull(_internalEvents));
+    _internalEvents!evt(fromState, toState);
+}
+    
+inline send_event(evt, fromState, toState)
+{
+    (_stateMachineReady == true);
+    empty(_internalEvents);
+    _externalEvents!evt(fromState, toState);
+    _eventProcessed?_;
 }
     )--";
 
     for (const auto& [k, r] : _sm._regions) {
-        visit_region(*r, _sm._id);
+        assert(r->_substates.size() == 1);
+        assert(r->_substates.begin()->second->_initial);
+        visit_state(*r->_substates.begin()->second);
     }
 
     // Reserve the never clause for LTL, non-progress checks and such; use a proctype instead
@@ -707,8 +678,8 @@ inline send_event(channel, evt, fs, ts)
 
     _out << "\ninit {\n"
         << "    atomic {\n";
-    for (const auto& [k, r] : _regions) {
-        _out << "        run " << region(k) << "(); \n";
+    for (const auto& [k, r] : _sm._regions) {
+        _out << "        run " << r->_substates.begin()->second->_id << "(_externalEvents, _eventProcessed); \n";
     }
     _out <<     "        run invariants(); \n";
     _out <<     "    }\n";
