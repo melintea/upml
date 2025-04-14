@@ -225,6 +225,10 @@ Visitor::Visitor(upml::sm::state_machine& sm,
 
 void Visitor::visit_state(const upml::sm::state& s) const
 {
+    for (const auto& [k, r] : s._regions) {
+        visit_region(*r);
+    }
+
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
     const id_t ilabel(name(keyword::entry, s._id));
@@ -232,35 +236,23 @@ void Visitor::visit_state(const upml::sm::state& s) const
     const id_t blabel(name("body", s._id));
     const id_t llabel(name("loop", s._id));
     const id_t plabel(name("progress", s._id)); //TODO:non-progress cycles
-
-    for (const auto& [k, r] : s._regions) {
-        visit_region(*r);
-    }
+    const bool topState(s._superState && !s._superState->_superState);
+    const bool leafState(s._regions.empty());
 
     _out << "\n/*\n" << s << "\n*/";
     _out << "\nproctype "  << s._id << "(chan superChannel; chan eventProcessedChan) \n{";
-    _out << "\n    local event evtRecv; \n";
-    _out << "\n" << ilabel << ":\n";
-    //TODO
-    _out << "} // "  << s._id << "\n\n";
-    return;
+    _out << "\n    local event evtRecv;";
+    _out << "\n    short currentState = idx_unknown;";
+    if ( ! leafState) {
+        _out << "\n    chan substateChannel = [1] of {event};";
+    }
 
-    _out << "\n\n/* state " << idxCrtState << "[*/\n"
-         << '\n' << ilabel << ':';
+    _out << "\n\n" << ilabel << ":\n";
     {
         lpt::autoindent_guard indent(_out);
-    
-        _out << "\ncurrentState = newState;";
-        if (  s._config.count(keyword::noInboundEvents) 
-           || s._transitions.empty()
-        ) {
-            _out << "\nnoChannel = true;";
-        }
-    
-        _out << '\n';
-
         visit_activity(keyword::precondition, s);
         visit_activity(keyword::entry, s);
+        _out << "\ncurrentState = " << idxCrtState << ";";
     }
 
     _out << "\n\n" << blabel << ':';
@@ -270,6 +262,24 @@ void Visitor::visit_state(const upml::sm::state& s) const
     if (s._config.count(keyword::progressTag)) {
         _out << "\n" << plabel << ':';
     }
+    if (topState) {
+        lpt::autoindent_guard indent(_out);
+        _out << "\nif";
+        _out << "\n:: nempty(_internalEvents) -> _internalEvents?evtRecv;";
+        _out << "\n:: empty(_internalEvents)  -> " << elabel << ": superChannel?evtRecv;";
+        _out << "\nfi";
+        _out << "\nprintf(\"MSC: > " <<  s._id << " event %e in state %d\\n\", evtRecv.evId, currentState);\n";
+    } else {
+        lpt::autoindent_guard indent(_out);
+        _out << "\nsuperChannel?evtRecv;";
+        _out << "\nprintf(\"MSC: > " <<  s._id << " event %e in state %d\\n\", evtRecv.evId, currentState);\n";
+    }
+
+    //TODO
+
+    _out << "\n} // "  << s._id << "\n\n";
+    return;
+
     {
         lpt::autoindent_guard indent(_out);
 
@@ -327,18 +337,18 @@ void Visitor::visit_activity(
             assert(destStatePtr != nullptr); // unless someone made a typo
             if ( ! destStatePtr->_regions.empty()) {
                 for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
-                    _out << "send_event(" << idx(region(destRegPtr->_id))
-                        << ", " << event(evt._name)
-                        << ", " << astmt._state
+                    _out << "send_event(" 
+                        << event(evt._name)
                         << ", " << idx(state(toSt._name))
+                        << ", " << astmt._state // from
                         << "); \n";
                 }
             } else {
                 // simple leaf state
-                _out << "send_event(" << idx(region(destStatePtr->_ownedByRegion->_id))
-                    << ", " << event(evt._name)
-                    << ", " << astmt._state
+                _out << "send_event(" 
+                    << event(evt._name)
                     << ", " << idx(state(toSt._name))
+                    << ", " << astmt._state // from
                     << "); \n";
             }
         } else if (keyword::trace == astmt._args[upml::sm::activity::_argOrder::aoActivity]) {
@@ -606,11 +616,10 @@ void Visitor::visit() const
         _out << e << ", ";
     }
     _out << "}\n";
-    _out << "\ntypedef event {mtype evId; short fromState; short toState};";
+    _out << "\ntypedef event {mtype evId; short toState; short fromState;};";
     _out << "\nchan _externalEvents = [1] of {event};";
     _out << "\nchan _internalEvents = [2*" << _sm.depth() << "+1] of {event};";
     _out << "\nchan _eventProcessed = [1] of {event};";
-    _out << "\nbool _stateMachineReady = false;";
     _out << "\n";
     for (const auto& [k, r] : _sm._regions) {
         for (const auto& [k2, s2] : r->_substates) {
@@ -628,7 +637,6 @@ inline send_internal_event(evt, fromState, toState)
     
 inline send_event(evt, fromState, toState)
 {
-    (_stateMachineReady == true);
     empty(_internalEvents);
     _externalEvents!evt(fromState, toState);
     _eventProcessed?_;
