@@ -684,13 +684,13 @@ void Visitor::visit() const
 inline send_internal_event(evt, fromState, toState) 
 {
     assert(nfull(_internalEvents));
-    _internalEvents!evt(fromState, toState);
+    _internalEvents!evt(toState, fromState);
 }
     
 inline send_event(evt, fromState, toState)
 {
     empty(_internalEvents);
-    _externalEvents!evt(fromState, toState);
+    _externalEvents!evt(toState, fromState);
     _eventProcessed?_;
 }
     )--";
