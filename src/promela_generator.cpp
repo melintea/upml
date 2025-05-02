@@ -478,25 +478,44 @@ void Visitor::visit_transition(
     const auto evt(scoped_name::create(t._event));
     const auto toSt(scoped_name::create(t._toState));
     const auto idxCrtState(idx(state(s._id)));
+    const id_t elabel(name("end", s._id));
+    const id_t blabel(name("body", s._id));
+    const id_t llabel(name("loop", s._id));
+    const id_t plabel(name("progress", s._id)); //TODO:non-progress cycles
 
     lpt::autoindent_guard indent(_out);
 
     _out << "\n//" << t << '\n';
     _out << ":: (evtRecv.evId == " << event(evt._name); 
-         visit_guard(s, t);
+    visit_guard(s, t);
     _out << ") -> ";
-         visit_effect(s, t);
+    visit_effect(s, t);
+
     if (idx(state(toSt._name)) == idxCrtState) {
+        // Should be an exit&re-enter transition, not an internal one
+        // but process as internal
+        // TODO: distinguish between the two
         visit_activity(keyword::postcondition, s);
-        //lpt::autoindent_guard indent(_out);
-        _out << "\nnewState = " << idx(state(toSt._name)) << "; ";
-        _out << "\ngoto " << name("body", s._id) << ';';
+        _out << "\ngoto " << blabel << ';'; // remain in state
     } else {
-        visit_activity(keyword::exit, s);
+        auto lcaPath(_sm.transition(_sm.state(s._id), _sm.state(toSt._name)));
+        _out << "\n// " << lcaPath;
+        std::ranges::for_each(std::as_const(lcaPath._exitStates), 
+            [self=this, &idxCrtState](const auto& change) {
+                self->_out << "\nsend_internal_event(" << event(change._event._id) 
+                           << ", " << idxCrtState 
+                           << ", " << idx(state(change._statePtr->_id ))  // to
+                           << ");";
+            });
+        std::ranges::for_each(std::as_const(lcaPath._enterStates), 
+            [self=this, &idxCrtState](const auto& change) {
+                self->_out << "\nsend_internal_event(" << event(change._event._id) 
+                           << ", " << idxCrtState 
+                           << ", " << idx(state(change._statePtr->_id ))  // to
+                           << ");";
+            });
         visit_activity(keyword::postcondition, s);
-        //lpt::autoindent_guard indent(_out);
-        _out << "\nnewState = " << idx(state(toSt._name)) << "; ";
-        _out << "\ngoto " << name(keyword::entry, toSt._name) << ';';
+        _out << "\ngoto " << blabel << ';'; // remain in state awaiting the Exit event
     }
     _out << "\n";
 }
