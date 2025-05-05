@@ -95,6 +95,7 @@ using state_to_state_path = std::vector<state_change_event>;
 struct state_to_state_transition
 {
     state_to_state_path _exitStates;
+    stateptr_t          _lcaStatePtr;
     state_to_state_path _enterStates;
 
     friend std::ostream& operator<<(std::ostream& os, const state_to_state_transition& t);
@@ -348,6 +349,7 @@ inline state_to_state_transition state_machine::transition(
     const auto& toStateRootPath(toState->path_to_root() | std::views::reverse);
     const auto& lcaState(least_common_ancestor(fromState, toState, internalTransition));
     assert(lcaState);
+    path._lcaStatePtr = lcaState;
 
     path._exitStates.push_back({keyword::ExitState, fromState});
     for (const auto& exitState : fromStateRootPath) {
@@ -602,7 +604,7 @@ inline std::ostream& operator<<(std::ostream& os, const state_to_state_transitio
                           [&os](const auto& change) {
                               os << change._event._id << ':' << change._statePtr->_id << "->";
                           });
-    os << "[^]->";
+    os << "[" << t._lcaStatePtr->_id << "]->";
     std::ranges::for_each(std::as_const(t._enterStates), 
                           [&os](const auto& change) {
                               os << change._event._id << ':' << change._statePtr->_id << "->";
