@@ -113,7 +113,7 @@ id_t name(upml::sm::id_t& evt)
 map_t names(const id_t& prefix, const upml::sm::names_t& evts)
 {
     map_t ret;
-    idx_t i(0);
+    idx_t i(1); // reserve 0 for unknown
     for (const auto& e : evts) {
         scoped_name te(scoped_name::create(e));
         ret[name(prefix, te._name)] = i++;
@@ -646,8 +646,8 @@ void Visitor::visit() const
         ;
     _out << "\n\n" << _sm << "\n*/\n\n";
 
-    _out << "\n#define idx_unknown -1\n";
-    _out << "\n#define idx_statusNotProcessed 0\n";
+    _out << "\n#define idx_unknown 0\n";
+    _out << "\n#define idx_statusNotProcessed 0";
     _out << "\n#define idx_statusProcessed 1\n";
     for (const auto& [k, s] : _states) {
         _out << "\n#define " << idx(state(k)) << " " << s;
