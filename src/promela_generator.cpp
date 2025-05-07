@@ -244,7 +244,6 @@ void Visitor::visit_state(const upml::sm::state& s) const
     _out << "\nproctype "  << s._id << "(chan superChannel; chan eventProcessedChan) \n{";
     _out << "\n    local event evtRecv;";
     _out << "\n    local eventStatus eventProcessed;";
-    _out << "\n    short currentState = idx_unknown;";
     if ( ! leafState) {
         for (const auto& [k1, r1] : s._regions) {
             auto subchan = "substateChannel_" + k1;
@@ -268,7 +267,7 @@ void Visitor::visit_state(const upml::sm::state& s) const
                 }
             }
         }
-        _out << "\ncurrentState = " << idxCrtState << ";";
+        _out << "\n_currentState[" << idxCrtState << "] = true;";
     }
 
     _out << "\n\n" << blabel << ':';
@@ -285,10 +284,10 @@ void Visitor::visit_state(const upml::sm::state& s) const
             _out << "\n:: nempty(_internalEvents) -> _internalEvents?evtRecv;";
             _out << "\n:: empty(_internalEvents)  -> " << elabel << ": superChannel?evtRecv;";
             _out << "\nfi";
-            _out << "\nprintf(\"MSC: > " <<  s._id << " event %e in state %d\\n\", evtRecv.evId, currentState);\n";
+            _out << "\nprintf(\"MSC: > " <<  s._id << " event %e in state %d\\n\", evtRecv.evId, " << idxCrtState << ");\n";
         } else {
             _out << "\nsuperChannel?evtRecv;";
-            _out << "\nprintf(\"MSC: > " <<  s._id << " event %e in state %d\\n\", evtRecv.evId, currentState);\n";
+            _out << "\nprintf(\"MSC: > " <<  s._id << " event %e in state %d\\n\", evtRecv.evId, " << idxCrtState << ");\n";
         }
 
         // enter/exit events
@@ -332,6 +331,7 @@ void Visitor::visit_state(const upml::sm::state& s) const
         lpt::autoindent_guard indent(_out);
         visit_activity(keyword::exit, s);
         visit_activity(keyword::postcondition, s);
+        _out << "\n_currentState[" << idxCrtState << "] = false;";
     }
     _out << "\n} // "  << s._id << "\n\n";
 }
@@ -467,7 +467,6 @@ void Visitor::visit_effect(
     // - enter new state
     // unless new state == old state:
     // - self-transitions (exit & enter again) not supported; implemented as internal
-    //_out << "currentState = idx_unknown; "; 
     visit_activity( s, a);
 }
 
@@ -649,9 +648,12 @@ void Visitor::visit() const
     _out << "\n#define idx_unknown 0\n";
     _out << "\n#define idx_statusNotProcessed 0";
     _out << "\n#define idx_statusProcessed 1\n";
+
     for (const auto& [k, s] : _states) {
         _out << "\n#define " << idx(state(k)) << " " << s;
     }
+    _out << "\n#define numStates " << _states.size() + 1;
+    _out << "\nbool _currentState[numStates]; ";
 
     _out << "\n";
     for (const auto& [k, r] : _regions) {
