@@ -411,24 +411,10 @@ std::string Visitor::token(const std::string& tok) const
     };
 
     const auto ttok(scoped_name::create(tok));
-    if ( ! ttok._item.empty() && ttok._scope == keyword::state) {
-        const auto& destStatePtr(_sm.state(ttok._name));
-        assert(destStatePtr != nullptr);
-        assert(destStatePtr->_regions.size() == 1); // TODO: syntax error if multiple regions
-        for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
-            return region(destRegPtr->_id) + ttok._itemType/*:*/ + ttok._item + ' ';
-        }
-        assert(false);
-    }
-    else {
-        auto umlTok(ttok.to_string());
-        boost::algorithm::trim(umlTok);
-        const auto it(spinTokens.find(umlTok));
-        return it != spinTokens.end() ? it->second : umlTok;
-    }
-
-    assert(false);
-    return tok;
+    auto umlTok(ttok.to_string());
+    boost::algorithm::trim(umlTok);
+    const auto it(spinTokens.find(umlTok));
+    return it != spinTokens.end() ? it->second : umlTok;
 }
 
 void Visitor::visit_guard(
