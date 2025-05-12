@@ -631,6 +631,13 @@ void Visitor::visit() const
         ;
     _out << "\n\n" << _sm << "\n*/\n\n";
 
+    /*
+    auto istates(_sm.initial_states());
+    for (const auto& s : istates) {
+        _out << "\n// initial: " << s;
+    }
+    */
+
     _out << "\n#define idx_unknown 0\n";
     _out << "\n#define idx_statusNotProcessed 0";
     _out << "\n#define idx_statusProcessed 1\n";
