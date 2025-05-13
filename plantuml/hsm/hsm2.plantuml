@@ -71,9 +71,14 @@ state Test {
 [*] --> Test
 Test --> [*]
 Test: entry: send event:G to state:SuperSuper ;
+Test: ltl: ltlBegin { []<>(  _currentState[state:SuperSuper] && _currentState[state:Super2] \n\
+                          && _currentState[state:Super21] && _currentState[state:S211]) };
+Test: ltl: ltlEnd   { <>[](  _currentState[state:SuperSuper] && _currentState[state:Super1] \n\
+                          && _currentState[state:S11]) };
 Test: ltl: ltlG {<>[]( \n\
-     (_currentState[state:S11] && ! _currentState[state:S211]) \n\
-  -> (_currentState[state:S211] && ! _currentState[state:S11]) \n\
+     (_currentState[state:SuperSuper] == false) -> (_currentState[state:SuperSuper] == true) \n\
+  -> (_currentState[state:S11] == true && _currentState[state:S211] == false) \n\
+  -> (_currentState[state:S211] == true && _currentState[state:S11] == false) \n\
   )};
 }
 
