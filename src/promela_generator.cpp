@@ -283,7 +283,7 @@ void Visitor::visit_state(const upml::sm::state& s) const
         if (topState) {
             _out << "\nif";
             _out << "\n:: nempty(_internalEvents) -> _internalEvents?evtRecv;";
-            _out << "\n:: empty(_internalEvents)  -> " << elabel << ": superChannel?evtRecv;";
+            _out << "\n:: initialized && empty(_internalEvents)  -> " << elabel << ": superChannel?evtRecv;";
             _out << "\nfi";
             _out << "\nprintf(\"MSC: > " <<  s._id << " event %e in state %d\\n\", evtRecv.evId, " << idxCrtState << ");\n";
         } else {
@@ -666,7 +666,7 @@ void Visitor::visit() const
     for (const auto& e : evts) {
         _out << e << ", ";
     }
-    _out << "}\n";
+    _out << "}";
     _out << "\ntypedef event {mtype evId; short toState; short fromState;};";
     _out << "\nchan _externalEvents = [1] of {event};";
     _out << "\nchan _internalEvents = [2*" << _sm.depth() << "] of {event};";
@@ -686,8 +686,7 @@ void Visitor::visit() const
             "\n}\n"
             "\ninline send_event(evt, fromState, toState)"
             "\n{"
-            "\n    (initialized);"
-            "\n    empty(_internalEvents);"
+            "\n    (initialized && empty(_internalEvents));"
             "\n    _externalEvents!evt(toState, fromState);"
             "\n    _eventProcessed?_;"
             "\n}\n"
