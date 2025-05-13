@@ -256,6 +256,7 @@ void Visitor::visit_state(const upml::sm::state& s) const
     {
         lpt::autoindent_guard indent(_out);
         _out << "\n_currentState[" << idxCrtState << "] = true;";
+        _out << "\n_initialState[" << idxCrtState << "] = " << s._initial << ";";
         visit_activity(keyword::precondition, s);
         visit_activity(keyword::entry, s);
         for (const auto& [k1, r1] : s._regions) {
@@ -631,13 +632,6 @@ void Visitor::visit() const
         ;
     _out << "\n\n" << _sm << "\n*/\n\n";
 
-    /*
-    auto istates(_sm.initial_states());
-    for (const auto& s : istates) {
-        _out << "\n// initial: " << s;
-    }
-    */
-
     _out << "\n#define idx_unknown 0\n";
     _out << "\n#define idx_statusNotProcessed 0";
     _out << "\n#define idx_statusProcessed 1\n";
@@ -647,6 +641,7 @@ void Visitor::visit() const
     }
     _out << "\n#define numStates " << _states.size() + 1;
     _out << "\nbool _currentState[numStates]; ";
+    _out << "\nbool _initialState[numStates]; ";
 
     _out << "\n";
     for (const auto& [k, r] : _regions) {
@@ -674,21 +669,27 @@ void Visitor::visit() const
         }
     }
 
-    _out << R"--(
-
-inline send_internal_event(evt, fromState, toState) 
-{
-    assert(nfull(_internalEvents));
-    _internalEvents!evt(toState, fromState);
-}
-    
-inline send_event(evt, fromState, toState)
-{
-    empty(_internalEvents);
-    _externalEvents!evt(toState, fromState);
-    _eventProcessed?_;
-}
-    )--";
+    _out << "\ninline send_internal_event(evt, fromState, toState)"
+            "\n{"
+            "\n    assert(nfull(_internalEvents));"
+            "\n    _internalEvents!evt(toState, fromState);"
+            "\n}\n"
+            "\ninline send_event(evt, fromState, toState)"
+            "\n{"
+            "\n    empty(_internalEvents);"
+            ;
+    auto istates(_sm.initial_states());
+    if (istates.size()) {
+        _out << "\n    (true";
+        for (const auto& s : istates) {
+            _out << " && _initialState[" << idx(state(s)) << "]";
+        }
+        _out << ");";
+    }
+    _out << "\n    _externalEvents!evt(toState, fromState);"
+            "\n    _eventProcessed?_;"
+            "\n}\n"
+            ;
 
     for (const auto& [k, r] : _sm._regions) {
         assert(r->_substates.size() == 1);
