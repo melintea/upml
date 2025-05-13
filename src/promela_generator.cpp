@@ -255,8 +255,6 @@ void Visitor::visit_state(const upml::sm::state& s) const
     _out << "\n\n" << ilabel << ":\n";
     {
         lpt::autoindent_guard indent(_out);
-        _out << "\n_currentState[" << idxCrtState << "] = true;";
-        _out << "\n_initialState[" << idxCrtState << "] = " << s._initial << ";";
         visit_activity(keyword::precondition, s);
         visit_activity(keyword::entry, s);
         for (const auto& [k1, r1] : s._regions) {
@@ -269,6 +267,8 @@ void Visitor::visit_state(const upml::sm::state& s) const
                 }
             }
         }
+        _out << "\n_currentState[" << idxCrtState << "] = true;";
+        _out << "\n_initialState[" << idxCrtState << "] = " << s._initial << ";";
     }
 
     _out << "\n\n" << blabel << ':';
