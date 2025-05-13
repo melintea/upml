@@ -642,6 +642,16 @@ void Visitor::visit() const
     _out << "\n#define numStates " << _states.size() + 1;
     _out << "\nbool _currentState[numStates]; ";
     _out << "\nbool _initialState[numStates]; ";
+    auto istates(_sm.initial_states());
+    if (istates.size()) {
+        _out << "\n#define initialized (true";
+        for (const auto& s : istates) {
+            _out << " && _initialState[" << idx(state(s)) << "]";
+        }
+        _out << ")";
+    } else {
+        _out  << "\n#define initialized (skip)";
+    }
 
     _out << "\n";
     for (const auto& [k, r] : _regions) {
@@ -676,17 +686,9 @@ void Visitor::visit() const
             "\n}\n"
             "\ninline send_event(evt, fromState, toState)"
             "\n{"
+            "\n    (initialized);"
             "\n    empty(_internalEvents);"
-            ;
-    auto istates(_sm.initial_states());
-    if (istates.size()) {
-        _out << "\n    (true";
-        for (const auto& s : istates) {
-            _out << " && _initialState[" << idx(state(s)) << "]";
-        }
-        _out << ");";
-    }
-    _out << "\n    _externalEvents!evt(toState, fromState);"
+            "\n    _externalEvents!evt(toState, fromState);"
             "\n    _eventProcessed?_;"
             "\n}\n"
             ;
