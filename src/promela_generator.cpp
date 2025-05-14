@@ -294,12 +294,18 @@ void Visitor::visit_state(const upml::sm::state& s) const
         // enter/exit events
         _out << "\nif";
         _out << "\n:: (evtRecv.evId == " << event(keyword::ExitState) << " && evtRecv.toState == " << idxCrtState << ") -> ";
+        if ( ! topState) {
+            _out << "\n   eventProcessedChan!" << event(keyword::ExitState) << "(idx_statusProcessed);";
+        }
         _out << "\n   goto " << xlabel << "; \n";
         for (const auto& [k1, r1] : s._regions) {
             auto subchan = "substateChannel_" + k1;
             for (const auto& [k2, s2] : r1->_substates) {
                 _out << "\n:: (evtRecv.evId == " << event(keyword::EnterState) << " && evtRecv.toState == " << idx(state(s2->_id)) << ") -> ";
                 _out << "\n   run " << s2->_id << "(" << subchan << ", substateEventProcessedChan); goto " << blabel << "; \n";
+                if ( ! topState) {
+                    _out << "\n   eventProcessedChan!" << event(keyword::EnterState) << "(idx_statusProcessed);";
+                }
             }
         }
         _out << "\n:: else -> skip; // send to substates for processing";
@@ -501,6 +507,7 @@ void Visitor::visit_transition(
                            << ");";
             });
         visit_activity(keyword::postcondition, s);
+        _out << "\neventProcessedChan!" << event(evt._name) << "(idx_statusProcessed);";
         _out << "\ngoto " << blabel << ';'; // remain in state awaiting the Exit event
     }
     _out << "\n";
