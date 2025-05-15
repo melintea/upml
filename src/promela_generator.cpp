@@ -255,6 +255,7 @@ void Visitor::visit_state(const upml::sm::state& s) const
     _out << "\n\n" << ilabel << ":\n";
     {
         lpt::autoindent_guard indent(_out);
+        _out << "\n_initialState[" << idxCrtState << "] = " << s._initial << ";";
         visit_activity(keyword::precondition, s);
         visit_activity(keyword::entry, s);
         for (const auto& [k1, r1] : s._regions) {
@@ -268,7 +269,6 @@ void Visitor::visit_state(const upml::sm::state& s) const
             }
         }
         _out << "\n_currentState[" << idxCrtState << "] = true;";
-        _out << "\n_initialState[" << idxCrtState << "] = " << s._initial << ";";
     }
 
     _out << "\n\n" << blabel << ':';
@@ -302,10 +302,11 @@ void Visitor::visit_state(const upml::sm::state& s) const
             auto subchan = "substateChannel_" + k1;
             for (const auto& [k2, s2] : r1->_substates) {
                 _out << "\n:: (evtRecv.evId == " << event(keyword::EnterState) << " && evtRecv.toState == " << idx(state(s2->_id)) << ") -> ";
-                _out << "\n   run " << s2->_id << "(" << subchan << ", substateEventProcessedChan); goto " << blabel << "; \n";
+                _out << "\n   run " << s2->_id << "(" << subchan << ", substateEventProcessedChan);";
                 if ( ! topState) {
                     _out << "\n   eventProcessedChan!" << event(keyword::EnterState) << "(idx_statusProcessed);";
                 }
+                _out << "\n   goto " << blabel << ";";
             }
         }
         _out << "\n:: else -> skip; // send to substates for processing";
@@ -319,8 +320,12 @@ void Visitor::visit_state(const upml::sm::state& s) const
             _out << "\nsubstateEventProcessedChan?eventProcessed;";
             _out << "\nassert(eventProcessed.evId == evtRecv.evId);";
             _out << "\nif";
-            _out << "\n:: (eventProcessed.status == idx_statusProcessed) -> goto " << blabel << ";";
-            _out << "\n:: else -> assert(eventProcessed.status == idx_statusProcessed); skip;";
+            _out << "\n:: (eventProcessed.status == idx_statusProcessed) -> ";
+            if ( ! topState) {
+                _out << "\n   eventProcessedChan!eventProcessed;";
+            }
+            _out << "\n   goto " << blabel << ";";
+            _out << "\n:: else -> assert(eventProcessed.status == idx_statusNotProcessed); skip;";
             _out << "\nfi\n";
         }
 
@@ -329,6 +334,7 @@ void Visitor::visit_state(const upml::sm::state& s) const
 
             visit_transitions(s);
             visit_activity(keyword::postcondition, s);
+            //TODO: else signal NotProcessed; goto blabel;
             _out << "\n} // atomic";
         }
     }
