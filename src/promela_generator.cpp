@@ -523,6 +523,7 @@ void Visitor::visit_transitions(const upml::sm::state& s) const
 {
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
+    const id_t blabel(name("body", s._id));
 
     if ( ! s._transitions.empty()) {
         _out << "\n/* transitions " << idxCrtState << "[*/"
@@ -531,7 +532,14 @@ void Visitor::visit_transitions(const upml::sm::state& s) const
            visit_transition(s, t);
         }
         visit_activity(keyword::timeout, s);
-        //TODO: resend unhandled events to the hierarchical parent state
+        // resend unhandled events to the hierarchical parent state
+        {
+            lpt::autoindent_guard indent(_out);
+            _out << "\n:: else ->"
+                 << "\neventProcessedChan!evtRecv.evId(idx_statusNotProcessed);"
+                 << "\ngoto " << blabel << ";";
+                 ;
+        }
         _out << "\nfi"
              << "\n/*]transitions " << idxCrtState << "*/\n"
              ;
