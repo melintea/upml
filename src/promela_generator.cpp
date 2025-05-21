@@ -293,10 +293,7 @@ void Visitor::visit_state(const upml::sm::state& s) const
 
         // enter/exit events
         _out << "\nif";
-        _out << "\n:: (evtRecv.evId == " << event(keyword::ExitState) << " && evtRecv.toState == " << idxCrtState << ") -> ";
-        if ( ! topState) {
-            _out << "\n   eventProcessedChan!" << event(keyword::ExitState) << "(idx_statusProcessed);";
-        }
+        _out << "\n:: (evtRecv.evId == " << event(keyword::ExitState) << " && (evtRecv.toState == " << idxCrtState << " || evtRecv.toState == idx_unknown)) -> ";
         _out << "\n   goto " << xlabel << "; \n";
         for (const auto& [k1, r1] : s._regions) {
             auto subchan = "substateChannel_" + k1;
@@ -315,8 +312,8 @@ void Visitor::visit_state(const upml::sm::state& s) const
         // send event to substates, check if processed
         for (const auto& [k1, r1] : s._regions) {
             auto subchan = "substateChannel_" + k1;
-            _out << "\n" << subchan << "!evtRecv;";
             _out << "\neventProcessed.status = idx_unknown;";
+            _out << "\n" << subchan << "!evtRecv;";
             _out << "\nsubstateEventProcessedChan?eventProcessed;";
             _out << "\nassert(eventProcessed.evId == evtRecv.evId);";
             _out << "\nif";
@@ -342,8 +339,20 @@ void Visitor::visit_state(const upml::sm::state& s) const
     _out << "\n\n" << xlabel << ':';
     {
         lpt::autoindent_guard indent(_out);
+        if ( ! leafState) {
+            for (const auto& [k1, r1] : s._regions) {
+                auto subchan = "substateChannel_" + k1;
+                _out << "\neventProcessed.status = idx_unknown;";
+                _out << "\n" << subchan << "!" << event(keyword::ExitState) << "(idx_unknown, idx_unknown);";
+                _out << "\nsubstateEventProcessedChan?eventProcessed;";
+                _out << "\nassert(eventProcessed.status == idx_statusProcessed);\n";
+            }
+        }
         visit_activity(keyword::exit, s);
         visit_activity(keyword::postcondition, s);
+        if ( ! topState) {
+            _out << "\neventProcessedChan!" << event(keyword::ExitState) << "(idx_statusProcessed);";
+        }
         _out << "\n_currentState[" << idxCrtState << "] = false;";
     }
     _out << "\n} // "  << s._id << "\n\n";
