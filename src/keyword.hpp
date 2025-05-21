@@ -23,12 +23,12 @@ inline constexpr const char* EnterState = "EnterState";
 inline constexpr const char* ExitState  = "ExitState";
 
 // State:stuff
-inline constexpr const char* entry   = "entry";
-inline constexpr const char* exit    = "exit";
+inline constexpr const char* entry     = "entry";
+inline constexpr const char* exit      = "exit";
 inline constexpr const char* precondition   = "precondition";
 inline constexpr const char* postcondition  = "postcondition";
 inline constexpr const char* invariant      = "invariant";
-inline constexpr const char* config  = "config";
+inline constexpr const char* config    = "config";
 inline constexpr const char*   noInboundEvents  = "noInboundEvents";
 inline constexpr const char*   progressTag      = "progressTag";
 inline constexpr const char* ltl       = "ltl";       // actually this is at model/global level

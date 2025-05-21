@@ -249,7 +249,7 @@ void Visitor::visit_state(const upml::sm::state& s) const
             auto subchan = "substateChannel_" + k1;
             _out << "\n    chan " << subchan << " = [1] of {event};";
         }
-        _out << "\n    chan substateEventProcessedChan = [1] of {event};";
+        _out << "\n    chan substateEventProcessedChan = [1] of {eventStatus};";
     }
 
     _out << "\n\n" << ilabel << ":\n";
