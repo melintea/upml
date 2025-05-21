@@ -293,6 +293,9 @@ void Visitor::visit_state(const upml::sm::state& s) const
 
         // enter/exit events
         _out << "\nif";
+        _out << "\n:: (evtRecv.evId == " << event(keyword::EnterState) << " && evtRecv.toState == " << idxCrtState << ") -> ";
+        _out << "\n   eventProcessedChan!" << event(keyword::EnterState) << "(idx_statusProcessed);";
+        _out << "\n   goto " << blabel << "; \n";
         _out << "\n:: (evtRecv.evId == " << event(keyword::ExitState) << " && (evtRecv.toState == " << idxCrtState << " || evtRecv.toState == idx_unknown)) -> ";
         _out << "\n   goto " << xlabel << "; \n";
         for (const auto& [k1, r1] : s._regions) {
@@ -507,6 +510,7 @@ void Visitor::visit_transition(
     } else {
         auto lcaPath(_sm.transition(_sm.state(s._id), _sm.state(toSt._name)));
         _out << "\n// " << lcaPath;
+        /*
         std::ranges::for_each(std::as_const(lcaPath._exitStates), 
             [self=this, &idxCrtState](const auto& change) {
                 self->_out << "\nsend_internal_event(" << event(change._event._id) 
@@ -514,6 +518,15 @@ void Visitor::visit_transition(
                            << ", " << idx(state(change._statePtr->_id ))  // to
                            << ");";
             });
+        */
+        if (lcaPath._exitStates.size()) {
+            const auto& change = *lcaPath._exitStates.rbegin();
+            assert(change._event._id == upml::keyword::ExitState);
+            _out << "\nsend_internal_event(" << event(change._event._id) 
+                 << ", " << idxCrtState 
+                 << ", " << idx(state(change._statePtr->_id ))  // to
+                 << ");";
+        }
         std::ranges::for_each(std::as_const(lcaPath._enterStates), 
             [self=this, &idxCrtState](const auto& change) {
                 self->_out << "\nsend_internal_event(" << event(change._event._id) 
