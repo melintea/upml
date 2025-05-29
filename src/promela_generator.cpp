@@ -238,7 +238,9 @@ void Visitor::visit_state(const upml::sm::state& s) const
     const id_t llabel(name("loop", s._id));
     const id_t plabel(name("progress", s._id)); //TODO:non-progress cycles
     const bool topState(s._superState && !s._superState->_superState);
-    const bool leafState(s._regions.empty());
+    const bool leafState = [&s]() {
+        return s._regions.empty() || s.states(true/*recursive*/).size() == 1;
+    }();
 
     _out << "\n/*\n" << s << "\n*/";
     _out << "\nproctype "  << s._id << "(chan superChannel; chan eventProcessedChan) \n{";
@@ -282,12 +284,12 @@ void Visitor::visit_state(const upml::sm::state& s) const
         lpt::autoindent_guard indent(_out);
         if (topState) {
             _out << "\nif";
-            _out << "\n:: nempty(_internalEvents) -> _internalEvents?evtRecv;";
-            _out << "\n:: initialized && empty(_internalEvents)  -> " << elabel << ": superChannel?evtRecv;";
+            _out << "\n:: nempty(_internalEvents[_chanMap[" << idxCrtState << "]]) -> _internalEvents[_chanMap[" << idxCrtState << "]]?evtRecv;";
+            _out << "\n:: initialized && empty(_internalEvents[_chanMap[" << idxCrtState << "]])  -> " << elabel << ": superChannel?evtRecv;";
             _out << "\nfi";
             _out << "\nprintf(\"MSC: > " <<  s._id << " event %e in state %d\\n\", evtRecv.evId, " << idxCrtState << ");\n";
         } else {
-            _out << "\nsuperChannel?evtRecv;";
+            _out << "\n" << elabel << ": superChannel?evtRecv;";
             _out << "\nprintf(\"MSC: > " <<  s._id << " event %e in state %d\\n\", evtRecv.evId, " << idxCrtState << ");\n";
         }
 
@@ -313,20 +315,22 @@ void Visitor::visit_state(const upml::sm::state& s) const
         _out << "\nfi\n";
 
         // send event to substates, check if processed
-        for (const auto& [k1, r1] : s._regions) {
-            auto subchan = "substateChannel_" + k1;
-            _out << "\neventProcessed.status = idx_unknown;";
-            _out << "\n" << subchan << "!evtRecv;";
-            _out << "\nsubstateEventProcessedChan?eventProcessed;";
-            _out << "\nassert(eventProcessed.evId == evtRecv.evId);";
-            _out << "\nif";
-            _out << "\n:: (eventProcessed.status == idx_statusProcessed) -> ";
-            if ( ! topState) {
-                _out << "\n   eventProcessedChan!eventProcessed;";
+        if ( ! leafState) {
+            for (const auto& [k1, r1] : s._regions) {
+                auto subchan = "substateChannel_" + k1;
+                _out << "\neventProcessed.status = idx_unknown;";
+                _out << "\n" << subchan << "!evtRecv;";
+                _out << "\nsubstateEventProcessedChan?eventProcessed;";
+                _out << "\nassert(eventProcessed.evId == evtRecv.evId);";
+                _out << "\nif";
+                _out << "\n:: (eventProcessed.status == idx_statusProcessed) -> ";
+                //if ( ! topState) {
+                    _out << "\n   eventProcessedChan!eventProcessed;";
+                //}
+                _out << "\n   goto " << blabel << ";";
+                _out << "\n:: else -> assert(eventProcessed.status == idx_statusNotProcessed); skip;";
+                _out << "\nfi\n";
             }
-            _out << "\n   goto " << blabel << ";";
-            _out << "\n:: else -> assert(eventProcessed.status == idx_statusNotProcessed); skip;";
-            _out << "\nfi\n";
         }
 
         if ( ! s._transitions.empty()) {
@@ -336,6 +340,8 @@ void Visitor::visit_state(const upml::sm::state& s) const
             visit_activity(keyword::postcondition, s);
             //TODO: else signal NotProcessed; goto blabel;
             _out << "\n} // atomic";
+        } else {
+            _out << "\ngoto " << blabel << ";";
         }
     }
 
@@ -682,9 +688,9 @@ void Visitor::visit() const
     for (const auto& [k, s] : _states) {
         _out << "\n#define " << idx(state(k)) << " " << s;
     }
-    _out << "\n#define numStates " << _states.size() + 1;
+    _out << "\n#define numStates " << _states.size() + 1 << '\n';
     _out << "\nbool _currentState[numStates]; ";
-    _out << "\nbool _initialState[numStates]; ";
+    _out << "\nbool _initialState[numStates]; \n";
     auto istates(_sm.initial_states());
     if (istates.size()) {
         _out << "\n#define initialized (true";
@@ -705,17 +711,38 @@ void Visitor::visit() const
     for (const auto& [k, e] : _events) {
         evts.insert(event(k));
     }
+
     _out << "\n\nmtype = { ";
     for (const auto& e : evts) {
         _out << e << ", ";
     }
-    _out << "}";
+    _out << "};";
+
     _out << "\ntypedef event {mtype evId; short toState; short fromState;};";
-    _out << "\nchan _externalEvents = [1] of {event};";
-    _out << "\nchan _internalEvents = [2*" << _sm.depth() << "] of {event};";
     _out << "\ntypedef eventStatus {mtype evId; short status;};";
-    _out << "\nchan _eventProcessed = [1] of {eventStatus};";
+
+    auto nTopRegs(_sm._regions.size());
+    int  chanMap[_states.size() + 1] = {};
+    for (int idxc = 0; const auto& [kr, r] : _sm._regions) {
+        //const auto idxr = _regions.at(name("", kr));
+        const auto snames(r->states(true/*recursive*/));
+        for (const auto& sn : snames) {
+            const auto idxs = _states.at(name("", sn));
+            chanMap[idxs] = idxc;
+        }
+        ++idxc;
+    }
+    _out << "\n\nint _chanMap[numStates] = {";
+    for (const char* comma = ""; const auto v : chanMap) {
+        _out << std::exchange(comma, ",") << v;
+    }
+    _out << "};";
+
+    _out << "\nchan _externalEvents[" << nTopRegs << "] = [1] of {event};";
+    _out << "\nchan _internalEvents[" << nTopRegs << "] = [2*" << _sm.depth() << "] of {event};\n";
+    _out << "\nchan _eventProcessed[" << nTopRegs << "] = [1] of {eventStatus};";
     _out << "\n";
+    
     for (const auto& [k, r] : _sm._regions) {
         for (const auto& [k2, s2] : r->_substates) {
             visit_activity(keyword::globalvar, *s2);
@@ -724,14 +751,14 @@ void Visitor::visit() const
 
     _out << "\ninline send_internal_event(evt, fromState, toState)"
             "\n{"
-            "\n    assert(nfull(_internalEvents));"
-            "\n    _internalEvents!evt(toState, fromState);"
+            "\n    assert(nfull(_internalEvents[_chanMap[toState]]));"
+            "\n    _internalEvents[_chanMap[toState]]!evt(toState, fromState);"
             "\n}\n"
             "\ninline send_event(evt, fromState, toState)"
             "\n{"
-            "\n    (initialized && empty(_internalEvents));"
-            "\n    _externalEvents!evt(toState, fromState);"
-            "\n    _eventProcessed?_;"
+            "\n    (initialized && empty(_internalEvents[_chanMap[toState]]));"
+            "\n    _externalEvents[_chanMap[toState]]!evt(toState, fromState);"
+            "\n    _eventProcessed[_chanMap[toState]]?_(_,_);"
             "\n}\n"
             ;
 
@@ -779,7 +806,10 @@ void Visitor::visit() const
     _out << "\ninit {\n"
         << "    atomic {\n";
     for (const auto& [k, r] : _sm._regions) {
-        _out << "        run " << r->_substates.begin()->second->_id << "(_externalEvents, _eventProcessed); \n";
+        const auto idxs(idx(state(r->_substates.begin()->second->_id)));
+        _out << "        run " << r->_substates.begin()->second->_id 
+             << "(_externalEvents[_chanMap[" << idxs << "]], "
+             << "_eventProcessed[_chanMap[" << idxs << "]]); \n";
     }
     _out <<     "        run invariants(); \n";
     _out <<     "    }\n";
