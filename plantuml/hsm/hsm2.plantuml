@@ -1,6 +1,6 @@
 @startuml
 
-note top of SuperSuper
+note bottom of SuperSuper
   Two levels HSM semantics:
   - instantiation: SuperSuper_entry(); Super1_entry(); S11_entry();
   - canonical T1: g() ->   S11_exit(); Super1_exit(); ->   t1(); ->  Super2_entry(); d(); S21_entry();
