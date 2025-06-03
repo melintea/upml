@@ -324,9 +324,15 @@ void Visitor::visit_state(const upml::sm::state& s) const
                 _out << "\nassert(eventProcessed.evId == evtRecv.evId);";
                 _out << "\nif";
                 _out << "\n:: (eventProcessed.status == idx_statusProcessed) -> ";
-                //if ( ! topState) {
+                if ( ! topState) { // ack all events
                     _out << "\n   eventProcessedChan!eventProcessed;";
-                //}
+                } else { // ack only external events
+                    _out << "\n   if";
+                    _out << "\n   :: (evtRecv.evId == event_EnterState || evtRecv.evId == event_ExitState) -> ";
+                    _out << "\n      skip;";
+                    _out << "\n   :: else -> eventProcessedChan!eventProcessed;";
+                    _out << "\n   fi";
+                }
                 _out << "\n   goto " << blabel << ";";
                 _out << "\n:: else -> assert(eventProcessed.status == idx_statusNotProcessed); skip;";
                 _out << "\nfi\n";
@@ -400,16 +406,16 @@ void Visitor::visit_activity(
                 for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
                     _out << "send_event(" 
                         << event(evt._name)
-                        << ", " << idx(state(toSt._name))
                         << ", " << astmt._state // from
+                        << ", " << idx(state(toSt._name))
                         << "); \n";
                 }
             } else {
                 // simple leaf state
                 _out << "send_event(" 
                     << event(evt._name)
-                    << ", " << idx(state(toSt._name))
                     << ", " << astmt._state // from
+                    << ", " << idx(state(toSt._name))
                     << "); \n";
             }
         } else if (keyword::trace == astmt._args[upml::sm::activity::_argOrder::aoActivity]) {
@@ -758,7 +764,7 @@ void Visitor::visit() const
             "\n{"
             "\n    (initialized && empty(_internalEvents[_chanMap[toState]]));"
             "\n    _externalEvents[_chanMap[toState]]!evt(toState, fromState);"
-            "\n    _eventProcessed[_chanMap[toState]]?_(_,_);"
+            "\n    _eventProcessed[_chanMap[toState]]?_(_);"
             "\n}\n"
             ;
 
