@@ -25,6 +25,6 @@ Depends on boost (spirit, program_options, filesystem). Requires C++20 or later.
 ## Similar tools & various links
 
 - ```vUML```. I could not get my hands on it.
-- [An exhausting list of FSL](https://buttondown.email/hillelwayne/archive/formal-specification-languages/)
+- [An exhaustive list of FSL](https://buttondown.email/hillelwayne/archive/formal-specification-languages/)
 - [SysML](https://sysml.org/)
 - [qhsmtst/qtools](https://www.state-machine.com/qtools/qutest_qhsm.html)
