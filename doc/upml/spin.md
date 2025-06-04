@@ -55,7 +55,7 @@ As an [comparative example](https://accu.org/journals/overload/32/183/melinte/),
 
 ## Model
 
-There are two models: [https://accu.org/journals/overload/33/186/melinte/](one for FSM and one for HSM). 
+There are two models: (one for FSM and one for HSM)[https://accu.org/journals/overload/33/186/melinte/]. 
 
 - FSM: 
   - There is at least one region in the state machine.
