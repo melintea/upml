@@ -29,15 +29,7 @@ Adjust ```maxUmlEvents``` as needed and note it is a negative. I could have used
 
 ## Model
 
-- There is at least one region in the state machine.
-- Each region executes in its own (promela) process.
-- A composite state executes in its own region - it has at
-  least one region.
-- A simple state executes in the composite state/region 
-  that owns it. 
-- Events are asynchronous messages. Event names are unique per 
-  plantuml file.
-- State names are unique per plantuml file.
+See the [Promela](spin.md#model) page.
 
 ## Differences with PlusCal
 
