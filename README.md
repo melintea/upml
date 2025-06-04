@@ -11,7 +11,7 @@ The state machine is described in a plantuml file (again, a subset of what plant
 
 ## Status
 
-Finite state machines (FSM) should be fully supported. Hierarchical state machines (HSM) are WIP.
+Finite state machines (FSM) should be fully supported. Hierarchical state machines (HSM) are WIP, and having only a Promela model.
 
 ## Build
 
