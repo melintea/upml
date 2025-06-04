@@ -2,7 +2,7 @@
 #set -x
 
 #
-# Usage: _upml.sh --file file.plantuml --verify spin|tla|both|none <--ide off> <--diff off>
+# Usage: _upml.sh --file file.plantuml --verify spin-fsm|spin-hsm|tla-hsm|both-fsm|both-hsm|none <--ide off> <--diff off>
 #
 
 gitroot=`git rev-parse --show-toplevel`
@@ -18,7 +18,7 @@ tlatoolbox=${tlahome}/toolbox
 xdiffer=meld
 
 
-echo "Usage: $0 --file file.plantuml --verify spin|tla|both|none <--ide off> <--diff off>"
+echo "Usage: $0 --file file.plantuml --verify spin-fsm|spin-hsm|tla-hsm|both-fsm|both-hsm|none <--ide off> <--diff off>"
 echo "[=== $@"
 
 
@@ -49,20 +49,36 @@ function generate_none() {
         --in "$pumlfile" \
         --backend none \
         2>&1  || exit 1
-} # generate_tla
+} # generate_none
 
-function generate_tla() {
+function generate_tla_hsm() {
     ${exeupml} \
         --in "$pumlfile" \
-        --backend tla \
+        --backend tla-hsm \
         --out "$tlafile" \
         2>&1  || exit 1
 } # generate_tla
 
-function generate_spin() {
+function generate_tla_fsm() {
     ${exeupml} \
         --in "$pumlfile" \
-        --backend spin \
+        --backend tla-fsm \
+        --out "$tlafile" \
+        2>&1  || exit 1
+} # generate_tla
+
+function generate_spin_fsm() {
+    ${exeupml} \
+        --in "$pumlfile" \
+        --backend spin-fsm \
+        --out "$spinfile" \
+        2>&1  || exit 1
+} # generate_spin
+
+function generate_spin_hsm() {
+    ${exeupml} \
+        --in "$pumlfile" \
+        --backend spin-hsm \
         --out "$spinfile" \
         2>&1  || exit 1
 } # generate_spin
@@ -110,7 +126,7 @@ function verify_spin() {
     if [[ ! -f pan.c ]]; then
         exit 1
     fi
-    gcc -DMEMLIM=2048 -O2 -DXUSAFE -w -o pan pan.c || exit 1
+    gcc -DMEMLIM=2048 -O2 -DNFAIR=4 -DXUSAFE -w -o pan pan.c || exit 1
     ./pan -m10000 -a || exit 1
     errs=`./pan -m10000 -a -f`
     if [ -z "$errs" ]; then
@@ -148,8 +164,8 @@ if [ x"${verify}" == xnone ]; then
     generate_none
 fi
 
-if [ x"${verify}" == xspin ] || [ x"${verify}" == xboth ]; then
-    generate_spin
+if [ x"${verify}" == "xspin-fsm" ] || [ x"${verify}" == "xboth-fsm" ]; then
+    generate_spin_fsm
     verify_spin
     if [ x"${diff}" != xoff ]; then
         ${xdiffer} "$spinfile" &
@@ -160,8 +176,31 @@ if [ x"${verify}" == xspin ] || [ x"${verify}" == xboth ]; then
     fi
 fi
 
-if [ x"${verify}" == xtla ] || [ x"${verify}" == xboth ]; then
-    generate_tla
+if [ x"${verify}" == "xspin-hsm" ] || [ x"${verify}" == "xboth-hsm" ]; then
+    generate_spin_hsm
+    verify_spin
+    if [ x"${diff}" != xoff ]; then
+        ${xdiffer} "$spinfile" &
+    fi
+    if [ x"${ide}" != xoff ] && [ -f "${xexespin}" ]; then
+        ${xexespin} "$spinfile"&
+        #exit 0
+    fi
+fi
+
+if [ x"${verify}" == "xtla-fsm" ] || [ x"${verify}" == "xboth-fsm" ]; then
+    generate_tla_fsm
+    verify_tla
+    if [ x"${diff}" != xoff ]; then
+        ${xdiffer} "$tlafile" &
+    fi
+    if [ x"${ide}" != xoff ]; then
+        ${tlatoolbox} "$tlafile" &
+    fi
+fi
+
+if [ x"${verify}" == "xtla-hsm" ] || [ x"${verify}" == "xboth-hsm" ]; then
+    generate_tla_hsm
     verify_tla
     if [ x"${diff}" != xoff ]; then
         ${xdiffer} "$tlafile" &

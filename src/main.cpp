@@ -37,8 +37,8 @@ int main(int argc, char* argv[])
 
     po.add_options()
         ("help,h",         "Print usage")
-        ("backend,b",      bpo::value<std::string>()->default_value("spin"), 
-                           "none, spin or tla. Default: spin")
+        ("backend,b",      bpo::value<std::string>()->default_value("none"), 
+                           "none, spin-fsm, spin-hsm or tla-fsm. Default: none")
         ("in,i",           bpo::value<std::string>(), 
                            "Plantuml input file. Default: stdin")
         ("out,o",          bpo::value<std::string>(), 
@@ -99,11 +99,11 @@ int main(int argc, char* argv[])
     lpt::autoindent_ostream out(outfs.is_open() ? outfs : std::cout);
 
     const std::string& backend(vm["backend"].as<std::string>());
-    if (backend == "spin") {
+    if (backend == "spin-fsm") {
         ret = ret & upml::spin::fsm::generate(out, sm);
-    } else if (backend == "spin2") {
+    } else if (backend == "spin-hsm") {
         ret = ret & upml::spin::hsm::generate(out, sm);
-    } else if (backend == "tla") {
+    } else if (backend == "tla-fsm") {
         ret = ret & upml::tla::fsm::generate(out, sm);
     } else if (backend == "none") {
         ; // 
