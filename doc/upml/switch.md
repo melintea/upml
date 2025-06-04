@@ -1,7 +1,7 @@
-## A double switch  model
+## (FSM) A double switch  model
 
-A double (lamp & wall) switch lamp [switch.plantuml](../../plantuml/switch/switch.plantuml) model:
-![image](../../plantuml/switch/switch0.png)
+A double (lamp & wall) switch lamp [switch.plantuml](../../plantuml/fsm/switch/switch.plantuml) model:
+![image](../../plantuml/fsm/switch/switch0.png)
 
 ## Promela 
 
@@ -26,7 +26,7 @@ state Human {
 Generate the spec and run it:
 
 ```
-./upml --in ../plantuml/switch/switch.plantuml --out ../plantuml/switch/switch.promela --backend spin
+./upml --in ../plantuml/fsm/switch/switch.plantuml --out ../plantuml/fsm/switch/switch.promela --backend spin-fsm
 
 # or
 cat ../plantuml/switch/switch.plantuml | ./umpl > ../plantuml/switch/switch.promela
@@ -62,7 +62,7 @@ depth-limit (-u200 steps) reached
 
 ### Verification
 
-![image](../../plantuml/switch/switch.png)
+![image](../../plantuml/fsm/switch/switch.png)
 
 - add a "Human" to flip the switches to turn the light on then to turn it back off. This should get the SM back into
 the ```BothOff``` state.
@@ -126,7 +126,7 @@ Close the system as described in the Promela section above. Note: this might gen
 Then run upml and load the result in the toolbox:
 
 ```
-./upml --in ../plantuml/switch/switch.plantuml --out ../plantuml/switch/switch.tla --backend tla
+./upml --in ../plantuml/fsm/switch/switch.plantuml --out ../plantuml/fsm/switch/switch.tla --backend tla-fsm
 ```
 
 Adjust ```maxUmlEvents``` to something like ```-5```; ```MaxEventsReached``` will fire.

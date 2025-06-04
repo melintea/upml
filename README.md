@@ -1,5 +1,7 @@
 # upml - formal verification of UML state machines with Promela and TLA+/PlusCal
 
+![image](plantuml/hsm/samek-g.png)
+
 A tool to convert (a subset of the whole [spec](https://www.omg.org/spec/UML/2.5.1/PDF) of) a UML state machine/statechart into:
 
 - a [Promela model](doc/upml/spin.md) for [spin](https://github.com/nimble-code/Spin) checking.
@@ -19,8 +21,8 @@ Depends on boost (spirit, program_options, filesystem). Requires C++20 or later.
 
 - [Syntax](doc/upml/syntax.md)
 - Examples:
-  - [A lamp switch](doc/upml/switch.md)
-  - [Some SIP stuff](doc/upml/sip.md)
+  - [(FSM) A lamp switch](doc/upml/switch.md)
+  - [(FSM) Some SIP stuff](doc/upml/sip.md)
 
 ## Similar tools & various links
 

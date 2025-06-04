@@ -1,7 +1,7 @@
-## SIP stuff
+## (FSM) SIP stuff
 
-A non-RFC3261-conformant-and-simplified [sip0.plantuml](../../plantuml/sip/sip0.plantuml) combination of two SM representing two parties bound by (a subset of the) SIP protocol:
-![image](../../plantuml/sip/sip0.png)
+A non-RFC3261-conformant-and-simplified [sip0.plantuml](../../plantuml/fsm/sip/sip0.plantuml) combination of two SM representing two parties bound by (a subset of the) SIP protocol:
+![image](../../plantuml/fsm/sip/sip0.png)
 
 ## Promela 
 
@@ -43,7 +43,7 @@ CallEnded --> [*]
 ClosedSystemEnvironment: ltl: ltlFinalStates {<>[](state:ClosedSystemEnvironment:currentState == state:CallEnded && state:Alice:currentState == state:Aterminated && state:Bob:currentState == state:Bterminated)};
 }
 ```
-![image](../../plantuml/sip/sip.png)
+![image](../../plantuml/fsm/sip/sip.png)
 
 A good run:
 
@@ -98,7 +98,7 @@ Use xspin/ispin.tcl.
 Close the system as described in the Promela section, run upml:
 
 ```
-./upml --in ../plantuml/sip/sip.plantuml --out ../plantuml/sip/sip.tla --backend tla
+./upml --in ../plantuml/fsm/sip/sip.plantuml --out ../plantuml/fsm/sip/sip.tla --backend tla-fsm
 ```
 Then use the toolbox with e.g. Temporal Formula: Spec and a Deadlock check.
 
