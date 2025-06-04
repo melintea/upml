@@ -22,11 +22,7 @@
 
 namespace upml {
 
-namespace spin::v1 {
-
-/*
- *  FSM/flat model.
- */ 
+namespace spin::hsm {
 
 using id_t    = upml::sm::id_t;
 using idx_t   = int;
@@ -117,7 +113,7 @@ id_t name(upml::sm::id_t& evt)
 map_t names(const id_t& prefix, const upml::sm::names_t& evts)
 {
     map_t ret;
-    idx_t i(0);
+    idx_t i(1); // reserve 0 for unknown
     for (const auto& e : evts) {
         scoped_name te(scoped_name::create(e));
         ret[name(prefix, te._name)] = i++;
@@ -173,14 +169,6 @@ class Visitor
     map_t  _states;
     map_t  _regions;
 
-    struct RegionData
-    {
-        id_t _id;
-        int  _regionIdx{0};
-        id_t _initialState;
-        id_t _finalState;
-    };
-
     using ActivityProcessor_t = std::function<void(const upml::sm::activity&)>;
 
 public: 
@@ -195,10 +183,9 @@ public:
     Visitor& operator=(Visitor&&)      = delete;
 
     void visit() const;
-    void visit_region(const upml::sm::region& r, const id_t& ownerTag) const;
-    void visit_state(const upml::sm::state& s, const RegionData& rd) const;
-    void visit_state_regions(const upml::sm::state& s) const;
-    void visit_transitions(const upml::sm::state& s, const RegionData& rd) const;
+    void visit_region(const upml::sm::region& r) const;
+    void visit_state(const upml::sm::state& sbrk) const;
+    void visit_transitions(const upml::sm::state& s) const;
     void visit_transition(
         const upml::sm::state&      s,
         const upml::sm::transition& t) const;
@@ -236,32 +223,54 @@ Visitor::Visitor(upml::sm::state_machine& sm,
     _states  = names("", sm.states(true));
 }
 
-void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
+void Visitor::visit_state(const upml::sm::state& s) const
 {
+    for (const auto& [k, r] : s._regions) {
+        visit_region(*r);
+    }
+
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
     const id_t ilabel(name(keyword::entry, s._id));
+    const id_t xlabel(name(keyword::exit, s._id));
     const id_t elabel(name("end", s._id));
     const id_t blabel(name("body", s._id));
     const id_t llabel(name("loop", s._id));
     const id_t plabel(name("progress", s._id)); //TODO:non-progress cycles
+    const bool topState(s._superState && !s._superState->_superState);
+    const bool leafState = [&s]() {
+        return s._regions.empty() || s.states(true/*recursive*/).size() == 1;
+    }();
 
-    _out << "\n\n/* state " << idxCrtState << "[*/\n"
-         << '\n' << ilabel << ':';
+    _out << "\n/*\n" << s << "\n*/";
+    _out << "\nproctype "  << s._id << "(chan superChannel; chan eventProcessedChan) \n{";
+    _out << "\n    local event evtRecv;";
+    _out << "\n    local eventStatus eventProcessed;";
+    if ( ! leafState) {
+        for (const auto& [k1, r1] : s._regions) {
+            auto subchan = "substateChannel_" + k1;
+            _out << "\n    chan " << subchan << " = [1] of {event};";
+        }
+        _out << "\n    chan substateEventProcessedChan = [1] of {eventStatus};";
+    }
+
+    _out << "\n\n" << ilabel << ":\n";
     {
         lpt::autoindent_guard indent(_out);
-    
-        _out << "\ncurrentState = newState;";
-        if (  s._config.count(keyword::noInboundEvents) 
-           || s._transitions.empty()
-        ) {
-            _out << "\nnoChannel = true;";
-        }
-    
-        _out << '\n';
-
+        _out << "\n_initialState[" << idxCrtState << "] = " << s._initial << ";";
         visit_activity(keyword::precondition, s);
         visit_activity(keyword::entry, s);
+        for (const auto& [k1, r1] : s._regions) {
+            for (const auto& [k2, s2] : r1->_substates) {
+                if (s2->_initial) {
+                    _out << "\nsend_internal_event(" << event(keyword::EnterState) 
+                         << ", " << idxCrtState 
+                         << ", " << idx(state(s2->_id)) 
+                         << ");";
+                }
+            }
+        }
+        _out << "\n_currentState[" << idxCrtState << "] = true;";
     }
 
     _out << "\n\n" << blabel << ':';
@@ -273,35 +282,95 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     }
     {
         lpt::autoindent_guard indent(_out);
-
-        _out << "\nif"
-             << "\n:: ( noChannel == false ) -> ";
-        if (s._final) {
-            _out << elabel << ':'; // TODO: skip completely the channel read 
+        if (topState) {
+            _out << "\nif";
+            _out << "\n:: nempty(_internalEvents[_chanMap[" << idxCrtState << "]]) -> _internalEvents[_chanMap[" << idxCrtState << "]]?evtRecv;";
+            _out << "\n:: initialized && empty(_internalEvents[_chanMap[" << idxCrtState << "]])  -> " << elabel << ": superChannel?evtRecv;";
+            _out << "\nfi";
+            _out << "\nprintf(\"MSC: > " <<  s._id << " event %e in state %d\\n\", evtRecv.evId, " << idxCrtState << ");\n";
+        } else {
+            _out << "\n" << elabel << ": superChannel?evtRecv;";
+            _out << "\nprintf(\"MSC: > " <<  s._id << " event %e in state %d\\n\", evtRecv.evId, " << idxCrtState << ");\n";
         }
-        _out << "\n    myChan?evtRecv; "
-             << "\n    printf(\"MSC: > %d " << region(rd._id) << " event %e in state %d\\n\", myIdx, evtRecv.evId, currentState); "
-             << "\n:: else"
-             << "\n    evtRecv.evId = " << event(upml::keyword::NullEvent) << ";"
-             ;
-        _out << "\nfi\n\n";
-        
-        //if (s._transitions.empty()) {
-        //    _out << "\n/* state " << idxCrtState << " has no transitions */\n";
-        //    return;
-        //}
-        visit_transitions(s, rd);
+
+        // enter/exit events
+        _out << "\nif";
+        _out << "\n:: (evtRecv.evId == " << event(keyword::EnterState) << " && evtRecv.toState == " << idxCrtState << ") -> ";
+        _out << "\n   eventProcessedChan!" << event(keyword::EnterState) << "(idx_statusProcessed);";
+        _out << "\n   goto " << blabel << "; \n";
+        _out << "\n:: (evtRecv.evId == " << event(keyword::ExitState) << " && (evtRecv.toState == " << idxCrtState << " || evtRecv.toState == idx_unknown)) -> ";
+        _out << "\n   goto " << xlabel << "; \n";
+        for (const auto& [k1, r1] : s._regions) {
+            auto subchan = "substateChannel_" + k1;
+            for (const auto& [k2, s2] : r1->_substates) {
+                _out << "\n:: (evtRecv.evId == " << event(keyword::EnterState) << " && evtRecv.toState == " << idx(state(s2->_id)) << ") -> ";
+                _out << "\n   run " << s2->_id << "(" << subchan << ", substateEventProcessedChan);";
+                if ( ! topState) {
+                    _out << "\n   eventProcessedChan!" << event(keyword::EnterState) << "(idx_statusProcessed);";
+                }
+                _out << "\n   goto " << blabel << ";";
+            }
+        }
+        _out << "\n:: else -> skip; // send to substates for processing";
+        _out << "\nfi\n";
+
+        // send event to substates, check if processed
+        if ( ! leafState) {
+            for (const auto& [k1, r1] : s._regions) {
+                auto subchan = "substateChannel_" + k1;
+                _out << "\neventProcessed.status = idx_unknown;";
+                _out << "\n" << subchan << "!evtRecv;";
+                _out << "\nsubstateEventProcessedChan?eventProcessed;";
+                _out << "\nassert(eventProcessed.evId == evtRecv.evId);";
+                _out << "\nif";
+                _out << "\n:: (eventProcessed.status == idx_statusProcessed) -> ";
+                if ( ! topState) { // ack all events
+                    _out << "\n   eventProcessedChan!eventProcessed;";
+                } else { // ack only external events
+                    _out << "\n   if";
+                    _out << "\n   :: (evtRecv.evId == event_EnterState || evtRecv.evId == event_ExitState) -> ";
+                    _out << "\n      skip;";
+                    _out << "\n   :: else -> eventProcessedChan!eventProcessed;";
+                    _out << "\n   fi";
+                }
+                _out << "\n   goto " << blabel << ";";
+                _out << "\n:: else -> assert(eventProcessed.status == idx_statusNotProcessed); skip;";
+                _out << "\nfi\n";
+            }
+        }
+
+        if ( ! s._transitions.empty()) {
+            _out << "\natomic {\neventProcessed.status = idx_unknown;\n";
+
+            visit_transitions(s);
+            visit_activity(keyword::postcondition, s);
+            //TODO: else signal NotProcessed; goto blabel;
+            _out << "\n} // atomic";
+        } else {
+            _out << "\ngoto " << blabel << ";";
+        }
+    }
+
+    _out << "\n\n" << xlabel << ':';
+    {
+        lpt::autoindent_guard indent(_out);
+        if ( ! leafState) {
+            for (const auto& [k1, r1] : s._regions) {
+                auto subchan = "substateChannel_" + k1;
+                _out << "\neventProcessed.status = idx_unknown;";
+                _out << "\n" << subchan << "!" << event(keyword::ExitState) << "(idx_unknown, idx_unknown);";
+                _out << "\nsubstateEventProcessedChan?eventProcessed;";
+                _out << "\nassert(eventProcessed.status == idx_statusProcessed);\n";
+            }
+        }
+        visit_activity(keyword::exit, s);
         visit_activity(keyword::postcondition, s);
+        if ( ! topState) {
+            _out << "\neventProcessedChan!" << event(keyword::ExitState) << "(idx_statusProcessed);";
+        }
+        _out << "\n_currentState[" << idxCrtState << "] = false;";
     }
-
-    _out << "\n/*]state " << idxCrtState << "*/\n";
-}
-
-void Visitor::visit_state_regions(const upml::sm::state& s) const
-{
-    for (const auto& [k, r] : s._regions) {
-        visit_region(*r, s._id);
-    }
+    _out << "\n} // "  << s._id << "\n\n";
 }
 
 void Visitor::visit_activity(
@@ -335,17 +404,17 @@ void Visitor::visit_activity(
             assert(destStatePtr != nullptr); // unless someone made a typo
             if ( ! destStatePtr->_regions.empty()) {
                 for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
-                    _out << "send_event(" << idx(region(destRegPtr->_id))
-                        << ", " << event(evt._name)
-                        << ", " << astmt._state
+                    _out << "send_event(" 
+                        << event(evt._name)
+                        << ", " << astmt._state // from
                         << ", " << idx(state(toSt._name))
                         << "); \n";
                 }
             } else {
                 // simple leaf state
-                _out << "send_event(" << idx(region(destStatePtr->_ownedByRegion->_id))
-                    << ", " << event(evt._name)
-                    << ", " << astmt._state
+                _out << "send_event(" 
+                    << event(evt._name)
+                    << ", " << astmt._state // from
                     << ", " << idx(state(toSt._name))
                     << "); \n";
             }
@@ -379,24 +448,10 @@ std::string Visitor::token(const std::string& tok) const
     };
 
     const auto ttok(scoped_name::create(tok));
-    if ( ! ttok._item.empty() && ttok._scope == keyword::state) {
-        const auto& destStatePtr(_sm.state(ttok._name));
-        assert(destStatePtr != nullptr);
-        assert(destStatePtr->_regions.size() == 1); // TODO: syntax error if multiple regions
-        for (const auto& [k, destRegPtr] : destStatePtr->_regions) {
-            return region(destRegPtr->_id) + ttok._itemType/*:*/ + ttok._item + ' ';
-        }
-        assert(false);
-    }
-    else {
-        auto umlTok(ttok.to_string());
-        boost::algorithm::trim(umlTok);
-        const auto it(spinTokens.find(umlTok));
-        return it != spinTokens.end() ? it->second : umlTok;
-    }
-
-    assert(false);
-    return tok;
+    auto umlTok(ttok.to_string());
+    boost::algorithm::trim(umlTok);
+    const auto it(spinTokens.find(umlTok));
+    return it != spinTokens.end() ? it->second : umlTok;
 }
 
 void Visitor::visit_guard(
@@ -435,7 +490,6 @@ void Visitor::visit_effect(
     // - enter new state
     // unless new state == old state:
     // - self-transitions (exit & enter again) not supported; implemented as internal
-    //_out << "currentState = idx_unknown; "; 
     visit_activity( s, a);
 }
 
@@ -446,33 +500,64 @@ void Visitor::visit_transition(
     const auto evt(scoped_name::create(t._event));
     const auto toSt(scoped_name::create(t._toState));
     const auto idxCrtState(idx(state(s._id)));
+    const id_t elabel(name("end", s._id));
+    const id_t blabel(name("body", s._id));
+    const id_t llabel(name("loop", s._id));
+    const id_t plabel(name("progress", s._id)); //TODO:non-progress cycles
 
     lpt::autoindent_guard indent(_out);
 
     _out << "\n//" << t << '\n';
     _out << ":: (evtRecv.evId == " << event(evt._name); 
-         visit_guard(s, t);
+    visit_guard(s, t);
     _out << ") -> ";
-         visit_effect(s, t);
+    visit_effect(s, t);
+
     if (idx(state(toSt._name)) == idxCrtState) {
+        // Should be an exit&re-enter transition, not an internal one
+        // but process as internal
+        // TODO: distinguish between the two
         visit_activity(keyword::postcondition, s);
-        //lpt::autoindent_guard indent(_out);
-        _out << "\nnewState = " << idx(state(toSt._name)) << "; ";
-        _out << "\ngoto " << name("body", s._id) << ';';
+        _out << "\ngoto " << blabel << ';'; // remain in state
     } else {
-        visit_activity(keyword::exit, s);
+        auto lcaPath(_sm.transition(_sm.state(s._id), _sm.state(toSt._name)));
+        _out << "\n// " << lcaPath;
+        /*
+        std::ranges::for_each(std::as_const(lcaPath._exitStates), 
+            [self=this, &idxCrtState](const auto& change) {
+                self->_out << "\nsend_internal_event(" << event(change._event._id) 
+                           << ", " << idxCrtState 
+                           << ", " << idx(state(change._statePtr->_id ))  // to
+                           << ");";
+            });
+        */
+        if (lcaPath._exitStates.size()) {
+            const auto& change = *lcaPath._exitStates.rbegin();
+            assert(change._event._id == upml::keyword::ExitState);
+            _out << "\nsend_internal_event(" << event(change._event._id) 
+                 << ", " << idxCrtState 
+                 << ", " << idx(state(change._statePtr->_id ))  // to
+                 << ");";
+        }
+        std::ranges::for_each(std::as_const(lcaPath._enterStates), 
+            [self=this, &idxCrtState](const auto& change) {
+                self->_out << "\nsend_internal_event(" << event(change._event._id) 
+                           << ", " << idxCrtState 
+                           << ", " << idx(state(change._statePtr->_id ))  // to
+                           << ");";
+            });
         visit_activity(keyword::postcondition, s);
-        //lpt::autoindent_guard indent(_out);
-        _out << "\nnewState = " << idx(state(toSt._name)) << "; ";
-        _out << "\ngoto " << name(keyword::entry, toSt._name) << ';';
+        _out << "\neventProcessedChan!" << event(evt._name) << "(idx_statusProcessed);";
+        _out << "\ngoto " << blabel << ';'; // remain in state awaiting the Exit event
     }
     _out << "\n";
 }
 
-void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) const
+void Visitor::visit_transitions(const upml::sm::state& s) const
 {
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
+    const id_t blabel(name("body", s._id));
 
     if ( ! s._transitions.empty()) {
         _out << "\n/* transitions " << idxCrtState << "[*/"
@@ -481,7 +566,14 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
            visit_transition(s, t);
         }
         visit_activity(keyword::timeout, s);
-        //TODO: resend unhandled events to the hierarchical parent state
+        // resend unhandled events to the hierarchical parent state
+        {
+            lpt::autoindent_guard indent(_out);
+            _out << "\n:: else ->"
+                 << "\neventProcessedChan!evtRecv.evId(idx_statusNotProcessed);"
+                 << "\ngoto " << blabel << ";";
+                 ;
+        }
         _out << "\nfi"
              << "\n/*]transitions " << idxCrtState << "*/\n"
              ;
@@ -510,36 +602,8 @@ void Visitor::visit_activity(
     }
 }
 
-void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) const
+void Visitor::visit_region(const upml::sm::region& r) const
 {
-    RegionData regionData;
-    regionData._id        = r._id;
-    regionData._regionIdx = _regions.find(r._id)->second; // TODO: this is always 0 - wrong
-    const id_t rname(name("region", r._id));
-
-    regionData._initialState = "idx_unknown";
-    regionData._finalState   = "idx_unknown";
-    for (const auto& [k, s] : r._substates) {
-        if (s->_initial) {
-            regionData._initialState = idx(state(k));
-        }
-        if (s->_final) {
-            regionData._finalState = idx(state(k));
-        }
-    }
-
-    _out << "\n\nproctype " << rname << "() // " << ownerTag
-         << "\n{"
-         << "\n    local short myIdx = " << idx(region(r._id)) << ";"
-         << "\n    local chan myChan = _channels[myIdx]; xr myChan; "
-         << "\n    local event evtRecv; "
-         << "\n    local short initialState = " << regionData._initialState << "; "
-         << "\n    local short finalState = " << regionData._finalState << "; "
-         << "\n    local short currentState = initialState; "
-         << "\n    local short newState = initialState; "
-         << "\n    local bool noChannel = false; "
-         << "\n"
-         ;
     {
         lpt::autoindent_guard indent(_out);
         for (const auto& [k, s] : r._substates) {
@@ -549,8 +613,8 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
 
     for (const auto& [k, s] : r._substates) {
         if (s->_initial) {
-            assert(idx(state(k)) == regionData._initialState);
-            visit_state(*s, regionData);
+            //assert(idx(state(k)) == regionData._initialState);
+            visit_state(*s);
             break;  //only one such (supposedly)
         }
     }
@@ -559,22 +623,14 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
         if (s->_initial || s->_final) {
             continue;
         }
-        visit_state(*s, regionData);
+        visit_state(*s);
     }
 
     for (const auto& [k, s] : r._substates) {
         if (s->_final && ! s->_initial) { // initial might be the final too
-            assert(idx(state(k)) == regionData._finalState);
-            visit_state(*s, regionData);
+            visit_state(*s);
             break;  //only one such (supposedly)
         }
-    }
-
-    _out << "\n} // " << rname << ' ' << ownerTag << "\n";
-
-
-    for (const auto& [k, s] : r._substates) {
-        visit_state_regions(*s);
     }
 }
 
@@ -631,9 +687,25 @@ void Visitor::visit() const
         ;
     _out << "\n\n" << _sm << "\n*/\n\n";
 
-    _out << "\n#define idx_unknown -1\n";
+    _out << "\n#define idx_unknown 0\n";
+    _out << "\n#define idx_statusNotProcessed 0";
+    _out << "\n#define idx_statusProcessed 1\n";
+
     for (const auto& [k, s] : _states) {
         _out << "\n#define " << idx(state(k)) << " " << s;
+    }
+    _out << "\n#define numStates " << _states.size() + 1 << '\n';
+    _out << "\nbool _currentState[numStates]; ";
+    _out << "\nbool _initialState[numStates]; \n";
+    auto istates(_sm.initial_states());
+    if (istates.size()) {
+        _out << "\n#define initialized (true";
+        for (const auto& s : istates) {
+            _out << " && _initialState[" << idx(state(s)) << "]";
+        }
+        _out << ")";
+    } else {
+        _out  << "\n#define initialized (skip)";
     }
 
     _out << "\n";
@@ -645,33 +717,61 @@ void Visitor::visit() const
     for (const auto& [k, e] : _events) {
         evts.insert(event(k));
     }
+
     _out << "\n\nmtype = { ";
     for (const auto& e : evts) {
         _out << e << ", ";
     }
-    _out << "}\n";
-    _out << "\ntypedef event {mtype evId; short fromState; short toState};";
-    _out << "\n\nchan _channels[" << _regions.size() << "] = [" << _regions.size() << "] of {event}; \n";
+    _out << "};";
+
+    _out << "\ntypedef event {mtype evId; short toState; short fromState;};";
+    _out << "\ntypedef eventStatus {mtype evId; short status;};";
+
+    auto nTopRegs(_sm._regions.size());
+    int  chanMap[_states.size() + 1] = {};
+    for (int idxc = 0; const auto& [kr, r] : _sm._regions) {
+        //const auto idxr = _regions.at(name("", kr));
+        const auto snames(r->states(true/*recursive*/));
+        for (const auto& sn : snames) {
+            const auto idxs = _states.at(name("", sn));
+            chanMap[idxs] = idxc;
+        }
+        ++idxc;
+    }
+    _out << "\n\nint _chanMap[numStates] = {";
+    for (const char* comma = ""; const auto v : chanMap) {
+        _out << std::exchange(comma, ",") << v;
+    }
+    _out << "};";
+
+    _out << "\nchan _externalEvents[" << nTopRegs << "] = [1] of {event};";
+    _out << "\nchan _internalEvents[" << nTopRegs << "] = [2*" << _sm.depth() << "] of {event};\n";
+    _out << "\nchan _eventProcessed[" << nTopRegs << "] = [1] of {eventStatus};";
+    _out << "\n";
+    
     for (const auto& [k, r] : _sm._regions) {
         for (const auto& [k2, s2] : r->_substates) {
             visit_activity(keyword::globalvar, *s2);
         }
     }
 
-    _out << R"--(
-
-inline send_event(channel, evt, fs, ts)
-{
-    local event evtSend;
-    evtSend.evId      = evt;
-    evtSend.fromState = fs;
-    evtSend.toState   = ts;
-    _channels[channel]!evtSend;
-}
-    )--";
+    _out << "\ninline send_internal_event(evt, fromState, toState)"
+            "\n{"
+            "\n    assert(nfull(_internalEvents[_chanMap[toState]]));"
+            "\n    _internalEvents[_chanMap[toState]]!evt(toState, fromState);"
+            "\n}\n"
+            "\ninline send_event(evt, fromState, toState)"
+            "\n{"
+            "\n    (initialized && empty(_internalEvents[_chanMap[toState]]));"
+            "\n    _externalEvents[_chanMap[toState]]!evt(toState, fromState);"
+            "\n    _eventProcessed[_chanMap[toState]]?_(_);"
+            "\n}\n"
+            ;
 
     for (const auto& [k, r] : _sm._regions) {
-        visit_region(*r, _sm._id);
+        assert(r->_substates.size() == 1);
+        assert(r->_substates.begin()->second->_initial);
+        visit_state(*r->_substates.begin()->second);
     }
 
     // Reserve the never clause for LTL, non-progress checks and such; use a proctype instead
@@ -711,8 +811,11 @@ inline send_event(channel, evt, fs, ts)
 
     _out << "\ninit {\n"
         << "    atomic {\n";
-    for (const auto& [k, r] : _regions) {
-        _out << "        run " << region(k) << "(); \n";
+    for (const auto& [k, r] : _sm._regions) {
+        const auto idxs(idx(state(r->_substates.begin()->second->_id)));
+        _out << "        run " << r->_substates.begin()->second->_id 
+             << "(_externalEvents[_chanMap[" << idxs << "]], "
+             << "_eventProcessed[_chanMap[" << idxs << "]]); \n";
     }
     _out <<     "        run invariants(); \n";
     _out <<     "    }\n";
@@ -764,12 +867,12 @@ bool generate(
     std::ostream&            out,
     upml::sm::state_machine& sm)
 {
-    spin::v1::Visitor psm(sm, out);
+    spin::hsm::Visitor psm(sm, out);
     psm.visit();
     return true;
 }
 
-} // spin::v1
+} // spin::hsm
 
 } //namespace upml
 

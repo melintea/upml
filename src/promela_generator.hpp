@@ -17,14 +17,18 @@
 
 namespace upml::spin {
 
+namespace hsm {
+
 /*
- *
+ * HSM
  */
 bool generate(
     std::ostream&            out,
     upml::sm::state_machine& sm);
 
-namespace v1 {
+} // hsm
+
+namespace fsm {
 
 /*
  * FSM model
@@ -33,7 +37,7 @@ bool generate(
     std::ostream&            out,
     upml::sm::state_machine& sm);
 
-} // v1
+} // fsm
 
 } //namespace upml::spin
 

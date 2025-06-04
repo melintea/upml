@@ -17,12 +17,27 @@
 
 namespace upml::tla {
 
+namespace hsm {
+
 /*
- *
+ * HSM
  */
 bool generate(
     std::ostream&            out,
     upml::sm::state_machine& sm);
+
+} // hsm
+
+namespace fsm {
+
+/*
+ * FSM model
+ */
+bool generate(
+    std::ostream&            out,
+    upml::sm::state_machine& sm);
+
+} // fsm
 
 } //namespace upml::tla
 
