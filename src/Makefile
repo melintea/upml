@@ -16,12 +16,12 @@ upml: *.cpp *.h* Makefile
 	#clang-tidy promela_generator.cpp -- $(FLAGS) 
 	
 test: upml
-	./_upml.sh  --file ../plantuml/syntax1.plantuml        --verify none  --diff off --ide off
-	./_upml.sh  --file ../plantuml/trace/send.plantuml     --verify spin  --diff off --ide off
-	./_upml.sh  --file ../plantuml/trace/recv.plantuml     --verify spin  --diff off --ide off
-	./_upml.sh  --file ../plantuml/sip/sip.plantuml        --verify both  --diff off --ide off
-	./_upml.sh  --file ../plantuml/switch/switch.plantuml  --verify both  --diff off --ide off
-	./_upml.sh  --file ../plantuml/hsm/samek-g.plantuml       --verify none  --diff off --ide off
+	./_upml.sh  --file ../plantuml/syntax1.plantuml            --verify none  --diff off --ide off
+	./_upml.sh  --file ../plantuml/fsm/trace/send.plantuml     --verify spin  --diff off --ide off
+	./_upml.sh  --file ../plantuml/fsm/trace/recv.plantuml     --verify spin  --diff off --ide off
+	./_upml.sh  --file ../plantuml/fsm/sip/sip.plantuml        --verify both  --diff off --ide off
+	./_upml.sh  --file ../plantuml/fsm/switch/switch.plantuml  --verify both  --diff off --ide off
+	./_upml.sh  --file ../plantuml/hsm/samek-g.plantuml        --verify none  --diff off --ide off
 	-rm pan*
 	@echo "\e[42m*** Pass ***\e[0m"
 
