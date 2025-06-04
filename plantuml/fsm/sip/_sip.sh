@@ -7,4 +7,4 @@
 gitroot=`git rev-parse --show-toplevel`
 shupml=${gitroot}/src/_upml.sh
 
-${shupml} --file "../plantuml/sip/sip.plantuml" --verify spin
+${shupml} --file "../plantuml/fsm/sip/sip.plantuml" --verify spin
