@@ -55,12 +55,18 @@ As an [comparative example](https://accu.org/journals/overload/32/183/melinte/),
 
 ## Model
 
-- There is at least one region in the state machine.
-- Each region executes in its own (promela) process.
-- A composite state executes in its own region - it has at
-  least one region.
-- A simple state executes in the composite state/region 
-  that owns it. 
+There are two models: [https://accu.org/journals/overload/33/186/melinte/](one for FSM and one for HSM). 
+
+- FSM: 
+  - There is at least one region in the state machine.
+  - Each region executes in its own (promela) process.
+  - A composite state executes in its own region - it has at
+    least one region.
+  - A simple state executes in the composite state/region 
+    that owns it. 
+- HSM:
+  - each state executes in its own (promela) process.
+
 - Events are asynchronous messages. Event names are unique per 
   plantuml file.
 - State names are unique per plantuml file.
