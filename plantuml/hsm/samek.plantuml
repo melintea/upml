@@ -1,0 +1,86 @@
+@startuml
+
+note bottom of SuperSuper
+  Two levels HSM semantics:
+  - instantiation: SuperSuper_entry(); Super1_entry(); S11_entry();
+  - canonical T1: g() ->   S11_exit(); Super1_exit(); ->   t1(); ->  Super2_entry(); d(); S21_entry();
+  - accepted  T1: g() ->   t1(); ->  S11_exit(); Super1_exit(); ->   Super2_entry(); d(); S21_entry();
+end note
+note bottom of SuperSuper
+ Miro Samek ch2/p88
+end note
+
+[*] --> SuperSuper
+state SuperSuper {
+  SuperSuper: entry: ;
+  SuperSuper: exit: ;
+
+  [*] --> Super2 
+  state Super2 {
+      Super2: entry: ;
+      Super2: exit: ;
+      
+      [*] --> Super21
+      state Super21 {
+          Super21: entry: ;
+          Super21: exit: ;
+	  Super21: precondition: (_currentState[state:Super2] && ! _currentState[state:Super1]);
+	  
+          [*] --> S211
+          S211: entry: ;
+          S211: exit: ;
+      }
+  }
+  
+  state Super1 {
+      [*] --> S11
+      Super1: entry: ;
+      Super1: exit: ;
+      
+      S11: entry: ;
+      S11: exit: ;
+  }
+}
+
+
+Super21 -[#green]-> Super21 : <color:green>A </color>
+
+Super21 -[#orchid]-> S211 : <color:orchid>B </color>
+
+Super2 -[#green]-> Super1 : <color:green>C </color>
+Super1 -[#green]-> Super2 : <color:green>C </color>
+
+S211 -[#blue]-> Super21 : <color:blue>D </color>
+S11 -[#blue]-> Super1 : <color:blue>D </color>
+Super1 -[#blue]-> SuperSuper : <color:blue>D </color>
+
+SuperSuper -[#red]-> S11 : <color:red>E </color>
+
+Super2 -[#olive]-> S11 : <color:olive>F </color>
+Super1 -[#olive]-> S211 : <color:olive>F </color>
+
+Super21 -[#sienna]-> S11 : <color:sienna>G </color>
+S11 -[#sienna]-> S211 : <color:sienna>G </color>
+
+S211 -[#magenta]-> SuperSuper : <color:magenta>H </color>
+S11 -[#magenta]-> SuperSuper : <color:magenta>H </color>
+
+--
+
+state Test {
+[*] --> Test
+Test --> [*]
+Test: entry: send event:G to state:SuperSuper ;
+Test: ltl: ltlBegin { []<>(  _currentState[state:SuperSuper] && _currentState[state:Super2] \n\
+                          && _currentState[state:Super21] && _currentState[state:S211]) };
+Test: ltl: ltlEnd   { <>[](  _currentState[state:SuperSuper] && _currentState[state:Super1] \n\
+                          && _currentState[state:S11]) };
+Test: ltl: ltlG {<>[]( \n\
+     (_currentState[state:SuperSuper] == false) -> (_currentState[state:SuperSuper] == true) \n\
+  -> (_currentState[state:S11] == true && _currentState[state:S211] == false) \n\
+  -> (_currentState[state:S211] == true && _currentState[state:S11] == false) \n\
+  )};
+}
+
+@enduml
+
