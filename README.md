@@ -7,7 +7,7 @@ A tool to convert (a subset of the whole [spec](https://www.omg.org/spec/UML/2.5
 - a [Promela model](doc/upml/spin.md) for [spin](https://github.com/nimble-code/Spin) checking.
 - a [TLA model](doc/upml/tla.md)
 
-The state machine is described in a plantuml file (again, a subset of what plantuml offers) with some additions.
+The state machine is described in a [plantuml](https://plantuml.com/state-diagram) file (again, a subset of what plantuml offers) with some additions.
 
 ## Status
 
@@ -23,6 +23,7 @@ Depends on boost (spirit, program_options, filesystem). Requires C++20 or later.
 - Examples:
   - [(FSM) A lamp switch](doc/upml/switch.md)
   - [(FSM) Some SIP stuff](doc/upml/sip.md)
+  - [(HSM) A take on Samek](doc/upml/samek.md)
 
 ## Similar tools & various links
 
