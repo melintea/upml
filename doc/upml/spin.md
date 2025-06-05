@@ -66,6 +66,8 @@ There are two models: [one for FSM and one for HSM](https://accu.org/journals/ov
     that owns it. 
 - HSM:
   - each state executes in its own (promela) process.
+  - non-canonical execution order: transition action(s), state 
+    exit actions, state enter actions
 
 - Events are asynchronous messages. Event names are unique per 
   plantuml file.
