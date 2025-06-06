@@ -2,7 +2,7 @@
 
 ![image](plantuml/hsm/samek-g.png)
 
-A tool to convert (a subset of the whole [spec](https://www.omg.org/spec/UML/2.5.1/PDF) of) a UML state machine/statechart into:
+A tool to convert (a subset of the whole [spec](https://www.omg.org/spec/UML/2.5.1/PDF) of) an UML state machine/statechart into:
 
 - a [Promela model](doc/upml/spin.md) for [spin](https://github.com/nimble-code/Spin) checking.
 - a [TLA model](doc/upml/tla.md)
