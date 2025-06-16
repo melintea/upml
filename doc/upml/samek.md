@@ -12,9 +12,14 @@ Test --> [*]
 // Inject event
 Test: entry: send event:G to state:SuperSuper ;
 
-// Check end state
-Test: ltl: ltlEnd   { <>[](  _currentState[state:SuperSuper] && _currentState[state:Super1] \n\
-                          && _currentState[state:S11]) };
+// Check end state         // Start state(s):
+Test: ltl: ltlEnd   { []( (  _currentState[state:SuperSuper] && _currentState[state:Super2] \n\
+                          && _currentState[state:Super21] && _currentState[state:S211] ) \n\
+			  -> \n\
+			  // End state(s)
+                          <>[](  _currentState[state:SuperSuper] && _currentState[state:Super1] \n\
+                              && _currentState[state:S11]) \n\
+		       ) };
 }
 ```
 
