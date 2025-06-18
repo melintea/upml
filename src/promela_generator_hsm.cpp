@@ -864,8 +864,13 @@ void Visitor::visit() const
                         self->_out << "trace { do :: ";
                         for (const auto& tok: a._args) {
                             auto ttok(scoped_name::create(tok));
-                            auto item(ttok._scope == keyword::event ? event(ttok._name) : self->token(tok));
-                            self->_out << item << ' ';
+                            if (ttok._scope == keyword::event) {
+                                self->_out << event(ttok._name) << ' ';
+                            } else if (ttok._scope == keyword::state) {
+                                self->_out << self->channel_idx(ttok._name) << ' ';
+                            }  else {
+                                self->_out << self->token(tok) << ' ';
+                            }
                         }
                         self->_out << " od; }\n ";
                    });
@@ -875,8 +880,13 @@ void Visitor::visit() const
                         self->_out << "notrace { do :: ";
                         for (const auto& tok: a._args) {
                             auto ttok(scoped_name::create(tok));
-                            auto item(ttok._scope == keyword::event ? event(ttok._name) : self->token(tok));
-                            self->_out << item << ' ';
+                            if (ttok._scope == keyword::event) {
+                                self->_out << event(ttok._name) << ' ';
+                            } else if (ttok._scope == keyword::state) {
+                                self->_out << self->channel_idx(ttok._name) << ' ';
+                            }  else {
+                                self->_out << self->token(tok) << ' ';
+                            }
                         }
                         self->_out << " od; }\n ";
                    });
