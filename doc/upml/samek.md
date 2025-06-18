@@ -22,6 +22,18 @@ Test: ltl: ltlEnd   { []( (  _currentState[state:SuperSuper] && _currentState[st
 		       ) };
 }
 ```
+```
+// (no)trace channels:
+Test: chanltl: _internalEvents[state:SuperSuper]!event:EnterState(state:Super2) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:Super21) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:S211) \; \n\
+               _externalEvents[state:SuperSuper]!event:G \; \n\
+	       _internalEvents[state:SuperSuper]!event:ExitState(state:Super2) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:Super1) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:S11) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:S11) \; \n\
+             ;
+```
 
 Then generate the Promela model:
 ```

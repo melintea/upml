@@ -862,12 +862,18 @@ void Visitor::visit() const
         self->_out << "//" << a << '\n';
         self->_out << keyword << " { do :: \n";
         lpt::autoindent_guard indent(self->_out);
-        for (const auto& tok: a._args) {
+        for (auto it = a._args.begin(); it != a._args.end(); ++it) {
+            const auto& tok(*it);
             auto ttok(scoped_name::create(tok));
             if (ttok._scope == keyword::event) {
                 self->_out << event(ttok._name) << ' ';
             } else if (ttok._scope == keyword::state) {
-                self->_out << self->channel_idx(ttok._name) << ' ';
+                const auto& context(*std::prev(it));
+                if (context == "[") { // array
+                    self->_out << self->channel_idx(ttok._name) << ' ';
+                } else {
+                    self->_out << self->token(tok) << ' ';
+                }
             } else if (tok == ";") {
                 self->_out << self->token(tok) << "\n";
             }  else {
