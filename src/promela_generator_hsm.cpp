@@ -214,8 +214,8 @@ public:
     std::string token(const std::string& tok) const;
 
     // index of the channel for a given state
-    int  channel_idx(const upml::sm::state& s);
-    int  channel_idx(const id_t& sn);
+    int  channel_idx(const upml::sm::state& s) const;
+    int  channel_idx(const id_t& sn) const;
 }; // Visitor
 
 Visitor::Visitor(upml::sm::state_machine& sm,
@@ -243,12 +243,12 @@ Visitor::Visitor(upml::sm::state_machine& sm,
     }
 }
 
-int  Visitor::channel_idx(const upml::sm::state& s)
+int  Visitor::channel_idx(const upml::sm::state& s) const
 {
     return channel_idx(s._id);
 }
 
-int  Visitor::channel_idx(const id_t& sn)
+int  Visitor::channel_idx(const id_t& sn) const
 {
     const auto idxs = _states.at(name("", sn));
     return _chanMap[idxs];
@@ -315,8 +315,8 @@ void Visitor::visit_state(const upml::sm::state& s) const
         lpt::autoindent_guard indent(_out);
         if (topState) {
             _out << "\nif";
-            _out << "\n:: nempty(_internalEvents[_chanMap[" << idxCrtState << "]]) -> _internalEvents[_chanMap[" << idxCrtState << "]]?evtRecv;";
-            _out << "\n:: initialized && empty(_internalEvents[_chanMap[" << idxCrtState << "]])  -> " << elabel << ": superChannel?evtRecv;";
+            _out << "\n:: nempty(_internalEvents[" << channel_idx(s) << "]) -> _internalEvents[" << channel_idx(s) << "]?evtRecv;";
+            _out << "\n:: initialized && empty(_internalEvents[" << channel_idx(s) << "])  -> " << elabel << ": superChannel?evtRecv;";
             _out << "\nfi";
             _out << "\nprintf(\"MSC: > " <<  s._id << " event %e in state %d\\n\", evtRecv.evId, " << idxCrtState << ");\n";
         } else {
@@ -833,10 +833,10 @@ void Visitor::visit() const
     _out << "\ninit {\n"
         << "    atomic {\n";
     for (const auto& [k, r] : _sm._regions) {
-        const auto idxs(idx(state(r->_substates.begin()->second->_id)));
+        const auto idxc(channel_idx(r->_substates.begin()->second->_id));
         _out << "        run " << r->_substates.begin()->second->_id 
-             << "(_externalEvents[_chanMap[" << idxs << "]], "
-             << "_eventProcessed[_chanMap[" << idxs << "]]); \n";
+             << "(_externalEvents[" << idxc << "], "
+             << "_eventProcessed[" << idxc << "]); \n";
     }
     _out <<     "        run invariants(); \n";
     _out <<     "    }\n";
