@@ -168,6 +168,7 @@ class Visitor
     map_t  _events;
     map_t  _states;
     map_t  _regions;
+    std::vector<int>  _chanMap; // index of the channel in the channel array for any given state
 
     using ActivityProcessor_t = std::function<void(const upml::sm::activity&)>;
 
@@ -208,8 +209,13 @@ public:
         const std::string&         activityType,
         const upml::sm::state&     s,
         const ActivityProcessor_t& processor) const;
+
     // Turn a plantuml token in a guard/post/pre/condition/invariant into valid PlusCal.
     std::string token(const std::string& tok) const;
+
+    // index of the channel for a given state
+    int  channel_idx(const upml::sm::state& s);
+    int  channel_idx(const id_t& sn);
 }; // Visitor
 
 Visitor::Visitor(upml::sm::state_machine& sm,
@@ -221,6 +227,31 @@ Visitor::Visitor(upml::sm::state_machine& sm,
 
     _regions = names("", sm.regions(true));
     _states  = names("", sm.states(true));
+
+    _chanMap.reserve(_states.size() + 1);
+    for (int i = 0; i < _chanMap.capacity(); ++i) {
+        _chanMap.push_back(0); // Note: -1 chokes spin (!)
+    }
+    for (int idxc = 0; const auto& [kr, r] : _sm._regions) {
+        //const auto idxr = _regions.at(name("", kr));
+        const auto snames(r->states(true/*recursive*/));
+        for (const auto& sn : snames) {
+            const auto idxs = _states.at(name("", sn));
+            _chanMap[idxs] = idxc;
+        }
+        ++idxc;
+    }
+}
+
+int  Visitor::channel_idx(const upml::sm::state& s)
+{
+    return channel_idx(s._id);
+}
+
+int  Visitor::channel_idx(const id_t& sn)
+{
+    const auto idxs = _states.at(name("", sn));
+    return _chanMap[idxs];
 }
 
 void Visitor::visit_state(const upml::sm::state& s) const
@@ -727,23 +758,13 @@ void Visitor::visit() const
     _out << "\ntypedef event {mtype evId; short toState; short fromState;};";
     _out << "\ntypedef eventStatus {mtype evId; short status;};";
 
-    auto nTopRegs(_sm._regions.size());
-    int  chanMap[_states.size() + 1] = {};
-    for (int idxc = 0; const auto& [kr, r] : _sm._regions) {
-        //const auto idxr = _regions.at(name("", kr));
-        const auto snames(r->states(true/*recursive*/));
-        for (const auto& sn : snames) {
-            const auto idxs = _states.at(name("", sn));
-            chanMap[idxs] = idxc;
-        }
-        ++idxc;
-    }
     _out << "\n\nint _chanMap[numStates] = {";
-    for (const char* comma = ""; const auto v : chanMap) {
+    for (const char* comma = ""; const auto v : _chanMap) {
         _out << std::exchange(comma, ",") << v;
     }
     _out << "};";
 
+    auto nTopRegs(_sm._regions.size());
     _out << "\nchan _externalEvents[" << nTopRegs << "] = [1] of {event};";
     _out << "\nchan _internalEvents[" << nTopRegs << "] = [2*" << _sm.depth() << "] of {event};\n";
     _out << "\nchan _eventProcessed[" << nTopRegs << "] = [1] of {eventStatus};";
