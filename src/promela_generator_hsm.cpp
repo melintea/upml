@@ -213,7 +213,7 @@ public:
     // Turn a plantuml token in a guard/post/pre/condition/invariant into valid PlusCal.
     std::string token(const std::string& tok) const;
 
-    // index of the channel for a given state
+    // Index in the chan arrays for a given state
     int  channel_idx(const upml::sm::state& s) const;
     int  channel_idx(const id_t& sn) const;
 }; // Visitor
@@ -858,37 +858,32 @@ void Visitor::visit() const
                         self->_out << ";\n ";
                    });
 
+    auto chanLtlFunc =  [self=this](const char* keyword, const upml::sm::activity& a){
+        self->_out << "//" << a << '\n';
+        self->_out << keyword << " { do :: \n";
+        lpt::autoindent_guard indent(self->_out);
+        for (const auto& tok: a._args) {
+            auto ttok(scoped_name::create(tok));
+            if (ttok._scope == keyword::event) {
+                self->_out << event(ttok._name) << ' ';
+            } else if (ttok._scope == keyword::state) {
+                self->_out << self->channel_idx(ttok._name) << ' ';
+            } else if (tok == ";") {
+                self->_out << self->token(tok) << "\n";
+            }  else {
+                self->_out << self->token(tok) << ' ';
+            }
+        }
+        self->_out << "od; }\n ";
+    };
+
     visit_activity(keyword::chanltl,
-                   [self=this](const upml::sm::activity& a){
-                        self->_out << "//" << a << '\n';
-                        self->_out << "trace { do :: ";
-                        for (const auto& tok: a._args) {
-                            auto ttok(scoped_name::create(tok));
-                            if (ttok._scope == keyword::event) {
-                                self->_out << event(ttok._name) << ' ';
-                            } else if (ttok._scope == keyword::state) {
-                                self->_out << self->channel_idx(ttok._name) << ' ';
-                            }  else {
-                                self->_out << self->token(tok) << ' ';
-                            }
-                        }
-                        self->_out << " od; }\n ";
+                   [&chanLtlFunc](const upml::sm::activity& a){
+                        chanLtlFunc("trace", a);
                    });
     visit_activity(keyword::nochanltl,
-                   [self=this](const upml::sm::activity& a){
-                        self->_out << "//" << a << '\n';
-                        self->_out << "notrace { do :: ";
-                        for (const auto& tok: a._args) {
-                            auto ttok(scoped_name::create(tok));
-                            if (ttok._scope == keyword::event) {
-                                self->_out << event(ttok._name) << ' ';
-                            } else if (ttok._scope == keyword::state) {
-                                self->_out << self->channel_idx(ttok._name) << ' ';
-                            }  else {
-                                self->_out << self->token(tok) << ' ';
-                            }
-                        }
-                        self->_out << " od; }\n ";
+                   [&chanLtlFunc](const upml::sm::activity& a){
+                        chanLtlFunc("notrace", a);
                    });
 
     _out <<     "/*UPML end*/\n\n";
