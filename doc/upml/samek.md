@@ -22,6 +22,7 @@ Test: ltl: ltlEnd   { []( (  _currentState[state:SuperSuper] && _currentState[st
 		       ) };
 }
 ```
+
 ```
 // (no)trace channels:
 Test: chanltl: _internalEvents[state:SuperSuper]!event:EnterState(state:Super2) \; \n\
@@ -34,6 +35,8 @@ Test: chanltl: _internalEvents[state:SuperSuper]!event:EnterState(state:Super2) 
                _internalEvents[state:SuperSuper]!event:EnterState(state:S11) \; \n\
              ;
 ```
+The double ```EnterState(state:S11)``` is a side effect of the current model; might change.
+
 
 Then generate the Promela model:
 ```
