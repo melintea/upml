@@ -40,7 +40,7 @@ The double ```EnterState(state:S11)``` is a side effect of the current model; mi
 
 Then generate the Promela model:
 ```
-./upml --in ../../plantuml/hsm/samek-g.plantuml --out ../../plantuml/hsm/samek-g.promelal --backend spin-hsm
+./upml --in ../../plantuml/hsm/samek-g.plantuml --out ../../plantuml/hsm/samek-g.promela --backend spin-hsm
 ```
 
 Note the non-canonical execution order: transition action(s), state exit axctions, state enter actions.
