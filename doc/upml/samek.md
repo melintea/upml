@@ -18,8 +18,9 @@ Test: ltl: ltlEnd   { []( (  _currentState[state:SuperSuper] && _currentState[st
 			  -> \n\
 			  // End state(s)
                           <>[](  _currentState[state:SuperSuper] && _currentState[state:Super1] \n\
-                              && _currentState[state:S11]) \n\
-		       ) };
+                              && _currentState[state:S11] \n\
+                              && ! _currentState[state:S211] ) \n\
+		        ) };
 }
 ```
 

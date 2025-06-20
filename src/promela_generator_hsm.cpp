@@ -869,7 +869,7 @@ void Visitor::visit() const
                 self->_out << event(ttok._name) << ' ';
             } else if (ttok._scope == keyword::state) {
                 const auto& context(*std::prev(it));
-                if (context == "[") { // array
+                if (context == "[") { // array, presumably of channels
                     self->_out << self->channel_idx(ttok._name) << ' ';
                 } else {
                     self->_out << self->token(tok) << ' ';
