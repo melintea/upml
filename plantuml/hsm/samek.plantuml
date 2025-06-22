@@ -2,9 +2,9 @@
 
 note bottom of SuperSuper
   Semantics:
-  - instantiation: SuperSuper_entry(); Super2_entry(); Super21_entry(); S211_entry();
-  - canonical: event G in S211 -> S211_exit(); Super21_exit(); Super2_exit(); ->  G(action); -> Super1_entry(); d(); S11_entry();
-  - implemented/accepted: event G in S211 -> G(action); -> S211_exit(); Super21_exit(); Super2_exit(); -> Super1_entry(); d(); S11_entry();
+  - instantiation: SuperSuper:entry(); Super2:entry(); Super21:entry(); S211:entry();
+  - canonical: event G in S211 -> S211:exit(); Super21:exit(); Super2:exit(); ->  G(action); -> Super1:entry(); S11:entry();
+  - implemented/accepted: event G in S211 -> G(action); -> S211:exit(); Super21:exit(); Super2:exit(); -> Super1:entry(); S11:entry();
 end note
 note bottom of SuperSuper
  Miro Samek ch2/p88
