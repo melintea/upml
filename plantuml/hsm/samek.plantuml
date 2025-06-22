@@ -1,10 +1,10 @@
 @startuml
 
 note bottom of SuperSuper
-  Two levels HSM semantics:
+  Semantics:
   - instantiation: SuperSuper_entry(); Super1_entry(); S11_entry();
-  - canonical T1: g() ->   S11_exit(); Super1_exit(); ->   t1(); ->  Super2_entry(); d(); S21_entry();
-  - accepted  T1: g() ->   t1(); ->  S11_exit(); Super1_exit(); ->   Super2_entry(); d(); S21_entry();
+  - canonical: event G in S211 -> S211_exit(); Super21_exit(); Super2_exit(); ->  G(action); -> Super1_entry(); d(); S11_entry();
+  - implemented/accepted: event G in S211 -> G(action); -> S211_exit(); Super21_exit(); Super2_exit(); -> Super1_entry(); d(); S11_entry();
 end note
 note bottom of SuperSuper
  Miro Samek ch2/p88
