@@ -336,6 +336,7 @@ void Visitor::visit_state(const upml::sm::state& s) const
             for (const auto& [k2, s2] : r1->_substates) {
                 _out << "\n:: (evtRecv.evId == " << event(keyword::EnterState) << " && evtRecv.toState == " << idx(state(s2->_id)) << ") -> ";
                 _out << "\n   run " << s2->_id << "(" << subchan << ", substateEventProcessedChan);";
+                _out << "\n   _currentState[" << idx(state(s2->_id)) << "] == true;";
                 if ( ! topState) {
                     _out << "\n   eventProcessedChan!" << event(keyword::EnterState) << "(idx_statusProcessed);";
                 }
@@ -376,7 +377,6 @@ void Visitor::visit_state(const upml::sm::state& s) const
 
             visit_transitions(s);
             visit_activity(keyword::postcondition, s);
-            //TODO _out << "\n:: else -> eventProcessedChan!evtRecv.evId(idx_statusNotProcessed); goto " << blabel << ";";
             _out << "\n} // atomic";
         } else {
             _out << "\neventProcessedChan!evtRecv.evId(idx_statusNotProcessed);";
