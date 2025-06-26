@@ -22,6 +22,7 @@ test: upml
 	./_upml.sh  --file ../plantuml/fsm/sip/sip.plantuml        --verify both-fsm  --diff off --ide off
 	./_upml.sh  --file ../plantuml/fsm/switch/switch.plantuml  --verify both-fsm  --diff off --ide off
 	./_upml.sh  --file ../plantuml/hsm/samek-g.plantuml        --verify spin-hsm  --diff off --ide off
+	./_upml.sh  --file ../plantuml/hsm/concurrent.plantuml     --verify spin-hsm  --diff off --ide off
 	-rm pan*
 	@echo "\e[42m*** Pass ***\e[0m"
 

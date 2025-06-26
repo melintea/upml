@@ -78,6 +78,7 @@ Test: chanltl: _internalEvents[state:SuperSuper]!event:EnterState(state:Super2) 
 	       _internalEvents[state:SuperSuper]!event:ExitState(state:Super2) \; \n\
                _internalEvents[state:SuperSuper]!event:EnterState(state:Super1) \; \n\
                _internalEvents[state:SuperSuper]!event:EnterState(state:S11) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:S11r2) \; \n\
                _internalEvents[state:SuperSuper]!event:EnterState(state:S11) \; \n\
                _internalEvents[state:SuperSuper]!event:EnterState(state:S11r2) \; \n\
              ;
