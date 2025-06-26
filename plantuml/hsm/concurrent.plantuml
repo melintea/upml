@@ -1,0 +1,99 @@
+@startuml
+
+note bottom of SuperSuper
+  plantuml has a parsing limitation for some transitions in/out of regions e.g.
+  Super21 --> S211 : B
+  S211 --> Super21 : D
+  S11 --> Super1 : D
+  SuperSuper --> S11 : E
+  Super2 --> S11 : F
+  Super1 --> S211 : F
+  Super21 --> S11 : G
+  S11 --> S211 : G
+  S211 --> SuperSuper : H
+  S11 --> SuperSuper : H
+end note
+
+[*] --> SuperSuper
+state SuperSuper {
+  SuperSuper: entry: ;
+  SuperSuper: exit: ;
+
+  [*] --> Super2 
+  state Super2 {
+      Super2: entry: ;
+      Super2: exit: ;
+      
+      [*] --> Super21
+      state Super21 {
+          Super21: entry: ;
+          Super21: exit: ;
+	  Super21: precondition: (_currentState[state:Super2] && ! _currentState[state:Super1]);
+	  
+          [*] --> S211
+          S211: entry: ;
+          S211: exit: ;
+
+          ||
+          [*] --> S211r2
+      }
+	  
+      ||
+      [*] --> S21r2
+  }
+  
+  state Super1 {
+      [*] --> S11
+      Super1: entry: ;
+      Super1: exit: ;
+      
+      S11: entry: ;
+      S11: exit: ;
+
+      --
+      [*] --> S11r2
+  }
+}
+
+
+Super21 -[#green]-> Super21 : <color:green>A </color>
+
+Super2 -[#green]-> Super1 : <color:green>C </color>
+Super1 -[#green]-> Super2 : <color:green>C </color>
+
+Super1 -[#blue]-> SuperSuper : <color:blue>D </color>
+
+--
+
+state Test {
+[*] --> Test
+Test --> [*]
+Test: entry: send event:C to state:SuperSuper ;
+Test: chanltl: _internalEvents[state:SuperSuper]!event:EnterState(state:Super2) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:Super21) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:Super21r2) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:S211) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:S211r2) \; \n\
+               _externalEvents[state:SuperSuper]!event:C \; \n\
+	       _internalEvents[state:SuperSuper]!event:ExitState(state:Super2) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:Super1) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:S11) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:S11) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:S11r1) \; \n\
+             ;
+Test: ltl: ltlEnd   { []( (  _currentState[state:SuperSuper] && _currentState[state:Super2] \n\
+                          && _currentState[state:Super21] && _currentState[state:S21r2] \n\
+			  && _currentState[state:S211] && _currentState[state:S211r2] ) \n\
+			  -> \n\
+                          <>[](  _currentState[state:SuperSuper] && _currentState[state:Super1] \n\
+                              && _currentState[state:S11] \n\
+                              && _currentState[state:S11r2] \n\
+                              && ! _currentState[state:S211] ) \n\
+                              && ! _currentState[state:S21r2] ) \n\
+                              && ! _currentState[state:S211r2] ) \n\
+		        ) };
+}
+
+
+@enduml
+
