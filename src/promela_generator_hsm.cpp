@@ -345,7 +345,7 @@ void Visitor::visit_state(const upml::sm::state& s) const
         _out << "\n:: else -> skip; // send to substates for processing";
         _out << "\nfi\n";
 
-        // send event to substates, check if processed
+        _out << "\n// send event to substates, check if processed";
         if ( ! leafState) {
             for (const auto& [k1, r1] : s._regions) {
                 auto subchan = "substateChannel_" + k1;
@@ -370,14 +370,16 @@ void Visitor::visit_state(const upml::sm::state& s) const
             }
         }
 
+        _out << "\n// transitions";
         if ( ! s._transitions.empty()) {
             _out << "\natomic {\neventProcessed.status = idx_unknown;\n";
 
             visit_transitions(s);
             visit_activity(keyword::postcondition, s);
-            //TODO: else signal NotProcessed; goto blabel;
+            //TODO _out << "\n:: else -> eventProcessedChan!evtRecv.evId(idx_statusNotProcessed); goto " << blabel << ";";
             _out << "\n} // atomic";
         } else {
+            _out << "\neventProcessedChan!evtRecv.evId(idx_statusNotProcessed);";
             _out << "\ngoto " << blabel << ";";
         }
     }
