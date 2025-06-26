@@ -71,7 +71,7 @@ Test --> [*]
 Test: entry: send event:C to state:SuperSuper ;
 Test: chanltl: _internalEvents[state:SuperSuper]!event:EnterState(state:Super2) \; \n\
                _internalEvents[state:SuperSuper]!event:EnterState(state:Super21) \; \n\
-               _internalEvents[state:SuperSuper]!event:EnterState(state:Super21r2) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:S21r2) \; \n\
                _internalEvents[state:SuperSuper]!event:EnterState(state:S211) \; \n\
                _internalEvents[state:SuperSuper]!event:EnterState(state:S211r2) \; \n\
                _externalEvents[state:SuperSuper]!event:C \; \n\
@@ -79,7 +79,7 @@ Test: chanltl: _internalEvents[state:SuperSuper]!event:EnterState(state:Super2) 
                _internalEvents[state:SuperSuper]!event:EnterState(state:Super1) \; \n\
                _internalEvents[state:SuperSuper]!event:EnterState(state:S11) \; \n\
                _internalEvents[state:SuperSuper]!event:EnterState(state:S11) \; \n\
-               _internalEvents[state:SuperSuper]!event:EnterState(state:S11r1) \; \n\
+               _internalEvents[state:SuperSuper]!event:EnterState(state:S11r2) \; \n\
              ;
 Test: ltl: ltlEnd   { []( (  _currentState[state:SuperSuper] && _currentState[state:Super2] \n\
                           && _currentState[state:Super21] && _currentState[state:S21r2] \n\
@@ -88,8 +88,8 @@ Test: ltl: ltlEnd   { []( (  _currentState[state:SuperSuper] && _currentState[st
                           <>[](  _currentState[state:SuperSuper] && _currentState[state:Super1] \n\
                               && _currentState[state:S11] \n\
                               && _currentState[state:S11r2] \n\
-                              && ! _currentState[state:S211] ) \n\
-                              && ! _currentState[state:S21r2] ) \n\
+                              && ! _currentState[state:S211] \n\
+                              && ! _currentState[state:S21r2] \n\
                               && ! _currentState[state:S211r2] ) \n\
 		        ) };
 }
