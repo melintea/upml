@@ -106,7 +106,7 @@ function spinit()
 
 function verify_spin() {
 
-    # safety
+    echo "#--- safety $spinfile"
     rm pan pan.* _spin_nvr.tmp *.trail
     ${exespin} -a "$spinfile" || exit 1
     if [[ ! -f pan.c ]]; then
@@ -121,7 +121,7 @@ function verify_spin() {
     fi
     rm pan pan.* _spin_nvr.tmp *.trail
 
-    # acceptance + fairness (model is larger)
+    echo "#--- acceptance + fairness (model is larger) $spinfile"
     ${exespin} -a "$spinfile" || exit 1
     if [[ ! -f pan.c ]]; then
         exit 1
@@ -133,6 +133,10 @@ function verify_spin() {
         echo "*** errors $errs"
         exit 1
     fi
+    rm pan pan.* _spin_nvr.tmp *.trail
+
+    echo "#--- non-progress $spinfile"
+    ${exespin} -run -np "$spinfile" || exit 1
     rm pan pan.* _spin_nvr.tmp *.trail
 
     # -c columnated output
