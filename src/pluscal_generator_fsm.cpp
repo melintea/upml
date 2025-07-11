@@ -88,7 +88,7 @@ struct scoped_name
     }
 }; // scoped_name
 
-// TODO: fold these into Visitor?
+// TODO: fold these into PseudoVisitor?
 id_t name(const id_t& prefix, const upml::sm::id_t& evt)
 {
     std::string sep = evt.length() && evt[0] != '_' ? "_" : "";
@@ -160,7 +160,7 @@ id_t idx(const upml::sm::id_t& s)
     return name("idx", s);
 }
 
-class Visitor
+class PseudoVisitor
 {
     upml::sm::state_machine&  _sm;
     std::ostream&             _out;
@@ -182,14 +182,14 @@ class Visitor
 
 public: 
 
-    Visitor(upml::sm::state_machine& sm,
-            std::ostream&            out);
-    Visitor()                          = delete;
-    ~Visitor()                         = default;
-    Visitor(const Visitor&)            = delete;
-    Visitor& operator=(const Visitor&) = delete;
-    Visitor(Visitor&&)                 = delete;
-    Visitor& operator=(Visitor&&)      = delete;
+    PseudoVisitor(upml::sm::state_machine& sm,
+                  std::ostream&            out);
+    PseudoVisitor()                          = delete;
+    ~PseudoVisitor()                         = default;
+    PseudoVisitor(const PseudoVisitor&)            = delete;
+    PseudoVisitor& operator=(const PseudoVisitor&) = delete;
+    PseudoVisitor(PseudoVisitor&&)                 = delete;
+    PseudoVisitor& operator=(PseudoVisitor&&)      = delete;
 
     void visit() const;
     void visit_region(const upml::sm::region& r, const id_t& ownerTag) const;
@@ -223,9 +223,9 @@ public:
         const ActivityProcessor_t& processor) const;
     // Turn a plantuml token in a guard/post/pre/condition/invariant into valid PlusCal.
     std::string token(const std::string& tok) const;
-}; // Visitor
+}; // PseudoVisitor
 
-Visitor::Visitor(upml::sm::state_machine& sm,
+PseudoVisitor::PseudoVisitor(upml::sm::state_machine& sm,
                  std::ostream&            out)
     : _sm(sm)
     , _out(out)
@@ -240,7 +240,7 @@ Visitor::Visitor(upml::sm::state_machine& sm,
     }
 }
 
-void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
+void PseudoVisitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
 {
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
@@ -300,14 +300,14 @@ void Visitor::visit_state(const upml::sm::state& s, const RegionData& rd) const
     _out << "\n\\*]state " << idxCrtState << "\n";
 }
 
-void Visitor::visit_state_regions(const upml::sm::state& s) const
+void PseudoVisitor::visit_state_regions(const upml::sm::state& s) const
 {
     for (const auto& [k, r] : s._regions) {
         visit_region(*r, s._id);
     }
 }
 
-void Visitor::visit_activity(
+void PseudoVisitor::visit_activity(
     const upml::sm::state&    s,
     const upml::sm::activity& a) const
 {
@@ -383,7 +383,7 @@ void Visitor::visit_activity(
     } while(itB != a._args.end());
 }
 
-std::string Visitor::token(const std::string& tok) const
+std::string PseudoVisitor::token(const std::string& tok) const
 {
     static const std::map<std::string, std::string> tlaTokens{
         {"&&", "/\\"},
@@ -425,7 +425,7 @@ std::string Visitor::token(const std::string& tok) const
     return tok;
 }
 
-void Visitor::visit_guard(
+void PseudoVisitor::visit_guard(
     const upml::sm::state&      s,
     const upml::sm::transition& t) const
 {
@@ -439,7 +439,7 @@ void Visitor::visit_guard(
     }
 }
 
-void Visitor::visit_effect(
+void PseudoVisitor::visit_effect(
     const upml::sm::state&      s,
     const upml::sm::transition& t) const
 {
@@ -461,7 +461,7 @@ void Visitor::visit_effect(
     visit_activity( s, a);
 }
 
-void Visitor::visit_transition(
+void PseudoVisitor::visit_transition(
     const upml::sm::state&      s,
     const upml::sm::transition& t) const
 {
@@ -490,7 +490,7 @@ void Visitor::visit_transition(
     _out << "\n";
 }
 
-void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) const
+void PseudoVisitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) const
 {
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
@@ -518,7 +518,7 @@ void Visitor::visit_transitions(const upml::sm::state& s, const RegionData& rd) 
 }
 
 
-void Visitor::visit_transition_labels(const upml::sm::region&  r) 
+void PseudoVisitor::visit_transition_labels(const upml::sm::region&  r) 
 {
     for (const auto& [ks, s] : r._substates) {
         visit_transition_labels(*s);
@@ -528,14 +528,14 @@ void Visitor::visit_transition_labels(const upml::sm::region&  r)
     }
 }
 
-void Visitor::visit_transition_labels(const upml::sm::state& s) 
+void PseudoVisitor::visit_transition_labels(const upml::sm::state& s) 
 {
     for (const auto& [kt, s] : s._transitions) {
         _transitionLabels.push_back(kt);
     }
 }
 
-void Visitor::visit_activity(
+void PseudoVisitor::visit_activity(
     const std::string&         activityType,
     const upml::sm::state&     s) const
 {
@@ -555,7 +555,7 @@ void Visitor::visit_activity(
     }
 }
 
-void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) const
+void PseudoVisitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) const
 {
     RegionData regionData;
     regionData._id        = r._id;
@@ -623,7 +623,7 @@ void Visitor::visit_region(const upml::sm::region& r, const id_t& ownerTag) cons
     }
 }
 
-void Visitor::visit_activity(
+void PseudoVisitor::visit_activity(
     const std::string&         activityType,
     const upml::sm::state&     s,
     const ActivityProcessor_t& processor) const
@@ -646,7 +646,7 @@ void Visitor::visit_activity(
     }
 }
 
-void Visitor::visit_activity(
+void PseudoVisitor::visit_activity(
     const std::string&         activityType,
     const ActivityProcessor_t& processor) const
 {
@@ -666,7 +666,7 @@ void Visitor::visit_activity(
     _out << "\n\n";
 }
 
-void Visitor::visit() const
+void PseudoVisitor::visit() const
 {
     const auto now(std::chrono::system_clock::now());
     const auto nt(std::chrono::system_clock::to_time_t(now));
@@ -815,14 +815,14 @@ macro recv_event(evtId, channel, inState) {
             "\n\n=======================================================================\n"
          ;
 
-} // Visitor::visit
+} // PseudoVisitor::visit
 
 
 bool generate(
     std::ostream&            out,
     upml::sm::state_machine& sm)
 {
-    tla::fsm::Visitor psm(sm, out);
+    tla::fsm::PseudoVisitor psm(sm, out);
     psm.visit();
     return true;
 }

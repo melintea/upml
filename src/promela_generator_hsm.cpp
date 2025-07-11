@@ -89,7 +89,7 @@ struct scoped_name
     }
 }; // scoped_name
 
-// TODO: fold these into Visitor?
+// TODO: fold these into PseudoVisitor?
 id_t name(const id_t& prefix, const upml::sm::id_t& evt)
 {
     std::string sep = evt.length() && evt[0] != '_' ? "_" : "";
@@ -161,7 +161,7 @@ id_t idx(const upml::sm::id_t& s)
     return name("idx", s);
 }
 
-class Visitor
+class PseudoVisitor
 {
     upml::sm::state_machine& _sm;
     std::ostream&            _out;
@@ -174,14 +174,14 @@ class Visitor
 
 public: 
 
-    Visitor(upml::sm::state_machine& sm,
-            std::ostream&            out);
-    Visitor()                          = delete;
-    ~Visitor()                         = default;
-    Visitor(const Visitor&)            = delete;
-    Visitor& operator=(const Visitor&) = delete;
-    Visitor(Visitor&&)                 = delete;
-    Visitor& operator=(Visitor&&)      = delete;
+    PseudoVisitor(upml::sm::state_machine& sm,
+                  std::ostream&            out);
+    PseudoVisitor()                          = delete;
+    ~PseudoVisitor()                         = default;
+    PseudoVisitor(const PseudoVisitor&)            = delete;
+    PseudoVisitor& operator=(const PseudoVisitor&) = delete;
+    PseudoVisitor(PseudoVisitor&&)                 = delete;
+    PseudoVisitor& operator=(PseudoVisitor&&)      = delete;
 
     void visit() const;
     void visit_region(const upml::sm::region& r) const;
@@ -216,9 +216,9 @@ public:
     // Index in the chan arrays for a given state
     int  channel_idx(const upml::sm::state& s) const;
     int  channel_idx(const id_t& sn) const;
-}; // Visitor
+}; // PseudoVisitor
 
-Visitor::Visitor(upml::sm::state_machine& sm,
+PseudoVisitor::PseudoVisitor(upml::sm::state_machine& sm,
                  std::ostream&            out)
     : _sm(sm)
     , _out(out)
@@ -243,18 +243,18 @@ Visitor::Visitor(upml::sm::state_machine& sm,
     }
 }
 
-int  Visitor::channel_idx(const upml::sm::state& s) const
+int  PseudoVisitor::channel_idx(const upml::sm::state& s) const
 {
     return channel_idx(s._id);
 }
 
-int  Visitor::channel_idx(const id_t& sn) const
+int  PseudoVisitor::channel_idx(const id_t& sn) const
 {
     const auto idxs = _states.at(name("", sn));
     return _chanMap[idxs];
 }
 
-void Visitor::visit_state(const upml::sm::state& s) const
+void PseudoVisitor::visit_state(const upml::sm::state& s) const
 {
     for (const auto& [k, r] : s._regions) {
         visit_region(*r);
@@ -406,7 +406,7 @@ void Visitor::visit_state(const upml::sm::state& s) const
     _out << "\n} // "  << s._id << "\n\n";
 }
 
-void Visitor::visit_activity(
+void PseudoVisitor::visit_activity(
     const upml::sm::state&    s,
     const upml::sm::activity& a) const
 {
@@ -475,7 +475,7 @@ void Visitor::visit_activity(
     } while(itB != a._args.end());
 }
 
-std::string Visitor::token(const std::string& tok) const
+std::string PseudoVisitor::token(const std::string& tok) const
 {
     static const std::map<std::string, std::string> spinTokens{
     };
@@ -487,7 +487,7 @@ std::string Visitor::token(const std::string& tok) const
     return it != spinTokens.end() ? it->second : umlTok;
 }
 
-void Visitor::visit_guard(
+void PseudoVisitor::visit_guard(
     const upml::sm::state&      s,
     const upml::sm::transition& t) const
 {
@@ -501,7 +501,7 @@ void Visitor::visit_guard(
     }
 }
 
-void Visitor::visit_effect(
+void PseudoVisitor::visit_effect(
     const upml::sm::state&      s,
     const upml::sm::transition& t) const
 {
@@ -526,7 +526,7 @@ void Visitor::visit_effect(
     visit_activity( s, a);
 }
 
-void Visitor::visit_transition(
+void PseudoVisitor::visit_transition(
     const upml::sm::state&      s,
     const upml::sm::transition& t) const
 {
@@ -586,7 +586,7 @@ void Visitor::visit_transition(
     _out << "\n";
 }
 
-void Visitor::visit_transitions(const upml::sm::state& s) const
+void PseudoVisitor::visit_transitions(const upml::sm::state& s) const
 {
     const int myIdx(_states.find(s._id)->second);
     const auto idxCrtState(idx(state(s._id)));
@@ -615,7 +615,7 @@ void Visitor::visit_transitions(const upml::sm::state& s) const
     visit_activity(keyword::postcondition, s);
 }
 
-void Visitor::visit_activity(
+void PseudoVisitor::visit_activity(
     const std::string&         activityType,
     const upml::sm::state&     s) const
 {
@@ -635,7 +635,7 @@ void Visitor::visit_activity(
     }
 }
 
-void Visitor::visit_region(const upml::sm::region& r) const
+void PseudoVisitor::visit_region(const upml::sm::region& r) const
 {
     {
         lpt::autoindent_guard indent(_out);
@@ -667,7 +667,7 @@ void Visitor::visit_region(const upml::sm::region& r) const
     }
 }
 
-void Visitor::visit_activity(
+void PseudoVisitor::visit_activity(
     const std::string&         activityType,
     const upml::sm::state&     s,
     const ActivityProcessor_t& processor) const
@@ -690,7 +690,7 @@ void Visitor::visit_activity(
     }
 }
 
-void Visitor::visit_activity(
+void PseudoVisitor::visit_activity(
     const std::string&         activityType,
     const ActivityProcessor_t& processor) const
 {
@@ -710,7 +710,7 @@ void Visitor::visit_activity(
     _out << "\n\n";
 }
 
-void Visitor::visit() const
+void PseudoVisitor::visit() const
 {
     const auto now(std::chrono::system_clock::now());
     const auto nt(std::chrono::system_clock::to_time_t(now));
@@ -901,7 +901,7 @@ bool generate(
     std::ostream&            out,
     upml::sm::state_machine& sm)
 {
-    spin::hsm::Visitor psm(sm, out);
+    spin::hsm::PseudoVisitor psm(sm, out);
     psm.visit();
     return true;
 }
