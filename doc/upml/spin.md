@@ -127,10 +127,17 @@ spin -A
 ```
 
 ## LTL
-- ```[] P``` P should hold all the time: invariant
-- ```<> P``` P should hold at lest once: guarantee
+- ```[] P``` P should hold all the time: invariant; always
+- ```<> P``` P should hold at lest once: guarantee; eventually
+- ```p -> q``` ```(!p || q)``` implication. Note: true if p is false (!)
+- ```p <-> q``` ```(p->q) && (q->p)``` equivalence
 - ```[]<> P``` P should hold infinitely often or is the final state: progress
 - ```<>[] P``` P should always hold sometime in the future or is the final state: stability
+- ```[]((p) -> (<>(q)))``` response: p implies eventually q
+- ```[]((p) -> ((q) U (r)))``` precedence: p implies q until r
+- ```[]((p) -> <>((q) || (r)))``` objective
+` ```(<>p) -> (<>q)``` correlation; order is not implied
+
 
 ## Various links
 - [Implementing Statecharts in Promela/SPIN; Holzmann](https://www.researchgate.net/publication/2262971_Implementing_Statecharts_in_PromelaSPIN)
