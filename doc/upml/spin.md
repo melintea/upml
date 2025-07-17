@@ -143,5 +143,7 @@ spin -A
 - [Implementing Statecharts in Promela/SPIN; Holzmann](https://www.researchgate.net/publication/2262971_Implementing_Statecharts_in_PromelaSPIN)
 - [Spin & Promela](https://spinroot.com)
 - [Tau](https://data.caltech.edu/records/8exsc-7h074)
+- [Temporal Specification Patterns](https://matthewbdwyer.github.io/psp/)
 - [Translating UML State Machine Diagram into Promela](https://www.iaeng.org/publication/IMECS2017/IMECS2017_pp512-516.pdf)
 - [Total Store Ordering (TSO) and the Partial Store Ordering (PSO) memory models](https://github.com/plasklab/mmlib) & [usage](https://brilliantsugar.github.io/posts/how-i-learned-to-stop-worrying-and-love-juggling-c++-atomics/)
+
