@@ -18,6 +18,7 @@ tlatoolbox=${tlahome}/toolbox
 xdiffer=meld
 
 
+echo "# ========================================================================"
 echo "Usage: $0 --file file.plantuml --verify spin-fsm|spin-hsm|tla-hsm|both-fsm|both-hsm|none <--ide off> <--diff off>"
 echo "[=== $@"
 
@@ -84,6 +85,7 @@ function generate_spin_hsm() {
 } # generate_spin
 
 function verify_tla() {
+    echo "# -- tla -----------------------------------------------------------------"
     java -cp ${tlahome}/tla2tools.jar pcal.trans "$tlafile" || exit 1
 
     ## pluscal -> tla
@@ -95,7 +97,7 @@ function verify_tla() {
     #  JAVA_OPTS="$DEFAULT_JAVA_OPTS"
     #fi
     #java $JAVA_OPTS -cp ${tlahome}/tla2tools.jar tlc2.TLC "$*"a
-} # test_tla
+} # verify_tla
 
 function spinit()
 {
@@ -106,6 +108,7 @@ function spinit()
 
 function verify_spin() {
 
+    echo "# ------------------------------------------------------------------------"
     echo "#--- safety $spinfile"
     rm pan pan.* _spin_nvr.tmp *.trail
     ${exespin} -a "$spinfile" || exit 1
@@ -121,6 +124,7 @@ function verify_spin() {
     fi
     rm pan pan.* _spin_nvr.tmp *.trail
 
+    echo "# ------------------------------------------------------------------------"
     echo "#--- acceptance + fairness (model is larger) $spinfile"
     ${exespin} -a "$spinfile" || exit 1
     if [[ ! -f pan.c ]]; then
@@ -135,6 +139,7 @@ function verify_spin() {
     fi
     rm pan pan.* _spin_nvr.tmp *.trail
 
+    echo "# ------------------------------------------------------------------------"
     echo "#--- non-progress $spinfile"
     ${exespin} -run -np "$spinfile" || exit 1
     rm pan pan.* _spin_nvr.tmp *.trail
@@ -160,7 +165,7 @@ function verify_spin() {
     # spin -p -t "$spinfile" # follow trail file
 
     # pan -D | dot -Tps | ps2pdf - pan.pdf
-} # test_spin
+} # verify_spin
 
 
 
