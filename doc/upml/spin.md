@@ -72,6 +72,8 @@ There are two models: [one for FSM and one for HSM](https://accu.org/journals/ov
 - Events are asynchronous messages. Event names are unique per 
   plantuml file.
 - State names are unique per plantuml file.
+- Max 253 processes (255 - init - invariants)
+- Max 255 channels
 
 ## Cheat Sheet
 
