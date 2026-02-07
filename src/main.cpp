@@ -13,12 +13,12 @@
 #include "promela_generator.hpp"
 #include "pluscal_generator.hpp"
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/version.hpp>
 
 #include <cstdlib>
 #include <iostream>
+#include <filesystem>
 #include <fstream>
 
 namespace bpo = boost::program_options;
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
             std::cerr << inf << ": " << ::strerror(errno) << "\n";
             ::exit(EXIT_FAILURE);
         }
-        smTag = boost::filesystem::path(inf).stem().c_str();
+        smTag = std::filesystem::path(inf).stem().c_str();
     }
 
     upml::sm::state_machine sm;

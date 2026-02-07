@@ -15,7 +15,7 @@ Finite state machines (FSM) should be fully supported. Hierarchical state machin
 
 ## Build
 
-Depends on boost (spirit, program_options, filesystem). Requires C++20 or later.
+Depends on boost (spirit, program_options). Requires C++20 or later.
 
 ## upml documentation
 

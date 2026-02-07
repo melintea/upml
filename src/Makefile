@@ -7,7 +7,7 @@ FLAGS += -O0 #-O3
 FLAGS += -DUPML_VERSION=0.10
 #FLAGS += -DENABLE_UPML_DEBUG=1
 #FLAGS += -DBOOST_SPIRIT_DEBUG=1
-FLAGS += -lboost_program_options -lboost_filesystem
+FLAGS += -lboost_program_options 
 
 all:  upml
 
