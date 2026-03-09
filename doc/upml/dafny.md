@@ -18,5 +18,6 @@ dafny /compile:0 /errorTrace:0 file.dfy
 
 ## Various links
 - [Onlne class](https://glados-michigan.github.io/verification-class/fall2024/)
+- Introducing Software Verification with Dafny Language: Proving Program Correctness; Boro Sitnikovski; 2022
 - [Install notes](https://dafny.org/latest/Installation#linux-binary)
 
