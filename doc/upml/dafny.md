@@ -8,8 +8,7 @@
 sudo apt install dotnet-sdk-8.0
 
 # Fetch & unzip https://github.com/dafny-lang/dafny/releases/latest
-# Add dafny/ to PATH
-# Test: $INSTALL/dafny/quicktest.sh
+# Add folder to PATH
 
 # Use
 dafny /compile:0 /errorTrace:0 file.dfy
@@ -17,7 +16,8 @@ dafny /compile:0 /errorTrace:0 file.dfy
 ```
 
 ## Various links
-- [Onlne class](https://glados-michigan.github.io/verification-class/fall2024/)
+- [Online class](https://glados-michigan.github.io/verification-class/fall2024/)
 - Introducing Software Verification with Dafny Language: Proving Program Correctness; Boro Sitnikovski; 2022
 - [Install notes](https://dafny.org/latest/Installation#linux-binary)
+- https://leino.science/papers/krml260.pdf
 
