@@ -21,6 +21,9 @@
 #include <filesystem>
 #include <fstream>
 
+#define STRHELPER(x) #x
+#define ASSTR(x)     STRHELPER(x)
+
 namespace bpo = boost::program_options;
 
 // machine configuration options
@@ -48,7 +51,7 @@ int main(int argc, char* argv[])
     bpo::store(bpo::parse_command_line(argc, argv, po), vm);
     if (vm.count("help"))
     {
-        std::cerr << "\n" << argv[0]  << " v" << UPML_VERSION << " boost " << BOOST_VERSION
+        std::cerr << "\n" << argv[0]  << " v" << ASSTR(UPML_VERSION) << " boost " << BOOST_VERSION
                   << ":\n" << po;
         exit(EXIT_SUCCESS);
     }
