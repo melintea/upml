@@ -5,13 +5,14 @@
 
 ```
 # https://docs.microsoft.com/dotnet/core/install/linux
-sudo apt install dotnet-sdk-8.0
+sudo apt install dotnet-sdk-8.0 
 
 # Fetch & unzip https://github.com/dafny-lang/dafny/releases/latest
 # Add folder to PATH
 
 # Use
-dafny /compile:0 /errorTrace:0 file.dfy
+#dafny /compile:0 /errorTrace:0 file.dfy
+dafny verify file.dfy
 
 ```
 
