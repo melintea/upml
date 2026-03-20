@@ -1,0 +1,155 @@
+/*
+ * https://www.researchgate.net/figure/Complete-UML-state-diagram-of-the-PELICAN-crossing_fig1_294711831
+ *
+ * PELICAN (PEdestrian LIght CONtrolled) Crossing — Promela/SPIN model
+ *
+ * Vehicle lights : GREEN → AMBER → RED → RED_AMBER → GREEN
+ * Pedestrian lights: DONT_WALK → WALK → FLASH_DONT_WALK → DONT_WALK
+ *
+ * Safety property : vehicles never have green while pedestrians have walk.
+ * Liveness property: every pedestrian request is eventually served.
+ */
+
+/* ---------- light encodings ---------- */
+mtype:veh  = { V_GREEN, V_AMBER, V_RED, V_RED_AMBER };
+mtype:ped  = { P_DONT_WALK, P_WALK, P_FLASH_DONT_WALK };
+
+/* ---------- shared state ---------- */
+mtype:veh  vehicle_light   = V_GREEN;
+mtype:ped  pedestrian_light = P_DONT_WALK;
+
+bool pedestrian_request = false;
+
+/* ---------- timer abstraction ---------- */
+/* Non-deterministic "tick" channel models timeout expiry. */
+chan timer = [0] of { bit };
+
+/* ---------- timer process ---------- */
+active proctype Timer()
+{
+    do
+    :: timer!1   /* a timeout fires (rendezvous, so controller must be ready) */
+    od
+}
+
+/* ---------- controller ---------- */
+active proctype Controller()
+{
+    do
+    :: /* ---- phase 1: vehicles green, pedestrians don't walk ---- */
+       vehicle_light    = V_GREEN;
+       pedestrian_light = P_DONT_WALK;
+
+       /* wait for a pedestrian button press */
+       pedestrian_request;                     /* blocks until true */
+
+       /* minimum green time for vehicles */
+       timer?1;
+
+       /* ---- phase 2: vehicles amber ---- */
+       vehicle_light = V_AMBER;
+       timer?1;
+
+       /* ---- phase 3: vehicles red, pedestrians walk ---- */
+       vehicle_light    = V_RED;
+       pedestrian_light = P_WALK;
+       pedestrian_request = false;             /* request consumed */
+       timer?1;
+
+       /* ---- phase 4: flashing don't-walk (pedestrians clear) ---- */
+       pedestrian_light = P_FLASH_DONT_WALK;
+       timer?1;
+
+       /* ---- phase 5: prepare vehicles, pedestrians don't walk ---- */
+       pedestrian_light = P_DONT_WALK;
+       vehicle_light    = V_RED_AMBER;
+       timer?1;
+
+       /* back to phase 1 */
+    od
+}
+
+/* ---------- pedestrian (environment) ---------- */
+active proctype Pedestrian()
+{
+    do
+    :: pedestrian_request = true
+    od
+}
+
+/* ================================================================
+ *  Verification properties
+ * ================================================================ */
+
+/*
+ * SAFETY — vehicles and pedestrians must never both have "go" signals.
+ *   vehicle GREEN  and pedestrian WALK  must be mutually exclusive
+ *   vehicle AMBER  and pedestrian WALK  must be mutually exclusive
+ */
+#define veh_go    (vehicle_light == V_GREEN || vehicle_light == V_AMBER)
+#define ped_go    (pedestrian_light == P_WALK)
+#define safe      (!(veh_go && ped_go))
+
+/* checked as a global invariant (monitor process) */
+active proctype SafetyMonitor()
+{
+    assert(safe);
+    do
+    :: assert(safe)
+    od
+}
+
+/*
+ * LTL PROPERTIES  (check with:  spin -a pelican.pml && cc -o pan pan.c
+ *                                 ./pan -a -N <name>)
+ *
+ * 1. Safety as LTL:
+ */
+ltl mutual_exclusion { [] safe }
+
+/*
+ * 2. Liveness — every request is eventually served (pedestrian gets WALK):
+ */
+ltl request_served { [] (pedestrian_request -> <> (pedestrian_light == P_WALK)) }
+
+/*
+ * 3. No starvation — vehicles always eventually get green again:
+ */
+ltl vehicles_progress { [] <> (vehicle_light == V_GREEN) }
+
+/*
+ * 4. No starvation — pedestrians always eventually get a walk phase:
+ */
+ltl pedestrians_progress { [] <> (pedestrian_light == P_WALK) }
+
+/*
+ * ================================================================
+ *  How to run
+ * ================================================================
+ *
+ *  Interactive simulation:
+ *    spin pelican.pml
+ *
+ *  Random simulation (200 steps):
+ *    spin -p -u200 pelican.pml
+ *
+ *  Exhaustive verification of safety (assertions):
+ *    spin -a pelican.pml
+ *    gcc -DSAFETY -o pan pan.c
+ *    ./pan
+ *
+ *  Verify an LTL property (e.g. mutual_exclusion):
+ *    spin -a pelican.pml
+ *    gcc -o pan pan.c
+ *    ./pan -a -N mutual_exclusion
+ *
+ *  Verify liveness (needs fairness, weak-fairness flag -f):
+ *    spin -a pelican.pml
+ *    gcc -o pan pan.c
+ *    ./pan -a -f -N request_served
+ *    ./pan -a -f -N vehicles_progress
+ *    ./pan -a -f -N pedestrians_progress
+ * ================================================================
+ */
+
+
