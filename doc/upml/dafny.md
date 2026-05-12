@@ -1,6 +1,10 @@
 - [Install](#install)
 - [Various links](#various-links)
 
+## Status
+
+Dafny does not seem suitable as it lacks the concept of message channels. As of 2026 [DafnyMPI](https://arxiv.org/pdf/2512.18842) is work in progress. 
+
 ## Install
 
 ```
