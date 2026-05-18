@@ -74,6 +74,7 @@ There are two models: [one for FSM and one for HSM](https://accu.org/journals/ov
 - State names are unique per plantuml file.
 - Max 253 processes (255 - init - invariants)
 - Max 255 channels
+- If more processes/states or channels are needed, use the [spin16](https://github.com/melintea/Spin16) fork.
 
 ## Cheat Sheet
 
