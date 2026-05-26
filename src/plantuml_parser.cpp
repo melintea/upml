@@ -17,6 +17,7 @@
 
 #include <boost/phoenix/phoenix.hpp>
 #include <boost/spirit/include/qi.hpp>
+//#include <boost/iterator/iterator_adaptor.hpp>
 #include <boost/spirit/include/support_line_pos_iterator.hpp>
 #include <boost/fusion/include/io.hpp>
 
@@ -29,10 +30,103 @@ namespace bp = boost::phoenix;
 
 
 namespace upml {
+template <typename BaseIt> class max_line_pos_iterator;
+} // upml
+
+namespace boost::spirit {
+template <class Iterator>
+inline std::size_t get_line(upml::max_line_pos_iterator<Iterator> i)
+{
+    return i.position();
+}
+} // boost::spirit
+
+
+namespace upml {
 
 namespace qi       = bs::qi;
 //namespace encoding = qi::unicode;
 namespace encoding = qi::ascii;
+
+
+/*
+ * [ Error tracking
+ */
+template <typename BaseIt>
+class max_line_pos_iterator 
+    : public boost::iterator_adaptor<
+          max_line_pos_iterator<BaseIt>
+        , bs::line_pos_iterator<BaseIt>
+        , boost::use_default           // Value (use default)
+        , boost::forward_traversal_tag // Category
+    > 
+{
+private:
+
+    using base_t = typename max_line_pos_iterator::iterator_adaptor_;
+
+public:
+
+    max_line_pos_iterator() : base_t() {}
+
+    explicit max_line_pos_iterator(bs::line_pos_iterator<BaseIt> const& base)
+        : base_t(base)
+    //, _maxLine(position())
+    {}
+
+    explicit max_line_pos_iterator(BaseIt it) 
+        : max_line_pos_iterator(bs::line_pos_iterator<BaseIt>(it)) 
+    {}
+
+    explicit max_line_pos_iterator(BaseIt it, std::size_t line) 
+        : max_line_pos_iterator(bs::line_pos_iterator<BaseIt>(it, line)) 
+    {}
+
+    std::size_t position() const
+    {
+        return this->base().position();
+    }
+    
+    std::size_t max_line() const
+    {
+        return _maxLine;
+    }
+    
+private:
+
+    friend class boost::iterator_core_access;
+
+    void increment() 
+    {
+        ++(this->base_reference()); 
+        
+        auto line(position());
+    if (line > _maxLine) {
+        _maxLine = line;
+    }
+    }
+    
+    static std::size_t _maxLine;
+    
+}; // max_line_pos_iterator
+
+template <typename BaseIt> std::size_t max_line_pos_iterator<BaseIt>::_maxLine = 1;
+
+template <class Iterator>
+inline std::size_t max_line(Iterator i)
+{
+    return bs::get_line(i);
+}
+
+template <class Iterator>
+inline std::size_t max_line(max_line_pos_iterator<Iterator> i)
+{
+    return i.max_line();
+}
+
+/*
+ * ] Error tracking
+ */
 
 // Escaped chars
 struct _morphs : qi::symbols<const char, const char>
@@ -110,7 +204,8 @@ struct on_error_handler
     {
         auto dist(std::distance(b, where));
         std::cerr 
-            << "Error: expecting " << what << " in line " << bs::get_line(where) << ":" << dist << ": \n"
+            << "Error at line " << max_line(where) 
+            <<": expecting " << what << " in line " << bs::get_line(where) << ":" << dist << ": \n"
             //<< std::string(b,e) << "\n"
             //<< std::setw(dist) << '^' << "---- here\n"
             ;
@@ -257,7 +352,7 @@ bool plantuml_parser(
     upml::sm::state_machine& sm)
 {
     using base_iter_t        = bs::istream_iterator;
-    using lp_iter_t          = bs::line_pos_iterator<base_iter_t>;
+    using lp_iter_t          = max_line_pos_iterator<base_iter_t>; // bs::line_pos_iterator<base_iter_t>;
     using in_iter_t          = lp_iter_t;  // base_iter_t; // 
     using skipper_t          = skipper<in_iter_t>; //
     using plantuml_grammar_t = plantuml_grammar<in_iter_t, 
@@ -284,7 +379,7 @@ bool plantuml_parser(
     if ( ! match || crtIt != endIt)
     {
         std::cerr << "Parsing stopped at line " 
-                  << bs::get_line(crtIt) << ':' << bs::get_column(firstIt, crtIt) 
+                  << upml::max_line(crtIt) << ':' << bs::get_column(firstIt, crtIt) 
                   << " pos " << std::distance(firstIt, crtIt) << '\n' 
                   //<< '\'' << std::string{crtIt, endIt} << "'\n"
                   ;

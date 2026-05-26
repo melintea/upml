@@ -1,0 +1,68 @@
+@startuml
+
+state ClosedSystemEnvironment {
+[*] --> AliceDial 
+AliceDial: config: noInboundEvents;
+AliceDial --> BobPickup : NullEvent [state:Alice:currentState == state:AIdle] /send event:Dial to state:Alice;
+
+BobPickup: config: noInboundEvents;
+BobPickup --> AliceHangup : NullEvent [state:Bob:currentState == state:BInitiated] /send event:Pickup to state:Bob;
+
+AliceHangup: config: noInboundEvents;
+AliceHangup --> CallEnded : NullEvent [state:Alice:currentState == state:AEstablished] /send event:Hangup to state:Alice;
+
+CallEnded: config: noInboundEvents;
+CallEnded --> [*]
+}
+
+
+state Alice {
+  [*] --> AIdle
+  AIdle --> AInitiated : Dial
+  
+  AInitiated: entry: send event:INVITE to state:Bob;
+  AInitiated --> AInitiated : 1xx
+  AInitiated --> AEstablished : 2xx
+
+  AEstablished: entry: send event:ACK to state:Bob;
+  AEstablished --> Aterminated : Hangup
+  
+  Aterminated: entry: send event:BYE to state:Bob;
+  Aterminated --> [*]
+
+  //AInitiated: timeout: send event:Hangup to state:Alice;
+  AInitiated: precondition: (state:Alice:currentState != state:BIdle);
+  AInitiated: postcondition: (state:Alice:currentState != state:BInitiated);
+  AInitiated: invariant: (state:Alice:currentState != state:Bterminated);
+  
+  // errors; on purpose
+  AInitiated: error_line_39
+  
+  AInitiated --> AEstablished : 3xx
+  AInitiated --> AEstablished : 4xx
+}
+
+//||
+
+state Bob {
+  [*] --> BIdle
+  BIdle --> BInitiated : INVITE
+  
+  BInitiated: entry: send event:1xx to state:Alice;
+  BInitiated --> BEstablished : Pickup
+  
+  BEstablished: entry: send event:2xx to state:Alice;
+  BEstablished --> BEstablished : ACK
+  BEstablished --> Bterminated : BYE
+  
+  Bterminated --> [*]
+
+  //BInitiated: timeout: send event:Hangup to state:Alice;
+  BInitiated: precondition: (state:Bob:currentState != state:AIdle);
+  BInitiated: postcondition: (state:Bob:currentState != state:AInitiated);
+  BInitiated: invariant: (state:Bob:currentState != state:Aterminated);
+  
+}
+
+@enduml
+
