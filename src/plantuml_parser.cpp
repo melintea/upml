@@ -205,7 +205,7 @@ struct on_error_handler
         auto dist(std::distance(b, where));
         std::cerr 
             << "Error at line " << max_line(where) 
-            <<": expecting " << what << " in line " << bs::get_line(where) << ":" << dist << ": \n"
+            <<": expecting a valid '" << what << "' starting line " << bs::get_line(where) << ":" << dist << ": \n"
             //<< std::string(b,e) << "\n"
             //<< std::setw(dist) << '^' << "---- here\n"
             ;
@@ -360,8 +360,8 @@ bool plantuml_parser(
                                                >;
     
     in_iter_t crtIt(base_iter_t(in >> std::noskipws));
-    in_iter_t firstIt(crtIt);
-    in_iter_t endIt;
+    const in_iter_t firstIt(crtIt);
+    const in_iter_t endIt;
     
     plantuml_grammar_t grammar(firstIt);
 
