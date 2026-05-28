@@ -11,6 +11,8 @@ exeupml=${gitroot}/src/upml
 #exespin=/usr/bin/spin
 exespin=${HOME}/work/Spin/Src/spin
 xexespin=${HOME}/work/Spin/optional_gui/ispin.tcl
+#exespin=${HOME}/work/github/Spin16/Src/spin
+#xexespin=${HOME}/work/github/Spin16/optional_gui/ispin.tcl
 
 tlahome=${HOME}/tla/toolbox
 tlatoolbox=${tlahome}/toolbox
@@ -109,6 +111,7 @@ function spinit()
 function verify_spin() {
 
     echo "# ------------------------------------------------------------------------"
+    echo "#--- ${exespin}"
     echo "#--- safety $spinfile"
     rm pan pan.* _spin_nvr.tmp *.trail
     ${exespin} -a "$spinfile" || exit 1
