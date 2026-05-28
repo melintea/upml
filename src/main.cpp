@@ -8,6 +8,7 @@
  *
  */
 
+#include "asstr.hpp"
 #include "iostream.hpp"
 #include "plantuml_parser.hpp"
 #include "promela_generator.hpp"
@@ -20,9 +21,6 @@
 #include <iostream>
 #include <filesystem>
 #include <fstream>
-
-#define STRHELPER(x) #x
-#define ASSTR(x)     STRHELPER(x)
 
 namespace bpo = boost::program_options;
 
