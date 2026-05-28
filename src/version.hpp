@@ -14,4 +14,15 @@
 #define STRHELPER(x) #x
 #define ASSTR(x)     STRHELPER(x)
 
+
+namespace upml {
+
+inline constexpr const char* version()
+{
+    return ASSTR( UPML_VERSION );
+}
+
+} //namespace upml
+
+	
 #endif //#define INCLUDED_asstr_hpp_cc9cd5d8_5ec5_47fd_9b0d_40f183f42b4a

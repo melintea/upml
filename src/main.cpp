@@ -8,7 +8,7 @@
  *
  */
 
-#include "asstr.hpp"
+#include "version.hpp"
 #include "iostream.hpp"
 #include "plantuml_parser.hpp"
 #include "promela_generator.hpp"
@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
     bpo::store(bpo::parse_command_line(argc, argv, po), vm);
     if (vm.count("help"))
     {
-        std::cerr << "\n" << argv[0]  << " v" << ASSTR(UPML_VERSION) << " boost " << BOOST_VERSION
+        std::cerr << "\n" << argv[0]  << " v" << upml::version() << " boost " << BOOST_VERSION
                   << ":\n" << po;
         exit(EXIT_SUCCESS);
     }
