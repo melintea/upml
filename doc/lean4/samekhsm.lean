@@ -367,3 +367,205 @@ example : step S11 B = S11 := by native_decide
 
 end SamekHSM
 
+/-! ##########################################################################
+    # Linear Temporal Logic over HSM runs
+    ##########################################################################
+
+  Lean/Mathlib ships no LTL library, so we build a small shallow embedding
+  specialised to this machine. Because the HSM is *deterministic* and driven
+  by an input word, a run is fully determined by a start leaf plus an infinite
+  stream of events. We therefore reason over event streams rather than over
+  arbitrary state traces: this keeps the semantics constructive and lets most
+  concrete properties fall to `decide` / `native_decide` over bounded prefixes.
+
+  Design:
+    * `Stream' α := Nat → α` is the standard "infinite sequence" (Mathlib name).
+      We avoid importing Mathlib and just use `Nat → α` directly.
+    * A *run* from `s₀` under event stream `es` is the state sequence
+        run s₀ es 0     = s₀
+        run s₀ es (n+1) = step (run s₀ es n) (es n)
+    * A *state predicate* is `State → Prop` (an atomic proposition / "label").
+    * An LTL formula is interpreted as a predicate over (run, index): we use a
+      shallow embedding `TProp := (Nat → State) → Nat → Prop`, i.e. a property
+      of a state sequence evaluated at a position. Operators are the usual ones.
+-/
+
+namespace SamekHSM.LTL
+open SamekHSM SamekHSM.State SamekHSM.Event
+
+/-- An infinite event word. -/
+abbrev EventStream := Nat → Event
+
+/-- The deterministic run (state sequence) from `s₀` under event word `es`. -/
+def run (s₀ : State) (es : EventStream) : Nat → State
+  | 0     => s₀
+  | n+1   => step (run s₀ es n) (es n)
+
+/-- A temporal property: a predicate over a state sequence at a position. -/
+abbrev TProp := (Nat → State) → Nat → Prop
+
+/-! ### Atomic propositions (lifting state predicates) -/
+
+/-- Lift a state predicate to an atomic temporal proposition evaluated "here". -/
+def lift (p : State → Prop) : TProp := fun σ i => p (σ i)
+
+/-- "State `s` is active in the current configuration." -/
+def inState (s : State) : TProp := fun σ i => active (σ i) s = true
+
+/-- "The current leaf is exactly `s`." -/
+def atLeaf (s : State) : TProp := fun σ i => σ i = s
+
+/-! ### Boolean connectives -/
+
+def tnot (φ : TProp) : TProp := fun σ i => ¬ φ σ i
+def tand (φ ψ : TProp) : TProp := fun σ i => φ σ i ∧ ψ σ i
+def tor  (φ ψ : TProp) : TProp := fun σ i => φ σ i ∨ ψ σ i
+def timp (φ ψ : TProp) : TProp := fun σ i => φ σ i → ψ σ i
+
+/-! ### Temporal operators (future fragment) -/
+
+/-- `X φ` — φ holds at the next step. -/
+def next (φ : TProp) : TProp := fun σ i => φ σ (i + 1)
+
+/-- `G φ` — φ holds now and at every future step (always/globally). -/
+def always (φ : TProp) : TProp := fun σ i => ∀ j, i ≤ j → φ σ j
+
+/-- `F φ` — φ holds at some current-or-future step (eventually). -/
+def eventually (φ : TProp) : TProp := fun σ i => ∃ j, i ≤ j ∧ φ σ j
+
+/-- `φ U ψ` — ψ eventually holds, and φ holds at every step until then. -/
+def untilT (φ ψ : TProp) : TProp :=
+  fun σ i => ∃ j, i ≤ j ∧ ψ σ j ∧ ∀ k, i ≤ k → k < j → φ σ k
+
+/-- `φ W ψ` — weak until: `(φ U ψ) ∨ G φ`. -/
+def weakUntil (φ ψ : TProp) : TProp := tor (untilT φ ψ) (always φ)
+
+/-- Satisfaction: run from `s₀` under `es` satisfies `φ` (at time 0). -/
+def Sat (s₀ : State) (es : EventStream) (φ : TProp) : Prop :=
+  φ (run s₀ es) 0
+
+/-- Prefix notation for satisfaction, written `⊨[s₀, es] φ`. The bracketed run
+    (start state + event word) keeps the comma inside a delimiter pair so the
+    notation cannot swallow commas or list literals in surrounding terms. -/
+notation:50 "⊨[" s₀ ", " es "] " φ => Sat s₀ es φ
+
+/-! ### Basic sanity: the run matches `step` -/
+
+example (es : EventStream) : run S211 es 0 = S211 := rfl
+example (es : EventStream) : run S211 es 1 = step S211 (es 0) := rfl
+
+/-! ### Duality laws (LTL identities), proved generically
+
+  These are the standard LTL equivalences; they hold for the shallow embedding
+  by unfolding definitions. Stated extensionally over all σ and i. -/
+
+theorem not_eventually_iff_always_not (φ : TProp) :
+    ∀ σ i, (tnot (eventually φ)) σ i ↔ (always (tnot φ)) σ i := by
+  intro σ i
+  simp only [tnot, always, eventually]
+  apply Iff.intro
+  · intro h j hij hφ
+    exact h ⟨j, hij, hφ⟩
+  · intro h hex
+    match hex with
+    | ⟨j, hij, hφ⟩ => exact h j hij hφ
+
+theorem not_always_iff_eventually_not (φ : TProp) :
+    ∀ σ i, (tnot (always φ)) σ i ↔ (eventually (tnot φ)) σ i := by
+  intro σ i
+  simp only [tnot, always, eventually]
+  apply Iff.intro
+  · -- `¬ (∀ j ≥ i, φ) → ∃ j ≥ i, ¬ φ` : the classical direction.
+    intro h
+    apply Classical.byContradiction
+    intro hc
+    apply h
+    intro j hij
+    apply Classical.byContradiction
+    intro hφ
+    exact hc ⟨j, hij, hφ⟩
+  · -- `(∃ j ≥ i, ¬ φ) → ¬ (∀ j ≥ i, φ)` : constructive.
+    intro h hall
+    match h with
+    | ⟨j, hij, hφ⟩ => exact hφ (hall j hij)
+
+/-- `G φ → φ` at the current position (reflexivity of always). -/
+theorem always_elim (φ : TProp) : ∀ σ i, (always φ) σ i → φ σ i :=
+  fun _ i h => h i (Nat.le_refl i)
+
+/-- `G φ → X (G φ)` (always is closed under next). -/
+theorem always_next (φ : TProp) :
+    ∀ σ i, (always φ) σ i → (next (always φ)) σ i := by
+  intro σ i h j hij
+  exact h j (Nat.le_trans (Nat.le_succ i) hij)
+
+/-- `φ → F φ` (introduction for eventually). -/
+theorem eventually_intro (φ : TProp) : ∀ σ i, φ σ i → (eventually φ) σ i :=
+  fun _ i h => ⟨i, Nat.le_refl i, h⟩
+
+/-! ### A bounded-run executor, so concrete LTL goals are decidable
+
+  For *concrete* event words we don't need the full infinite stream: we unfold
+  the run to a bounded list and check temporal operators over that prefix. This
+  makes safety-style properties checkable by `native_decide`. -/
+
+/-- Total prefix builder: run the event list, collecting every visited leaf
+    `[s₀, s₁, …, sₙ]` where `sₖ₊₁ = step sₖ (es.get k)`. -/
+def leavesAlong : State → List Event → List State
+  | s, []      => [s]
+  | s, e :: es => s :: leavesAlong (step s e) es
+
+/-- "Globally p" over a concrete finite run: p holds at every visited leaf. -/
+def gAll (p : State → Bool) (s : State) (es : List Event) : Bool :=
+  (leavesAlong s es).all p
+
+/-- "Eventually p" over a concrete finite run: p holds at some visited leaf. -/
+def fSome (p : State → Bool) (s : State) (es : List Event) : Bool :=
+  (leavesAlong s es).any p
+
+/-! ### Concrete LTL properties of the Samek HSM
+
+  Event names: A..H. Recall (from the base model):
+    * E is handled only at the root and always drives to leaf S11.
+    * From S11, G → S211; from S211, G → S11.
+    * SuperSuper is the root and is active in every configuration.
+-/
+
+/-- The root is active in *every* configuration (its ancestor chain always
+    ends at `SuperSuper`). This is the atomic fact behind the `G` property. -/
+theorem superSuper_always_active : ∀ s : State, active s SuperSuper = true := by
+  intro s; cases s <;> native_decide
+
+/-- SuperSuper is active at every visited leaf: `G (in SuperSuper)` along any
+    finite word, from any start state. Follows from `superSuper_always_active`
+    since every element of `leavesAlong s es` is some `State`. -/
+theorem always_in_superSuper (s : State) (es : List Event) :
+    gAll (fun leaf => active leaf SuperSuper) s es = true := by
+  unfold gAll
+  rw [List.all_eq_true]
+  intro leaf _
+  exact superSuper_always_active leaf
+
+/-- After pressing E, the next leaf is S11, from any configuration:
+    `G (atLeaf _ → X (atLeaf S11))` specialised to the event being E. -/
+theorem E_forces_S11_next (s : State) : step s E = S11 := by
+  -- One-step safety fact underpinning the temporal statement.
+  cases s <;> native_decide
+
+/-- Liveness-flavoured concrete check: from S211, the word [G] reaches S11. -/
+theorem F_reach_S11_from_S211 :
+    fSome (fun leaf => leaf == S11) S211 [G] = true := by native_decide
+
+/-- Safety over a concrete word: starting at S211 and pressing
+    [G, G, G] we never visit the root-only leaf... (illustrative). -/
+example :
+    gAll (fun leaf => leaf == S211 || leaf == S11) S211 [G, G, G] = true := by
+  native_decide
+
+/-- The two-state G-cycle: G alternates S211 ↔ S11 forever.
+    Over the concrete word of n Gs the visited leaves alternate. -/
+example : leavesAlong S211 [G, G, G, G] = [S211, S11, S211, S11, S211] := by
+  native_decide
+
+end SamekHSM.LTL
+
