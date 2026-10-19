@@ -21,6 +21,7 @@
 #include <boost/spirit/include/support_line_pos_iterator.hpp>
 #include <boost/fusion/include/io.hpp>
 
+#include <memory>
 #include <string>
 #include <iomanip>
 #include <iostream>
@@ -37,7 +38,9 @@ namespace boost::spirit {
 template <class Iterator>
 inline std::size_t get_line(upml::max_line_pos_iterator<Iterator> i)
 {
-    return i.position();
+    // Delegate to the underlying line_pos_iterator so get_line()/get_column()
+    // keep working on our adaptor (used by the on_success/on_error handlers).
+    return get_line(i.base());
 }
 } // boost::spirit
 
@@ -51,7 +54,46 @@ namespace encoding = qi::ascii;
 
 /*
  * [ Error tracking
+ *
+ * A Qi parser backtracks by saving a copy of the current iterator, trying an
+ * alternative, and -- on failure -- restoring that saved copy. That means by
+ * the time the top-level parse fails, the "current" iterator has been rewound
+ * to wherever backtracking landed, NOT to the furthest point the parser
+ * actually reached. The furthest point is what tells us where the original
+ * error that forced backtracking occurred.
+ *
+ * To capture it we keep a high-water mark in a tracker object that lives
+ * OUTSIDE the iterator. Every iterator copy Qi makes during backtracking holds
+ * a shared_ptr to the same tracker, and increment() only ever pushes the mark
+ * forward. Because the tracker is not part of the iterator's value, restoring
+ * a saved iterator copy does not roll the mark back -- so it survives
+ * backtracking and records the deepest advance of the whole parse.
  */
+template <typename BaseIt>
+struct furthest_pos
+{
+    using lp_iter_t = bs::line_pos_iterator<BaseIt>;
+
+    // Furthest iterator reached so far (highest raw offset). Default-constructed
+    // tracker starts with no observation.
+    lp_iter_t   _iter{};
+    std::size_t _offset = 0;      ///< raw byte offset of _iter from the start
+    std::size_t _line   = 1;      ///< 1-based line of _iter
+    bool        _seen   = false;  ///< whether any position has been recorded yet
+
+    /// Push the high-water mark forward if \a it is further than anything seen.
+    void observe(const lp_iter_t& it, std::size_t offset)
+    {
+        if (!_seen || offset > _offset)
+        {
+            _iter   = it;
+            _offset = offset;
+            _line   = bs::get_line(it);
+            _seen   = true;
+        }
+    }
+}; // furthest_pos
+
 template <typename BaseIt>
 class max_line_pos_iterator 
     : public boost::iterator_adaptor<
@@ -67,31 +109,45 @@ private:
 
 public:
 
+    using tracker_t     = furthest_pos<BaseIt>;
+    using tracker_ptr_t = std::shared_ptr<tracker_t>;
+
     max_line_pos_iterator() : base_t() {}
 
-    explicit max_line_pos_iterator(bs::line_pos_iterator<BaseIt> const& base)
+    explicit max_line_pos_iterator(bs::line_pos_iterator<BaseIt> const& base,
+                                   tracker_ptr_t tracker = {})
         : base_t(base)
-    //, _maxLine(position())
+        , _tracker(std::move(tracker))
+        , _offset(0)
     {}
 
-    explicit max_line_pos_iterator(BaseIt it) 
-        : max_line_pos_iterator(bs::line_pos_iterator<BaseIt>(it)) 
+    explicit max_line_pos_iterator(BaseIt it, tracker_ptr_t tracker = {}) 
+        : max_line_pos_iterator(bs::line_pos_iterator<BaseIt>(it), std::move(tracker)) 
     {}
 
-    explicit max_line_pos_iterator(BaseIt it, std::size_t line) 
-        : max_line_pos_iterator(bs::line_pos_iterator<BaseIt>(it, line)) 
+    explicit max_line_pos_iterator(BaseIt it, std::size_t line, tracker_ptr_t tracker = {}) 
+        : max_line_pos_iterator(bs::line_pos_iterator<BaseIt>(it, line), std::move(tracker)) 
     {}
 
     std::size_t position() const
     {
         return this->base().position();
     }
-    
+
+    /// Line at the furthest point the parser reached before backtracking.
     std::size_t max_line() const
     {
-        return _maxLine;
+        return (_tracker && _tracker->_seen) ? _tracker->_line : position();
     }
-    
+
+    /// Raw offset of the furthest point the parser reached before backtracking.
+    std::size_t max_offset() const
+    {
+        return (_tracker && _tracker->_seen) ? _tracker->_offset : _offset;
+    }
+
+    const tracker_ptr_t& tracker() const { return _tracker; }
+
 private:
 
     friend class boost::iterator_core_access;
@@ -99,18 +155,18 @@ private:
     void increment() 
     {
         ++(this->base_reference()); 
-        
-        auto line(position());
-    if (line > _maxLine) {
-        _maxLine = line;
-    }
+        ++_offset;
+
+        if (_tracker)
+        {
+            _tracker->observe(this->base(), _offset);
+        }
     }
     
-    static std::size_t _maxLine;
+    tracker_ptr_t _tracker;  ///< shared high-water mark, survives backtracking
+    std::size_t   _offset = 0;  ///< this iterator's own raw offset from start
     
 }; // max_line_pos_iterator
-
-template <typename BaseIt> std::size_t max_line_pos_iterator<BaseIt>::_maxLine = 1;
 
 template <class Iterator>
 inline std::size_t max_line(Iterator i)
@@ -359,7 +415,12 @@ bool plantuml_parser(
                                                 skipper_t 
                                                >;
     
-    in_iter_t crtIt(base_iter_t(in >> std::noskipws));
+    // Shared high-water-mark tracker: records the furthest point the parser
+    // reaches. It lives outside the iterators so Qi's backtracking (which
+    // restores saved iterator copies) cannot rewind it.
+    auto tracker = std::make_shared<in_iter_t::tracker_t>();
+
+    in_iter_t crtIt(base_iter_t(in >> std::noskipws), tracker);
     const in_iter_t firstIt(crtIt);
     const in_iter_t endIt;
     
@@ -379,10 +440,24 @@ bool plantuml_parser(
     if ( ! match || crtIt != endIt)
     {
         std::cerr << "Parsing stopped at line " 
-                  << upml::max_line(crtIt) << ':' << bs::get_column(firstIt, crtIt) 
+                  << bs::get_line(crtIt) << ':' << bs::get_column(firstIt, crtIt) 
                   << " pos " << std::distance(firstIt, crtIt) << '\n' 
                   //<< '\'' << std::string{crtIt, endIt} << "'\n"
                   ;
+
+        // The furthest point reached before the parser was forced to backtrack
+        // is the most likely origin of the error. It is usually ahead of where
+        // the parse ultimately stopped, because backtracking rewinds the
+        // current iterator but not the high-water mark.
+        if (tracker->_seen)
+        {
+            const auto& furthestIt = tracker->_iter;
+            std::cerr << "Furthest progress (backtracking origin) at line "
+                      << tracker->_line << ':'
+                      << bs::get_column(firstIt.base(), furthestIt)
+                      << " pos " << tracker->_offset << '\n';
+        }
+
         return false;
     }
     /*
