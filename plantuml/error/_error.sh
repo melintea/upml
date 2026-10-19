@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#
+# Trigger a parser error
+#
+
 clear && make || exit 1
 
 gitroot=`git rev-parse --show-toplevel`
