@@ -67,17 +67,15 @@ struct furthest_pos
     lp_iter_t   _iter{};
     std::size_t _offset = 0;      ///< raw byte offset of _iter from the start of the file
     std::size_t _line   = 1;      ///< 1-based line of _iter
-    bool        _seen   = false;  ///< whether any position has been recorded yet
 
     /// Push the high-water mark forward if \a it is further than anything seen.
     void observe(const lp_iter_t& it, std::size_t offset)
     {
-        if (!_seen || offset > _offset)
+        if (offset > _offset)
         {
             _iter   = it;
             _offset = offset;
             _line   = bs::get_line(it);
-            _seen   = true;
         }
     }
 }; // furthest_pos
@@ -125,13 +123,13 @@ public:
     /// Line at the furthest point the parser reached before backtracking.
     std::size_t max_line() const
     {
-        return (_parseTracker && _parseTracker->_seen) ? _parseTracker->_line : position();
+        return (_parseTracker) ? _parseTracker->_line : position();
     }
 
     /// Raw offset of the furthest point the parser reached before backtracking.
     std::size_t max_offset() const
     {
-        return (_parseTracker && _parseTracker->_seen) ? _parseTracker->_offset : _offset;
+        return (_parseTracker) ? _parseTracker->_offset : _offset;
     }
 
     const parse_tracker_ptr_t& parse_tracker() const { return _parseTracker; }
@@ -431,14 +429,11 @@ bool plantuml_parser(
                   //<< '\'' << std::string{crtIt, endIt} << "'\n"
                   ;
 
-        if (tracker->_seen)
-        {
-            const auto& furthestIt = tracker->_iter;
-            std::cerr << "Furthest progress (backtracking origin) at line "
-                      << tracker->_line << ':'
-                      << bs::get_column(firstIt.base(), furthestIt)
-                      << " filepos " << tracker->_offset << '\n';
-        }
+        const auto& furthestIt = tracker->_iter;
+        std::cerr << "Furthest progress (backtracking origin) at line "
+                  << tracker->_line << ':'
+                  << bs::get_column(firstIt.base(), furthestIt)
+                  << " filepos " << tracker->_offset << '\n';
 
         return false;
     }
