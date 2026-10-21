@@ -246,7 +246,7 @@ struct on_error_handler
     {
         auto dist(std::distance(b, where));
         std::cerr 
-            << "Error around line " << max_line(where) 
+            << "Error at line " << max_line(where) 
             <<": expecting a valid '" << what << "' starting line " << bs::get_line(where) << ":" << dist << ": \n"
             //<< std::string(b,e) << "\n"
             //<< std::setw(dist) << '^' << "---- here\n"
@@ -423,14 +423,14 @@ bool plantuml_parser(
     
     if ( ! match || crtIt != endIt)
     {
-        std::cerr << "Parsing stopped at line " 
-                  << bs::get_line(crtIt) << ':' << bs::get_column(firstIt, crtIt) 
-                  << " pos " << std::distance(firstIt, crtIt) << '\n' 
-                  //<< '\'' << std::string{crtIt, endIt} << "'\n"
-                  ;
+        //std::cerr << "Parsing stopped at line " 
+        //          << bs::get_line(crtIt) << ':' << bs::get_column(firstIt, crtIt) 
+        //          << " pos " << std::distance(firstIt, crtIt) << '\n' 
+        //          //<< '\'' << std::string{crtIt, endIt} << "'\n"
+        //          ;
 
         const auto& furthestIt = tracker->_iter;
-        std::cerr << "Furthest progress (backtracking origin) at line "
+        std::cerr << "Parsing stopped at line "
                   << tracker->_line << ':'
                   << bs::get_column(firstIt.base(), furthestIt)
                   << " filepos " << tracker->_offset << '\n';
