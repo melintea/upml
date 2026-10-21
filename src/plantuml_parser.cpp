@@ -247,7 +247,8 @@ struct on_error_handler
         auto dist(std::distance(b, where));
         std::cerr 
             << "Error at line " << max_line(where) 
-            <<": expecting a valid '" << what << "' starting line " << bs::get_line(where) << ":" << dist << ": \n"
+            <<": expecting a valid '" << what 
+            << "' starting line " << bs::get_line(where) << ":" << bs::get_column(b, where) << ": \n"
             //<< std::string(b,e) << "\n"
             //<< std::setw(dist) << '^' << "---- here\n"
             ;
